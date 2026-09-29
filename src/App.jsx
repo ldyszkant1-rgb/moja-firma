@@ -5790,6 +5790,19 @@ function JobDetails({
               value={normalizeJobStage(editedJob)}
               onChange={(e) => {
                 const value = e.target.value
+                if (value === 'Zakończone') {
+                  const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
+                  const paidAmount = calculatePaidAmount(paymentHistory)
+                  const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
+
+                  if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
+                    showCustomAlert(
+                      `Najpierw rozlicz całą fakturę. Pozostało do zapłaty: ${formatMoney(Math.max(0, invoiceAmount - paidAmount))}.`
+                    )
+                    return
+                  }
+                }
+
                 setEditedJob({
                   ...editedJob,
                   status: value,
@@ -9288,20 +9301,26 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteFinance] = await Promise.all([
+      const [remoteJobs, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
         getJobs(),
         getFinance(),
+        getAllJobPayments(),
+        getPartnerSettlements(),
+        getPartnerTransfers(),
       ])
 
       const backup = {
         app: 'Aeroinstal',
-        backupVersion: 1,
+        backupVersion: 2,
         createdAt: new Date().toISOString(),
         settings,
         jobs: Array.isArray(remoteJobs) ? remoteJobs : [],
         finance: Array.isArray(remoteFinance) ? remoteFinance : [],
         generalReminders: Array.isArray(generalReminders) ? generalReminders : [],
-        note: 'Kopia zawiera dane aplikacji i metadane plików. Zdjęcia i dokumenty pozostają w Supabase Storage.',
+        jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
+        partnerSettlements: Array.isArray(remotePartnerSettlements) ? remotePartnerSettlements : [],
+        partnerTransfers: Array.isArray(remotePartnerTransfers) ? remotePartnerTransfers : [],
+        note: 'Kopia zawiera dane aplikacji, płatności i rozliczenia wspólników. Zdjęcia i dokumenty pozostają w Supabase Storage.',
       }
 
       const blob = new Blob(
@@ -9341,7 +9360,7 @@ function SettingsPage({
       if (
         !backup ||
         backup.app !== 'Aeroinstal' ||
-        backup.backupVersion !== 1 ||
+        ![1, 2].includes(backup.backupVersion) ||
         !Array.isArray(backup.jobs) ||
         !Array.isArray(backup.finance) ||
         !backup.settings
@@ -9413,6 +9432,62 @@ function SettingsPage({
         if (financeError) {
           throw financeError
         }
+      }
+
+      const paymentRows = (backup.jobPayments || []).map((item) => ({
+        id: item.id,
+        job_id: item.jobId,
+        amount: Number(item.amount || 0),
+        paid_at: item.paidAt || getTodayString(),
+        note: item.note || null,
+        created_at: item.createdAt || undefined,
+      }))
+
+      if (paymentRows.length > 0) {
+        const { error: paymentError } = await supabase
+          .from('job_payments')
+          .upsert(paymentRows, { onConflict: 'id' })
+        if (paymentError) throw paymentError
+      }
+
+      const settlementRows = (backup.partnerSettlements || []).map((item) => ({
+        id: item.id,
+        month: item.month,
+        profit: Number(item.profit || 0),
+        lukasz_share: Number(item.lukaszShare || 0),
+        pawel_share: Number(item.pawelShare || 0),
+        lukasz_paid: Number(item.lukaszPaid || 0),
+        pawel_paid: Number(item.pawelPaid || 0),
+        closed: Boolean(item.closed),
+        closed_at: item.closedAt || null,
+        note: item.note || null,
+        created_at: item.createdAt || undefined,
+        updated_at: item.updatedAt || undefined,
+      }))
+
+      if (settlementRows.length > 0) {
+        const { error: settlementError } = await supabase
+          .from('partner_settlements')
+          .upsert(settlementRows, { onConflict: 'id' })
+        if (settlementError) throw settlementError
+      }
+
+      const transferRows = (backup.partnerTransfers || []).map((item) => ({
+        id: item.id,
+        settlement_id: item.settlementId || null,
+        transfer_date: item.transferDate || getTodayString(),
+        from_person: item.fromPerson,
+        to_person: item.toPerson,
+        amount: Number(item.amount || 0),
+        note: item.note || null,
+        created_at: item.createdAt || undefined,
+      }))
+
+      if (transferRows.length > 0) {
+        const { error: transferError } = await supabase
+          .from('partner_transfers')
+          .upsert(transferRows, { onConflict: 'id' })
+        if (transferError) throw transferError
       }
 
       localStorage.setItem(

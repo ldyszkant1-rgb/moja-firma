@@ -3974,11 +3974,11 @@ function NewJobPage({
         </h2>
 
 
-        <div className="note-form">
+        <div className="note-form new-job-basic-form">
 
           <input
 
-            className="note-text-input"
+            className="job-new-input"
 
             placeholder="Nazwa roboty"
 
@@ -3998,7 +3998,7 @@ function NewJobPage({
 
           <input
 
-            className="note-text-input"
+            className="job-new-input"
 
             placeholder="Lokalizacja / statek"
 
@@ -4124,7 +4124,7 @@ function NewJobPage({
         </h2>
 
 
-        <div className="finance-row">
+        <div className="finance-row new-job-rate-row">
 
           <div>
 
@@ -4163,7 +4163,7 @@ function NewJobPage({
         </div>
 
 
-        <div className="finance-row">
+        <div className="finance-row new-job-rate-row">
 
           <div>
 
@@ -4202,7 +4202,7 @@ function NewJobPage({
         </div>
 
 
-        <div className="finance-row">
+        <div className="finance-row new-job-rate-row">
 
           <div>
 

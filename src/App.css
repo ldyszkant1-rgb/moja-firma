@@ -7148,3 +7148,484 @@ section {
     box-shadow: 0 6px 19px rgba(30, 70, 105, .055);
   }
 }
+
+/* =====================================================
+   AEROINSTAL — PRO UI — SZCZEGÓŁY ROBOTY
+   Wizualne uporządkowanie widoku pojedynczej roboty.
+   Bez zmian w logice.
+   ===================================================== */
+
+.sub-page > .details-top {
+  margin: 0 0 14px;
+  padding: 8px 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sub-page > .details-top .back-button {
+  min-height: 38px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  background: #edf7ff;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.sub-page > .details-top .edit-button {
+  min-height: 38px;
+  padding: 8px 15px;
+  border: 1px solid #d8e6ef;
+  border-radius: 11px;
+  background: #fff;
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(30,70,105,.05);
+}
+
+.sub-page > .small-label + h1 {
+  margin-top: 2px;
+}
+
+.sub-page > h1 {
+  font-size: 30px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.job-location {
+  margin-top: 6px;
+  color: #718096;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.completed-date {
+  display: inline-flex;
+  align-items: center;
+  margin: 9px 0 16px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eaf8f0;
+  color: #168447;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sub-page > .detail-card {
+  margin-bottom: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  box-shadow: 0 8px 26px rgba(25,60,95,.055);
+}
+
+.sub-page > .detail-card h2 {
+  margin-bottom: 13px;
+  font-size: 18px;
+  letter-spacing: -.02em;
+}
+
+.sub-page > .detail-card .detail-title {
+  margin-bottom: 0;
+}
+
+.job-stage-card {
+  background:
+    linear-gradient(145deg, #ffffff 0%, #f9fcff 100%);
+}
+
+.job-stage-card .detail-title h2 {
+  font-size: 19px;
+}
+
+.job-stage-pill {
+  min-height: 28px;
+  padding: 6px 10px;
+  font-size: 10px;
+  letter-spacing: .02em;
+}
+
+.job-stage-steps {
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.job-stage-step {
+  min-height: 68px;
+  padding: 8px 4px;
+  border-radius: 13px;
+  transition: .16s ease;
+}
+
+.job-stage-step span {
+  width: 25px;
+  height: 25px;
+  margin-bottom: 5px;
+}
+
+.job-stage-step strong {
+  font-size: 9px;
+}
+
+.job-stage-step.active {
+  box-shadow: inset 0 0 0 1px rgba(7,135,232,.04);
+}
+
+.invoice-info-grid {
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.invoice-info-grid label {
+  min-width: 0;
+}
+
+.invoice-info-grid input,
+.job-stage-select-label select {
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 14px;
+}
+
+.job-paid-info {
+  margin-top: 11px;
+  border: 1px solid #cfead9;
+  border-radius: 11px;
+  background: #f0faf4;
+}
+
+/* Płatności faktury */
+.sub-page > .detail-card[style*="marginTop"] {
+  background: #fff;
+}
+
+.sub-page > .detail-card[style*="marginTop"] > div:first-child {
+  align-items: center !important;
+}
+
+.sub-page > .detail-card[style*="marginTop"] .small-label {
+  margin-bottom: 3px;
+}
+
+.sub-page > .detail-card[style*="marginTop"] .rate-input {
+  min-height: 44px;
+  border-radius: 11px;
+}
+
+/* Zdjęcie główne */
+.sub-page > .detail-card img[alt] {
+  border-radius: 15px !important;
+}
+
+.sub-page > .detail-card:has(> h2:first-child) img[alt] {
+  box-shadow: 0 7px 20px rgba(25,60,95,.08);
+}
+
+.sub-page > .detail-card .document-button,
+.sub-page > .detail-card .document-open,
+.sub-page > .detail-card .document-remove {
+  border-radius: 10px;
+}
+
+/* Postęp */
+.large-progress {
+  height: 11px;
+  margin-top: 2px;
+  background: #e9eff4;
+}
+
+.sub-page > .detail-card:has(.large-progress) .detail-title strong {
+  color: var(--blue);
+  font-size: 22px;
+  letter-spacing: -.03em;
+}
+
+.sub-page > .detail-card:has(.large-progress) input[type="number"] {
+  min-height: 42px;
+  border: 1px solid #d8e3eb;
+  border-radius: 11px;
+  background: #fff;
+  color: var(--blue-dark);
+}
+
+/* Zakres */
+.detail-quantities {
+  gap: 9px;
+}
+
+.quantity-box {
+  padding: 13px 12px;
+  border-radius: 13px;
+  background: #f7fafc;
+  border-color: #e4ebf1;
+}
+
+.quantity-box span {
+  color: #7a8799;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.quantity-box strong {
+  margin-top: 4px;
+  font-size: 21px;
+}
+
+/* Stawki */
+.sub-page > .detail-card .finance-row {
+  min-height: 53px;
+  padding: 8px 0;
+}
+
+.sub-page > .detail-card .finance-row > div strong {
+  font-size: 13px;
+}
+
+.sub-page > .detail-card .finance-row > div small {
+  color: #8490a2;
+  font-size: 11px;
+}
+
+.sub-page > .detail-card .rate-input {
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.sub-page > .detail-card .job-footer {
+  margin-top: 7px;
+  padding: 12px 0 0;
+  border-left: 0;
+  border-top: 1px solid #edf1f4;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sub-page > .detail-card .job-footer span {
+  font-size: 12px;
+}
+
+.sub-page > .detail-card .job-footer strong {
+  font-size: 21px;
+}
+
+/* Dokumentacja */
+.document-row {
+  min-height: 58px;
+  padding: 9px 0;
+}
+
+.document-row strong {
+  font-size: 13px;
+}
+
+.document-open,
+.document-remove {
+  font-size: 12px;
+}
+
+.photo-buttons {
+  margin-bottom: 12px;
+}
+
+.photos-grid {
+  gap: 8px;
+}
+
+.photo-item {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(25,60,95,.06);
+}
+
+/* Zadania */
+.notes-card .notes-header {
+  gap: 10px;
+}
+
+.notes-card .notes-header h2 {
+  font-size: 19px;
+}
+
+.notes-card .note-add-button {
+  min-height: 38px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.notes-list-modern {
+  margin-top: 12px;
+}
+
+.note-item-modern {
+  border-color: #e7edf2;
+  border-radius: 14px;
+  background: #fbfcfd;
+  box-shadow: none;
+}
+
+.note-item-modern + .note-item-modern {
+  margin-top: 8px;
+}
+
+.note-item-modern .note-text-line strong {
+  font-size: 14px;
+}
+
+.note-item-modern .note-created-at {
+  color: #8a96a8;
+  font-size: 10px;
+}
+
+.note-action-button {
+  border-radius: 9px;
+  font-size: 11px;
+}
+
+/* Akcje końcowe */
+.sub-page > .finish-button,
+.sub-page > .save-button {
+  min-height: 50px;
+  margin-top: 4px;
+  border-radius: 13px;
+  font-size: 14px;
+  box-shadow: 0 8px 20px rgba(7,135,232,.14);
+}
+
+.sub-page > .finish-button {
+  box-shadow: 0 8px 20px rgba(22,163,74,.14);
+}
+
+.sub-page > .job-stage-actions {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 760px) {
+  .sub-page > .details-top {
+    margin-bottom: 10px;
+    padding-top: 3px;
+  }
+
+  .sub-page > .details-top .back-button,
+  .sub-page > .details-top .edit-button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+
+  .sub-page > h1 {
+    font-size: 25px;
+    line-height: 1.1;
+  }
+
+  .job-location {
+    font-size: 13px;
+  }
+
+  .sub-page > .detail-card {
+    margin-bottom: 10px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .sub-page > .detail-card h2 {
+    font-size: 17px;
+  }
+
+  .job-stage-steps {
+    grid-template-columns: repeat(5, minmax(72px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .job-stage-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  .job-stage-step {
+    min-width: 72px;
+    min-height: 64px;
+  }
+
+  .invoice-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-quantities {
+    gap: 7px;
+  }
+
+  .quantity-box {
+    padding: 11px 9px;
+  }
+
+  .quantity-box strong {
+    font-size: 19px;
+  }
+
+  .sub-page > .detail-card .job-footer strong {
+    font-size: 19px;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+
+  .notes-card .notes-header {
+    align-items: flex-start;
+  }
+
+  .notes-card .note-add-button {
+    flex: 0 0 auto;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .sub-page > .details-top {
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+
+  .sub-page > h1 {
+    font-size: 23px;
+  }
+
+  .sub-page > .detail-card {
+    padding: 13px;
+    border-radius: 15px;
+  }
+
+  .job-stage-pill {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-quantities {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+
+  .quantity-box strong {
+    font-size: 18px;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+
+  .notes-card .notes-header {
+    flex-direction: column;
+  }
+
+  .notes-card .note-add-button {
+    width: 100%;
+  }
+}

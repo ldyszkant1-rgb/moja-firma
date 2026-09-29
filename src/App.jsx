@@ -7777,6 +7777,18 @@ function FinancePage({
 
   const yearProfit = yearRevenue - yearCosts
 
+
+  /*
+   * FINANSE — PROSTA LOGIKA ROZLICZENIA
+   *
+   * 1. Przychód = faktycznie otrzymane pieniądze.
+   * 2. Przychód dzielimy 50/50 — niezależnie od tego, kto zapłacił koszt.
+   * 3. Koszty są osobno. Różnica w kosztach między wspólnikami tworzy saldo,
+   *    które automatycznie przechodzi na kolejne miesiące.
+   * 4. Oddanie pieniędzy zapisujemy jako transfer. Przy pełnym rozliczeniu
+   *    aplikacja sama wylicza kwotę — użytkownik tylko potwierdza.
+   */
+
   const lukaszCosts = monthCosts
     .filter((cost) => cost.paidBy === 'Łukasz')
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
@@ -7785,167 +7797,180 @@ function FinancePage({
     .filter((cost) => cost.paidBy === 'Paweł')
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
 
-  const lukaszBalance = lukaszCosts - totalCosts / 2
-  const pawelBalance = pawelCosts - totalCosts / 2
+  const currentCostBalance = lukaszCosts - pawelCosts
 
-  let settlementText = 'Koszty są rozliczone po równo.'
-  let settlementAmount = 0
+  const selectedMonthEnd = `${selectedMonthKey}-31`
 
-  if (lukaszBalance > 0.01) {
-    settlementText = 'Paweł oddaje Łukaszowi'
-    settlementAmount = lukaszBalance
-  } else if (pawelBalance > 0.01) {
-    settlementText = 'Łukasz oddaje Pawłowi'
-    settlementAmount = pawelBalance
-  }
-
-
-  const selectedSettlement = partnerSettlements.find(
-    (item) => item.month === `${selectedMonthKey}-01`
-  ) || null
-
-  const priorSettlements = partnerSettlements.filter(
-    (item) => item.month < `${selectedMonthKey}-01`
+  const costsThroughSelectedMonth = costs.filter(
+    (cost) =>
+      cost.month &&
+      cost.month.startsWith('20') &&
+      cost.month <= selectedMonthEnd &&
+      cost.type !== 'revenue'
   )
 
-  const previousSettlementBalance = priorSettlements.reduce(
-    (sum, item) =>
-      sum + (Number(item.lukaszPaid || 0) - Number(item.pawelPaid || 0)) / 2,
+  const historicalCostBalance = costsThroughSelectedMonth.reduce(
+    (sum, cost) => {
+      const amount = Number(cost.amount || 0)
+      if (cost.paidBy === 'Łukasz') return sum + amount
+      if (cost.paidBy === 'Paweł') return sum - amount
+      return sum
+    },
     0
   )
 
-  const previousTransfersBalance = partnerTransfers
-    .filter((item) => item.transferDate && item.transferDate < `${selectedMonthKey}-01`)
+  const transfersThroughSelectedMonth = partnerTransfers
+    .filter(
+      (item) =>
+        item.transferDate &&
+        item.transferDate <= selectedMonthEnd
+    )
     .reduce(
       (sum, item) => {
         const amount = Number(item.amount || 0)
-        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum - amount
-        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum + amount
+
+        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') {
+          return sum - amount
+        }
+
+        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') {
+          return sum + amount
+        }
+
         return sum
       },
       0
     )
 
-  const currentTransfersBalance = partnerTransfers
-    .filter((item) => item.transferDate && item.transferDate.startsWith(selectedMonthKey))
-    .reduce(
-      (sum, item) => {
-        const amount = Number(item.amount || 0)
-        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum - amount
-        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum + amount
-        return sum
-      },
-      0
-    )
+  const partnerCostBalance = historicalCostBalance + transfersThroughSelectedMonth
 
-  const previousCarryoverBalance =
-    previousSettlementBalance + previousTransfersBalance
+  const balanceDirection =
+    partnerCostBalance > 0.01
+      ? 'Paweł oddaje Łukaszowi'
+      : partnerCostBalance < -0.01
+        ? 'Łukasz oddaje Pawłowi'
+        : 'Brak salda między wspólnikami'
 
-  const currentLukaszPaid = selectedSettlement
-    ? Number(selectedSettlement.lukaszPaid || 0)
-    : parseDecimal(settlementForm.lukaszPaid)
+  const balanceAmount = Math.abs(partnerCostBalance)
 
-  const currentPawelPaid = selectedSettlement
-    ? Number(selectedSettlement.pawelPaid || 0)
-    : parseDecimal(settlementForm.pawelPaid)
+  const previousCostBalance =
+    costs
+      .filter(
+        (cost) =>
+          cost.month &&
+          cost.month < `${selectedMonthKey}-01` &&
+          cost.type !== 'revenue'
+      )
+      .reduce(
+        (sum, cost) => {
+          const amount = Number(cost.amount || 0)
+          if (cost.paidBy === 'Łukasz') return sum + amount
+          if (cost.paidBy === 'Paweł') return sum - amount
+          return sum
+        },
+        0
+      ) +
+    partnerTransfers
+      .filter(
+        (item) =>
+          item.transferDate &&
+          item.transferDate < `${selectedMonthKey}-01`
+      )
+      .reduce(
+        (sum, item) => {
+          const amount = Number(item.amount || 0)
+          if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum - amount
+          if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum + amount
+          return sum
+        },
+        0
+      )
 
-  const currentSettlementBalance =
-    (currentLukaszPaid - currentPawelPaid) / 2
+  const splitAmount = revenue / 2
 
-  const totalSettlementBalance =
-    previousCarryoverBalance + currentSettlementBalance + currentTransfersBalance
+  const recordPartnerTransfer = async (amount) => {
+    const safeAmount = Number(amount || 0)
 
-  const settlementDirection =
-    totalSettlementBalance > 0.01
-      ? 'Paweł powinien oddać Łukaszowi'
-      : totalSettlementBalance < -0.01
-        ? 'Łukasz powinien oddać Pawłowi'
-        : 'Brak wzajemnego zadłużenia'
-
-  const saveCurrentSettlement = async (closeMonth = false) => {
-    if (selectedSettlement?.closed && closeMonth) {
-      showCustomAlert('Ten miesiąc jest już zamknięty.')
+    if (!safeAmount || safeAmount <= 0 || Math.abs(partnerCostBalance) <= 0.01) {
       return
     }
 
-    const lukaszPaid = parseDecimal(
-      selectedSettlement ? selectedSettlement.lukaszPaid : settlementForm.lukaszPaid
-    )
-    const pawelPaid = parseDecimal(
-      selectedSettlement ? selectedSettlement.pawelPaid : settlementForm.pawelPaid
-    )
-
-    if (lukaszPaid < 0 || pawelPaid < 0) {
-      showCustomAlert('Kwoty wypłat nie mogą być ujemne.')
+    if (selectedMonthKey !== currentMonthKey) {
+      await showCustomAlert(
+        'Rozliczenie pieniędzy między wspólnikami zapisujemy w bieżącym miesiącu. Przejdź do bieżącego miesiąca i zatwierdź rozliczenie.'
+      )
       return
     }
 
-    if (lukaszPaid + pawelPaid > profit + 0.01) {
-      showCustomAlert('Łączne wypłaty wspólników nie mogą przekroczyć zysku miesiąca.')
+    const fromPerson = partnerCostBalance > 0 ? 'Paweł' : 'Łukasz'
+    const toPerson = partnerCostBalance > 0 ? 'Łukasz' : 'Paweł'
+
+    if (safeAmount > Math.abs(partnerCostBalance) + 0.01) {
+      await showCustomAlert(
+        `Kwota nie może być większa niż aktualne saldo: ${formatMoney(Math.abs(partnerCostBalance))}.`
+      )
       return
     }
 
     try {
       setSettlementSaving(true)
-      const saved = await savePartnerSettlement({
-        month: `${selectedMonthKey}-01`,
-        profit,
-        lukaszShare: share,
-        pawelShare: share,
-        lukaszPaid,
-        pawelPaid,
-        closed: closeMonth,
-        note: settlementForm.note,
+
+      const saved = await createPartnerTransfer({
+        settlementId: null,
+        transferDate: getTodayString(),
+        fromPerson,
+        toPerson,
+        amount: safeAmount,
+        note: safeAmount >= Math.abs(partnerCostBalance) - 0.01
+          ? 'Pełne rozliczenie salda kosztów'
+          : 'Częściowe rozliczenie salda kosztów',
       })
 
-      setPartnerSettlements((current) =>
-        current.some((item) => item.id === saved.id)
-          ? current.map((item) => item.id === saved.id ? saved : item)
-          : [...current, saved]
+      setPartnerTransfers((current) => [...current, saved])
+
+      await showCustomAlert(
+        safeAmount >= Math.abs(partnerCostBalance) - 0.01
+          ? `Saldo zostało rozliczone: ${formatMoney(safeAmount)}.`
+          : `Zapisano częściową spłatę: ${formatMoney(safeAmount)}.`
       )
-
-      setSettlementForm((current) => ({
-        ...current,
-        lukaszPaid: String(saved.lukaszPaid),
-        pawelPaid: String(saved.pawelPaid),
-      }))
-
-      if (closeMonth) {
-        showCustomAlert('Miesiąc został zamknięty i rozliczenie zapisane.')
-      }
     } catch (error) {
-      console.error('Nie udało się zapisać rozliczenia wspólników:', error)
-      showCustomAlert('Nie udało się zapisać rozliczenia wspólników.')
+      console.error('Nie udało się zapisać rozliczenia salda:', error)
+      await showCustomAlert('Nie udało się zapisać rozliczenia salda.')
     } finally {
       setSettlementSaving(false)
     }
   }
 
-  const addPartnerTransfer = async () => {
-    const amount = parseDecimal(transferForm.amount)
+  const confirmFullPartnerSettlement = async () => {
+    if (Math.abs(partnerCostBalance) <= 0.01) return
+
+    const confirmed = await showCustomConfirm(
+      `${balanceDirection} ${formatMoney(balanceAmount)}.\\n\\nCzy potwierdzasz, że pieniądze zostały oddane?`
+    )
+
+    if (!confirmed) return
+
+    await recordPartnerTransfer(balanceAmount)
+  }
+
+  const confirmPartialPartnerSettlement = async () => {
+    if (Math.abs(partnerCostBalance) <= 0.01) return
+
+    const value = await showCustomPrompt(
+      `Aktualne saldo: ${formatMoney(balanceAmount)}.\\n\\nPodaj kwotę częściowej spłaty.`,
+      ''
+    )
+
+    if (value === null || value === '') return
+
+    const amount = parseDecimal(value)
+
     if (!amount || amount <= 0) {
-      showCustomAlert('Podaj kwotę przekazania.')
+      await showCustomAlert('Podaj prawidłową kwotę.')
       return
     }
 
-    try {
-      setSettlementSaving(true)
-      const saved = await createPartnerTransfer({
-        settlementId: selectedSettlement?.id || null,
-        transferDate: getTodayString(),
-        fromPerson: transferForm.fromPerson,
-        toPerson: transferForm.toPerson,
-        amount,
-        note: transferForm.note,
-      })
-      setPartnerTransfers((current) => [...current, saved])
-      setTransferForm((current) => ({ ...current, amount: '', note: '' }))
-    } catch (error) {
-      console.error('Nie udało się zapisać przekazania wspólnika:', error)
-      showCustomAlert('Nie udało się zapisać przekazania.')
-    } finally {
-      setSettlementSaving(false)
-    }
+    await recordPartnerTransfer(amount)
   }
 
   const addCost = async () => {
@@ -8283,306 +8308,118 @@ function FinancePage({
         </div>
       </div>
 
-      <div className="detail-card" style={{ marginBottom: '14px' }}>
-        <div className="finance-cost-header">
-          <div>
-            <h2 style={{ marginBottom: '4px' }}>Rozliczenie</h2>
-            <span>Podział kosztów po 50%</span>
+
+      <div className="finance-overview-grid">
+
+        <div className="finance-overview-card finance-overview-card-main">
+          <div className="finance-overview-label">PIENIĄDZE W TYM MIESIĄCU</div>
+          <div className="finance-overview-title">Podział 50/50</div>
+          <div className="finance-overview-value">{formatMoney(revenue)}</div>
+          <div className="finance-overview-subtitle">
+            Faktycznie otrzymane pieniądze
+          </div>
+
+          <div className="finance-share-grid">
+            <div className="finance-share-item">
+              <span>Łukasz</span>
+              <strong>{formatMoney(splitAmount)}</strong>
+            </div>
+            <div className="finance-share-item">
+              <span>Paweł</span>
+              <strong>{formatMoney(splitAmount)}</strong>
+            </div>
           </div>
         </div>
 
-        <div className="cost-person-summary">
-          <div>
-            <span>Łukasz zapłacił</span>
+        <div className="finance-overview-card">
+          <div className="finance-overview-label">KOSZTY</div>
+          <div className="finance-overview-title">Kto zapłacił</div>
+
+          <div className="finance-cost-person-row">
+            <span>Łukasz</span>
             <strong>{formatMoney(lukaszCosts)}</strong>
           </div>
-          <div>
-            <span>Paweł zapłacił</span>
+          <div className="finance-cost-person-row">
+            <span>Paweł</span>
             <strong>{formatMoney(pawelCosts)}</strong>
           </div>
-        </div>
 
-        <div className="settlement-card" style={{ marginTop: '12px' }}>
-          <div className="settlement-icon">⚖️</div>
-          <div style={{ minWidth: 0 }}>
-            <span>{settlementText}</span>
-            {settlementAmount > 0 ? (
-              <div className="settlement-amount">
-                {formatMoney(settlementAmount)}
-              </div>
-            ) : (
-              <strong style={{ display: 'block', marginTop: '4px' }}>
-                0 zł
-              </strong>
-            )}
+          <div className="finance-cost-difference">
+            <span>Różnica w tym miesiącu</span>
+            <strong>{formatMoney(Math.abs(currentCostBalance))}</strong>
           </div>
         </div>
 
-        <div
-          style={{
-            marginTop: '14px',
-            paddingTop: '14px',
-            borderTop: '1px solid #e2e7ee',
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <span>Połowa zysku</span>
-          <strong>{formatMoney(share)}</strong>
-        </div>
       </div>
 
-
-      <div className="detail-card" style={{ marginBottom: '14px' }}>
-        <div className="finance-cost-header">
+      <div className="finance-partner-card">
+        <div className="finance-partner-card-header">
           <div>
-            <h2 style={{ marginBottom: '4px' }}>Rozliczenie wspólników</h2>
-            <span>Faktyczne wypłaty zysku 50/50 i saldo przenoszone dalej</span>
+            <div className="finance-overview-label">SALDO WSPÓLNIKÓW</div>
+            <h2>Rozliczenie kosztów</h2>
+            <p>Saldo przechodzi automatycznie na kolejne miesiące.</p>
           </div>
-          {selectedSettlement?.closed && (
-            <span style={{
-              padding: '6px 9px',
-              borderRadius: '999px',
-              background: '#e7f8ee',
-              color: '#15803d',
-              fontSize: '12px',
-              fontWeight: 800,
-            }}>
-              Zamknięty
+
+          {Math.abs(partnerCostBalance) <= 0.01 && (
+            <span className="finance-status-ok">Rozliczone</span>
+          )}
+        </div>
+
+        <div className={
+          `finance-balance-box ${
+            partnerCostBalance > 0.01
+              ? 'is-lukasz-creditor'
+              : partnerCostBalance < -0.01
+                ? 'is-pawel-creditor'
+                : 'is-settled'
+          }`
+        }>
+          <span className="finance-balance-caption">Aktualne saldo</span>
+
+          {Math.abs(partnerCostBalance) > 0.01 ? (
+            <>
+              <strong className="finance-balance-direction">{balanceDirection}</strong>
+              <strong className="finance-balance-amount">{formatMoney(balanceAmount)}</strong>
+            </>
+          ) : (
+            <strong className="finance-balance-direction">Nikt nikomu nic nie jest winien</strong>
+          )}
+
+          {Math.abs(previousCostBalance) > 0.01 && (
+            <span className="finance-balance-note">
+              Z poprzednich miesięcy: {formatMoney(Math.abs(previousCostBalance))}
             </span>
           )}
         </div>
 
-        <div className="cost-person-summary">
-          <div>
-            <span>Zysk do podziału</span>
-            <strong>{formatMoney(profit)}</strong>
-          </div>
-          <div>
-            <span>Po 50% na osobę</span>
-            <strong>{formatMoney(share)}</strong>
-          </div>
-        </div>
+        {Math.abs(partnerCostBalance) > 0.01 && (
+          <div className="finance-settlement-actions">
+            <button
+              type="button"
+              className="finance-settle-button"
+              onClick={confirmFullPartnerSettlement}
+              disabled={settlementSaving}
+            >
+              ✓ Rozlicz {formatMoney(balanceAmount)}
+            </button>
 
-        <div className="cost-person-summary" style={{ marginTop: '8px' }}>
-          <div>
-            <span>Łukasz faktycznie otrzymał</span>
-            <strong>{formatMoney(currentLukaszPaid)}</strong>
+            <button
+              type="button"
+              className="finance-partial-settle-button"
+              onClick={confirmPartialPartnerSettlement}
+              disabled={settlementSaving}
+            >
+              Rozlicz część
+            </button>
           </div>
-          <div>
-            <span>Paweł faktycznie otrzymał</span>
-            <strong>{formatMoney(currentPawelPaid)}</strong>
-          </div>
-        </div>
-
-        <div style={{
-          marginTop: '12px',
-          padding: '13px',
-          borderRadius: '14px',
-          background: totalSettlementBalance > 0.01
-            ? '#fff4e5'
-            : totalSettlementBalance < -0.01
-              ? '#eaf5ff'
-              : '#e7f8ee',
-        }}>
-          <span style={{ display: 'block', color: '#66758f', fontSize: '12px' }}>
-            Saldo po uwzględnieniu poprzednich miesięcy
-          </span>
-          <strong style={{ display: 'block', marginTop: '4px', color: '#24345c' }}>
-            {settlementDirection}
-          </strong>
-          <strong style={{ display: 'block', marginTop: '3px', fontSize: '19px' }}>
-            {formatMoney(Math.abs(totalSettlementBalance))}
-          </strong>
-          {Math.abs(previousCarryoverBalance) > 0.01 && (
-            <span style={{ display: 'block', marginTop: '4px', color: '#66758f', fontSize: '12px' }}>
-              Przeniesione z poprzednich miesięcy: {formatMoney(Math.abs(previousCarryoverBalance))}
-            </span>
-          )}
-        </div>
-
-        {!selectedSettlement?.closed && (
-          <>
-            <div style={{
-              marginTop: '14px',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '10px',
-            }}>
-              <label>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Wypłata dla Łukasza
-                </span>
-                <input
-                  className="rate-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={settlementForm.lukaszPaid}
-                  onChange={(e) => setSettlementForm({ ...settlementForm, lukaszPaid: e.target.value })}
-                  placeholder="0"
-                  disabled={settlementSaving}
-                />
-              </label>
-              <label>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Wypłata dla Pawła
-                </span>
-                <input
-                  className="rate-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={settlementForm.pawelPaid}
-                  onChange={(e) => setSettlementForm({ ...settlementForm, pawelPaid: e.target.value })}
-                  placeholder="0"
-                  disabled={settlementSaving}
-                />
-              </label>
-              <label style={{ gridColumn: '1 / -1' }}>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Notatka
-                </span>
-                <input
-                  className="rate-input"
-                  type="text"
-                  value={settlementForm.note}
-                  onChange={(e) => setSettlementForm({ ...settlementForm, note: e.target.value })}
-                  placeholder="np. wypłacone gotówką"
-                  disabled={settlementSaving}
-                />
-              </label>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
-              <button
-                type="button"
-                className="save-button"
-                onClick={() => saveCurrentSettlement(false)}
-                disabled={settlementSaving}
-              >
-                Zapisz rozliczenie
-              </button>
-              <button
-                type="button"
-                className="save-button"
-                onClick={() => saveCurrentSettlement(true)}
-                disabled={settlementSaving}
-              >
-                Zamknij miesiąc
-              </button>
-            </div>
-          </>
         )}
 
-        <div style={{
-          marginTop: '16px',
-          paddingTop: '14px',
-          borderTop: '1px solid #e5ebf0',
-        }}>
-          <strong style={{ display: 'block', color: '#24345c', marginBottom: '8px' }}>
-            Oddanie pieniędzy między wspólnikami
-          </strong>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '10px',
-          }}>
-            <label>
-              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Od</span>
-              <select
-                className="rate-input"
-                value={transferForm.fromPerson}
-                onChange={(e) => setTransferForm({ ...transferForm, fromPerson: e.target.value })}
-                disabled={settlementSaving}
-              >
-                <option>Łukasz</option>
-                <option>Paweł</option>
-              </select>
-            </label>
-            <label>
-              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Do</span>
-              <select
-                className="rate-input"
-                value={transferForm.toPerson}
-                onChange={(e) => setTransferForm({ ...transferForm, toPerson: e.target.value })}
-                disabled={settlementSaving}
-              >
-                <option>Łukasz</option>
-                <option>Paweł</option>
-              </select>
-            </label>
-            <label>
-              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Kwota</span>
-              <input
-                className="rate-input"
-                type="text"
-                inputMode="decimal"
-                value={transferForm.amount}
-                onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
-                placeholder="0"
-                disabled={settlementSaving}
-              />
-            </label>
-            <label>
-              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Opis</span>
-              <input
-                className="rate-input"
-                type="text"
-                value={transferForm.note}
-                onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })}
-                placeholder="np. przelew"
-                disabled={settlementSaving}
-              />
-            </label>
-          </div>
-
-          <button
-            type="button"
-            className="save-button"
-            onClick={addPartnerTransfer}
-            disabled={settlementSaving}
-            style={{ marginTop: '10px' }}
-          >
-            + Zapisz przekazanie
-          </button>
-
-          {partnerTransfers.filter((item) => item.settlementId === selectedSettlement?.id).length > 0 && (
-            <div style={{ marginTop: '10px' }}>
-              {partnerTransfers
-                .filter((item) => item.settlementId === selectedSettlement?.id)
-                .map((item) => (
-                  <div key={item.id} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '10px',
-                    padding: '9px 0',
-                    borderTop: '1px solid #eef2f5',
-                  }}>
-                    <span style={{ fontSize: '13px', color: '#66758f' }}>
-                      {item.fromPerson} → {item.toPerson}
-                    </span>
-                    <strong>{formatMoney(item.amount)}</strong>
-                    <button
-                      type="button"
-                      className="document-remove"
-                      onClick={async () => {
-                        try {
-                          await deletePartnerTransfer(item.id)
-                          setPartnerTransfers((current) => current.filter((row) => row.id !== item.id))
-                        } catch (error) {
-                          console.error(error)
-                          showCustomAlert('Nie udało się usunąć przekazania.')
-                        }
-                      }}
-                      style={{ padding: '6px 8px', fontSize: '11px' }}
-                    >
-                      Usuń
-                    </button>
-                  </div>
-                ))}
-            </div>
-          )}
+        <div className="finance-partner-explanation">
+          <span>Jak to działa?</span>
+          <p>
+            Koszty wpływają na wynik firmy, ale nie muszą być wyrównywane w tym samym miesiącu.
+            Jeśli jedna osoba wyłoży więcej, różnica zostaje tutaj i przechodzi dalej.
+          </p>
         </div>
       </div>
 

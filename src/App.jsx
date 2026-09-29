@@ -7826,6 +7826,18 @@ function FinancePage({
       0
     )
 
+  const currentTransfersBalance = partnerTransfers
+    .filter((item) => item.transferDate && item.transferDate.startsWith(selectedMonthKey))
+    .reduce(
+      (sum, item) => {
+        const amount = Number(item.amount || 0)
+        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum - amount
+        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum + amount
+        return sum
+      },
+      0
+    )
+
   const previousCarryoverBalance =
     previousSettlementBalance + previousTransfersBalance
 
@@ -7841,7 +7853,7 @@ function FinancePage({
     (currentLukaszPaid - currentPawelPaid) / 2
 
   const totalSettlementBalance =
-    previousCarryoverBalance + currentSettlementBalance
+    previousCarryoverBalance + currentSettlementBalance + currentTransfersBalance
 
   const settlementDirection =
     totalSettlementBalance > 0.01
@@ -9488,6 +9500,23 @@ function SettingsPage({
           .from('partner_transfers')
           .upsert(transferRows, { onConflict: 'id' })
         if (transferError) throw transferError
+      }
+
+      if (Array.isArray(backup.generalReminders) && backup.generalReminders.length > 0) {
+        const reminderRows = backup.generalReminders.map((item) => ({
+          id: item.id,
+          text: item.text || '',
+          date: item.date || null,
+          time: item.time || null,
+          done: Boolean(item.done),
+          created_at: item.createdAt || item.created_at || undefined,
+        }))
+
+        const { error: reminderError } = await supabase
+          .from('general_reminders')
+          .upsert(reminderRows, { onConflict: 'id' })
+
+        if (reminderError) throw reminderError
       }
 
       localStorage.setItem(

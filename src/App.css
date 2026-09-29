@@ -1,0 +1,6358 @@
+/* =========================================================
+   AEROINSTAL
+   GŁÓWNY STYL APLIKACJI
+   ========================================================= */
+
+:root {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  color: #101b45;
+  background: #f3f8fc;
+
+  --blue: #0787e8;
+  --blue-dark: #101b45;
+  --blue-light: #eaf5ff;
+
+  --green: #16a34a;
+  --green-light: #e7f8ee;
+
+  --gray: #66758f;
+  --gray-light: #eef3f7;
+
+  --border: #e1e9f0;
+
+  --card-radius: 20px;
+
+  --shadow:
+    0 7px 24px rgba(30, 70, 105, 0.07);
+}
+
+
+/* =========================================================
+   RESET
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+
+  width: 100%;
+  min-height: 100vh;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f8fbfd 0%,
+      #eef5fa 100%
+    );
+
+  color: var(--blue-dark);
+
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   APP
+   ========================================================= */
+
+.app {
+  width: 100%;
+  max-width: 1100px;
+
+  min-height: 100vh;
+
+  margin: 0 auto;
+
+  padding-bottom: 125px;
+
+  overflow-x: hidden;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.main-header {
+  position: relative;
+
+  width: 100%;
+  height: 135px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #e3eaf0;
+}
+
+.app-logo {
+  display: block;
+
+  width: 310px;
+  max-width: 70%;
+
+  height: auto;
+}
+
+.main-header::after {
+  content: "ŁD";
+
+  position: absolute;
+
+  right: 28px;
+  top: 31px;
+
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #aeb9c6;
+
+  color: white;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.content {
+  width: 100%;
+  padding: 0 14px;
+}
+
+
+/* =========================================================
+   WEATHER
+   ========================================================= */
+
+.weather-card {
+  width: 100%;
+
+  margin: 0 0 18px;
+
+  padding: 15px 25px;
+
+  min-height: 105px;
+
+  display: grid;
+
+  grid-template-columns:
+    1.2fr
+    1.3fr
+    1fr
+    1.5fr;
+
+  align-items: center;
+
+  background: #ffffff;
+
+  border: 1px solid var(--border);
+
+  border-radius: 21px;
+
+  box-shadow: var(--shadow);
+
+  overflow: hidden;
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+
+  min-width: 0;
+}
+
+.weather-main strong {
+  font-size: 42px;
+  line-height: 1;
+
+  color: var(--blue-dark);
+}
+
+.weather-icon {
+  font-size: 50px;
+  line-height: 1;
+}
+
+.weather-location,
+.weather-date {
+  min-width: 0;
+
+  padding-left: 20px;
+
+  border-left: 1px solid #dce5ec;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.weather-location strong,
+.weather-date strong {
+  color: #26375d;
+
+  font-size: 19px;
+}
+
+.weather-location span,
+.weather-date span {
+  color: var(--gray);
+
+  font-size: 15px;
+}
+
+.weather-forecast {
+  min-width: 0;
+
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 18px;
+}
+
+.forecast-day {
+  min-width: 45px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 2px;
+
+  color: var(--blue-dark);
+}
+
+.forecast-day > span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.forecast-icon {
+  font-size: 25px;
+}
+
+.forecast-day strong {
+  font-size: 15px;
+}
+
+.forecast-day small {
+  color: #7b879b;
+  font-size: 12px;
+}
+
+.forecast-day em {
+  color: #4386c5;
+
+  font-size: 10px;
+
+  font-style: normal;
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+.dashboard-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(6, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-bottom: 28px;
+}
+
+.dashboard-card {
+  min-width: 0;
+
+  min-height: 113px;
+
+  grid-column: span 2;
+
+  padding: 18px 22px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  background: #ffffff;
+
+  border: 1px solid var(--border);
+
+  border-radius: 19px;
+
+  box-shadow: var(--shadow);
+
+  overflow: hidden;
+}
+
+.dashboard-card:nth-child(4) {
+  grid-column: span 3;
+}
+
+.dashboard-icon {
+  flex: 0 0 65px;
+
+  width: 65px;
+  height: 65px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #e8f5ff;
+
+  color: var(--blue);
+
+  font-size: 30px;
+}
+
+.dashboard-icon.completed {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.dashboard-card span {
+  color: #34446b;
+  font-size: 17px;
+}
+
+.dashboard-card strong {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--blue-dark);
+
+  font-size: 35px;
+
+  line-height: 1;
+}
+
+
+/* =========================================================
+   ŁĄCZNA WARTOŚĆ ROBÓT
+   ========================================================= */
+
+.dashboard-value-card {
+  min-width: 0;
+
+  min-height: 113px;
+
+  grid-column: span 3;
+
+  padding: 18px 22px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+
+  background:
+    linear-gradient(
+      110deg,
+      #087ddd 0%,
+      #0998ed 100%
+    );
+
+  border-radius: 19px;
+
+  color: white;
+
+  box-shadow:
+    0 10px 28px rgba(0, 130, 225, 0.22);
+
+  overflow: hidden;
+}
+
+
+/* IKONA */
+
+.dashboard-value-icon {
+  flex: 0 0 65px;
+
+  width: 65px;
+  height: 65px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,0.13);
+
+  font-size: 30px;
+
+  line-height: 1;
+}
+
+
+/* TEKST + KWOTA */
+
+.dashboard-value-card > div:last-child {
+  flex: 1 1 auto;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dashboard-value-card span {
+  display: block;
+
+  color: white;
+
+  font-size: 17px;
+
+  line-height: 1.2;
+}
+
+.dashboard-value-card strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: white;
+
+  font-size: 31px;
+
+  line-height: 1.05;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   SEKCJE
+   ========================================================= */
+
+section {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.section-title {
+  width: 100%;
+
+  margin: 0 5px 13px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.section-title h2 {
+  margin: 0;
+
+  color: var(--blue-dark);
+
+  font-size: 25px;
+
+  line-height: 1.15;
+}
+
+.section-link {
+  flex-shrink: 0;
+
+  padding: 5px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--blue);
+
+  font-size: 16px;
+}
+
+
+/* =========================================================
+   ROBOTY
+   ========================================================= */
+
+.jobs {
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.job-card {
+  width: 100%;
+
+  min-width: 0;
+
+  min-height: 108px;
+
+  padding: 14px 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(200px, 1.35fr)
+    minmax(170px, 1fr)
+    minmax(180px, 1fr);
+
+  align-items: center;
+
+  gap: 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #e4ebf1;
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow);
+
+  overflow: hidden;
+}
+
+.job-header {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+}
+
+.job-header h3 {
+  margin: 0;
+
+  color: var(--blue-dark);
+
+  font-size: 23px;
+}
+
+.job-header span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #657491;
+
+  font-size: 16px;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.status {
+  flex-shrink: 0;
+
+  margin-left: auto;
+
+  padding: 7px 11px;
+
+  border-radius: 20px;
+
+  background: #e9f5ff;
+
+  color: var(--blue);
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+.status.completed {
+  background: #dcf6e7;
+  color: #159447;
+}
+
+
+/* =========================================================
+   POSTĘP
+   ========================================================= */
+
+.progress-section {
+  min-width: 0;
+}
+
+.progress-label {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 5px;
+}
+
+.progress-label span {
+  color: #4d5e7b;
+  font-size: 14px;
+}
+
+.progress-label strong {
+  color: var(--blue-dark);
+  font-size: 20px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 14px;
+
+  background: #e9eff3;
+
+  border-radius: 20px;
+
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #0786e6,
+      #1698ed
+    );
+}
+
+
+/* =========================================================
+   ILOŚCI
+   ========================================================= */
+
+.quantities {
+  min-width: 0;
+
+  padding-left: 20px;
+
+  border-left: 1px solid #e5ebf0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.quantities div {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.quantities div::before {
+  content: "▱";
+
+  color: var(--blue-dark);
+
+  font-size: 18px;
+}
+
+.quantities span,
+.quantities strong {
+  color: #536582;
+
+  font-size: 15px;
+}
+
+.quantities strong {
+  font-weight: 500;
+}
+
+
+/* =========================================================
+   WARTOŚĆ ROBOTY
+   ========================================================= */
+
+.job-footer {
+  min-width: 0;
+
+  padding-left: 25px;
+
+  border-left: 1px solid #e5ebf0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.job-footer span {
+  color: #66738d;
+  font-size: 15px;
+}
+
+.job-footer strong {
+  margin-top: 3px;
+
+  color: var(--blue-dark);
+
+  font-size: 25px;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   NOTATKI
+   ========================================================= */
+
+.notes-dashboard {
+  width: 100%;
+
+  overflow: hidden;
+
+  background: white;
+
+  border: 1px solid #e4ebf1;
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow);
+}
+
+.dashboard-note {
+  min-height: 70px;
+
+  padding: 12px 24px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.dashboard-note:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-note-icon {
+  flex: 0 0 43px;
+
+  width: 43px;
+  height: 43px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #18a84e;
+
+  color: white;
+
+  font-size: 20px;
+}
+
+.dashboard-note strong {
+  display: block;
+
+  color: var(--blue-dark);
+
+  font-size: 15px;
+}
+
+.dashboard-note span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #687792;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   DOLNA NAWIGACJA
+   ========================================================= */
+
+.bottom-navigation {
+  position: fixed;
+
+  left: 50%;
+  bottom: 15px;
+
+  z-index: 100;
+
+  width: min(
+    calc(100% - 40px),
+    1050px
+  );
+
+  min-height: 92px;
+
+  transform: translateX(-50%);
+
+  padding: 7px 12px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 5px;
+
+  background:
+    rgba(255,255,255,0.97);
+
+  border: 1px solid #e3eaf0;
+
+  border-radius: 26px;
+
+  box-shadow:
+    0 12px 35px rgba(27,62,95,0.13);
+
+  backdrop-filter: blur(15px);
+}
+
+.nav-item {
+  min-width: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #6b7a91;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  border-radius: 17px;
+}
+
+.nav-item > span {
+  font-size: 29px;
+  line-height: 1;
+}
+
+.nav-item small {
+  font-size: 15px;
+}
+
+.nav-item.active {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   STRONY WEWNĘTRZNE
+   ========================================================= */
+
+.sub-page {
+  width: 100%;
+  padding-top: 18px;
+}
+
+.page-heading {
+  margin: 8px 5px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.page-heading h1,
+.sub-page h1 {
+  margin: 0;
+
+  color: var(--blue-dark);
+
+  font-size: 32px;
+}
+
+.small-label {
+  margin-bottom: 5px;
+
+  color: var(--blue);
+
+  font-size: 12px;
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+}
+
+.back-button {
+  padding: 7px 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--blue);
+
+  font-size: 15px;
+}
+
+
+/* =========================================================
+   KARTY SZCZEGÓŁÓW
+   ========================================================= */
+
+.detail-card {
+  width: 100%;
+
+  min-width: 0;
+
+  margin-bottom: 16px;
+
+  padding: 22px;
+
+  background: white;
+
+  border: 1px solid #e3eaf0;
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow);
+
+  overflow: hidden;
+}
+
+.detail-card h2 {
+  margin: 0 0 16px;
+
+  color: var(--blue-dark);
+
+  font-size: 20px;
+}
+
+
+/* =========================================================
+   ILOŚCI — SZCZEGÓŁY
+   ========================================================= */
+
+.detail-quantities {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0,1fr));
+
+  gap: 12px;
+}
+
+.quantity-box {
+  min-width: 0;
+
+  padding: 16px;
+
+  background: #f5f9fc;
+
+  border: 1px solid #e6edf2;
+
+  border-radius: 14px;
+}
+
+.quantity-box span {
+  display: block;
+
+  color: #687791;
+
+  font-size: 14px;
+}
+
+.quantity-box strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--blue-dark);
+
+  font-size: 25px;
+}
+
+
+/* =========================================================
+   DOKUMENTACJA
+   ========================================================= */
+
+.document-row {
+  min-height: 65px;
+
+  padding: 11px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #edf1f4;
+}
+
+.document-row:last-child {
+  border-bottom: 0;
+}
+
+.document-row strong {
+  color: var(--blue-dark);
+  font-size: 15px;
+}
+
+.document-button {
+  flex-shrink: 0;
+
+  padding: 9px 13px;
+
+  border: 1px solid #d8e5ef;
+
+  border-radius: 10px;
+
+  background: #f7fbfe;
+
+  color: var(--blue);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   ZDJĘCIA
+   ========================================================= */
+
+.photo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-bottom: 15px;
+}
+
+.photos-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0,1fr));
+
+  gap: 9px;
+}
+
+.photo-item {
+  position: relative;
+
+  aspect-ratio: 1;
+
+  overflow: hidden;
+
+  border-radius: 13px;
+
+  background: #edf2f5;
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  display: block;
+}
+
+.photo-remove {
+  position: absolute;
+
+  top: 5px;
+  right: 5px;
+
+  width: 27px;
+  height: 27px;
+
+  border: 0;
+
+  border-radius: 50%;
+
+  background: rgba(20,28,45,0.72);
+
+  color: white;
+}
+
+
+/* =========================================================
+   PRZYCISKI
+   ========================================================= */
+
+.finish-button,
+.save-button {
+  width: 100%;
+
+  padding: 14px;
+
+  border: 0;
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #0787e8,
+      #1298ed
+    );
+
+  color: white;
+
+  font-size: 15px;
+
+  font-weight: 700;
+}
+
+.finish-button {
+  background:
+    linear-gradient(
+      90deg,
+      #159c49,
+      #19b255
+    );
+}
+
+.restore-button {
+  width: 100%;
+
+  padding: 13px;
+
+  border: 1px solid #dce7e1;
+
+  border-radius: 12px;
+
+  background: #f4fbf6;
+
+  color: #159447;
+
+  font-size: 14px;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   FINANSE
+   ========================================================= */
+
+.month-select {
+  min-width: 160px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #dce5ed;
+
+  border-radius: 10px;
+
+  background: white;
+
+  color: #27375b;
+}
+
+.finance-main-card {
+  width: 100%;
+
+  margin-bottom: 16px;
+
+  padding: 21px 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  background:
+    linear-gradient(
+      110deg,
+      #087ddd,
+      #0998ed
+    );
+
+  border-radius: 20px;
+
+  color: white;
+
+  overflow: hidden;
+}
+
+.finance-main-card span {
+  color: white;
+  font-size: 17px;
+}
+
+.finance-revenue-total {
+  color: white;
+
+  font-size: 31px;
+
+  white-space: nowrap;
+}
+
+.finance-table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border: 1px solid #e4ebf1;
+
+  border-radius: 13px;
+}
+
+.finance-table {
+  width: 100%;
+
+  min-width: 680px;
+
+  border-collapse: collapse;
+
+  background: white;
+
+  font-size: 13px;
+}
+
+.finance-table th {
+  padding: 12px;
+
+  background: #f5f8fa;
+
+  color: #65738c;
+
+  font-size: 11px;
+
+  text-align: left;
+}
+
+.finance-table td {
+  padding: 12px;
+
+  border-top: 1px solid #edf1f4;
+
+  color: #52617d;
+}
+
+.finance-table td strong {
+  color: var(--blue-dark);
+}
+
+.person-column {
+  text-align: center !important;
+}
+
+.paid-check {
+  width: 25px;
+  height: 25px;
+
+  margin: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #e6f7ed;
+
+  color: #159447;
+
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   FINANSE — PODSUMOWANIA
+   ========================================================= */
+
+.cost-person-summary {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0,1fr));
+
+  gap: 10px;
+
+  margin-bottom: 15px;
+}
+
+.cost-person-summary > div {
+  min-width: 0;
+
+  padding: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+
+  background: #f7fafc;
+
+  border-radius: 11px;
+}
+
+.cost-person-summary span {
+  color: #6c7990;
+
+  font-size: 13px;
+}
+
+.cost-person-summary strong {
+  color: var(--blue-dark);
+
+  font-size: 15px;
+
+  white-space: nowrap;
+}
+
+.profit-card {
+  width: 100%;
+
+  margin-bottom: 16px;
+
+  padding: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  background: white;
+
+  border: 1px solid #e4ebf1;
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow);
+}
+
+.profit-card span {
+  color: #4f607d;
+  font-size: 16px;
+}
+
+.profit-card strong {
+  color: #159447;
+
+  font-size: 29px;
+
+  white-space: nowrap;
+}
+
+.split {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0,1fr));
+
+  gap: 12px;
+}
+
+.split > div {
+  padding: 15px;
+
+  background: #f6f9fb;
+
+  border-radius: 13px;
+}
+
+.split span {
+  display: block;
+
+  color: #65738c;
+
+  font-size: 13px;
+}
+
+.split strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: var(--blue-dark);
+
+  font-size: 22px;
+}
+
+
+/* =========================================================
+   USTAWIENIA
+   ========================================================= */
+
+.settings-list {
+  overflow: hidden;
+
+  background: white;
+
+  border: 1px solid #e4ebf1;
+
+  border-radius: 18px;
+
+  box-shadow: var(--shadow);
+}
+
+.settings-item {
+  min-height: 65px;
+
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #edf1f4;
+
+  color: #27375b;
+}
+
+.settings-item:last-child {
+  border-bottom: 0;
+}
+
+
+/* =========================================================
+   TELEFON
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .app {
+    width: 100%;
+    padding-bottom: 100px;
+  }
+
+  .content {
+    padding: 0 10px;
+  }
+
+
+  /* HEADER */
+
+  .main-header {
+    height: 102px;
+  }
+
+  .app-logo {
+    width: 230px;
+    max-width: 65%;
+  }
+
+  .main-header::after {
+    right: 13px;
+    top: 25px;
+
+    width: 44px;
+    height: 44px;
+
+    font-size: 15px;
+  }
+
+
+  /* WEATHER */
+
+  .weather-card {
+    margin-bottom: 12px;
+
+    padding: 14px;
+
+    min-height: 0;
+
+    grid-template-columns:
+      minmax(0,1fr)
+      minmax(0,1fr);
+
+    gap: 12px;
+
+    border-radius: 18px;
+  }
+
+  .weather-main {
+    gap: 9px;
+  }
+
+  .weather-main strong {
+    font-size: 30px;
+  }
+
+  .weather-icon {
+    font-size: 38px;
+  }
+
+  .weather-location,
+  .weather-date {
+    padding-left: 11px;
+  }
+
+  .weather-location strong,
+  .weather-date strong {
+    font-size: 15px;
+  }
+
+  .weather-location span,
+  .weather-date span {
+    font-size: 12px;
+  }
+
+  .weather-forecast {
+    grid-column: 1 / -1;
+
+    width: 100%;
+
+    padding-top: 9px;
+
+    border-top: 1px solid #edf1f4;
+
+    justify-content: space-around;
+  }
+
+  .forecast-day {
+    min-width: 0;
+  }
+
+  .forecast-icon {
+    font-size: 22px;
+  }
+
+
+  /* DASHBOARD */
+
+  .dashboard-grid {
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap: 9px;
+
+    margin-bottom: 20px;
+  }
+
+  .dashboard-card {
+    min-height: 90px;
+
+    grid-column: span 1 !important;
+
+    padding: 11px;
+
+    gap: 8px;
+
+    border-radius: 15px;
+  }
+
+  .dashboard-icon {
+    flex: 0 0 43px;
+
+    width: 43px;
+    height: 43px;
+
+    font-size: 21px;
+  }
+
+  .dashboard-card span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .dashboard-card strong {
+    font-size: 26px;
+  }
+
+
+  /* =====================================================
+     ŁĄCZNA WARTOŚĆ ROBÓT — TELEFON
+     ===================================================== */
+
+  .dashboard-value-card {
+    width: 100%;
+
+    min-width: 0;
+
+    min-height: 91px;
+
+    grid-column: 1 / -1 !important;
+
+    padding: 12px;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 10px;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+  }
+
+  .dashboard-value-icon {
+    flex: 0 0 44px;
+
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.13);
+
+    font-size: 20px;
+  }
+
+  .dashboard-value-card > div:last-child {
+    flex: 1 1 auto;
+
+    min-width: 0;
+
+    width: auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    justify-content: center;
+  }
+
+  .dashboard-value-card span {
+    max-width: 100%;
+
+    color: white;
+
+    font-size: 11px;
+
+    line-height: 1.2;
+  }
+
+  .dashboard-value-card strong {
+    max-width: 100%;
+
+    margin-top: 3px;
+
+    color: white;
+
+    font-size: 20px;
+
+    line-height: 1;
+
+    white-space: nowrap;
+  }
+
+
+  /* SEKCJE */
+
+  section {
+    margin-bottom: 23px;
+  }
+
+  .section-title {
+    margin: 0 3px 10px;
+  }
+
+  .section-title h2 {
+    font-size: 21px;
+  }
+
+  .section-link {
+    font-size: 13px;
+  }
+
+
+  /* ROBOTY */
+
+  .job-card {
+    width: 100%;
+
+    min-height: 0;
+
+    padding: 13px;
+
+    grid-template-columns:
+      minmax(0,1fr);
+
+    gap: 10px;
+
+    border-radius: 16px;
+  }
+
+  .job-header {
+    width: 100%;
+  }
+
+  .job-header h3 {
+    font-size: 21px;
+  }
+
+  .job-header span {
+    font-size: 14px;
+  }
+
+  .status {
+    padding: 6px 9px;
+
+    font-size: 10px;
+  }
+
+
+  /* POSTĘP */
+
+  .progress-label strong {
+    font-size: 21px;
+  }
+
+  .progress-bar {
+    height: 13px;
+  }
+
+
+  /* ILOŚCI */
+
+  .quantities {
+    width: 100%;
+
+    padding: 10px 0 0;
+
+    border-left: 0;
+
+    border-top: 1px solid #edf1f4;
+
+    display: flex;
+    flex-direction: row;
+
+    gap: 0;
+  }
+
+  .quantities div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .quantities div::before {
+    display: none;
+  }
+
+  .quantities span,
+  .quantities strong {
+    font-size: 13px;
+  }
+
+
+  /* WARTOŚĆ */
+
+  .job-footer {
+    width: 100%;
+
+    padding: 9px 0 0;
+
+    border-left: 0;
+
+    border-top: 1px solid #edf1f4;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: center;
+
+    justify-content: space-between;
+  }
+
+  .job-footer strong {
+    font-size: 21px;
+  }
+
+
+  /* NOTATKI */
+
+  .dashboard-note {
+    padding: 10px 13px;
+
+    min-height: 62px;
+  }
+
+  .dashboard-note-icon {
+    flex-basis: 36px;
+
+    width: 36px;
+    height: 36px;
+
+    font-size: 17px;
+  }
+
+  .dashboard-note strong {
+    font-size: 13px;
+  }
+
+  .dashboard-note span {
+    font-size: 11px;
+  }
+
+
+  /* DOLNE MENU */
+
+  .bottom-navigation {
+    width: calc(100% - 14px);
+
+    min-height: 76px;
+
+    bottom: 6px;
+
+    padding: 5px;
+
+    gap: 2px;
+
+    border-radius: 21px;
+  }
+
+  .nav-item {
+    gap: 3px;
+  }
+
+  .nav-item > span {
+    font-size: 23px;
+  }
+
+  .nav-item small {
+    font-size: 10px;
+  }
+
+
+  /* STRONY WEWNĘTRZNE */
+
+  .sub-page {
+    padding-top: 10px;
+  }
+
+  .page-heading {
+    margin: 7px 2px 15px;
+    gap: 8px;
+  }
+
+  .page-heading h1,
+  .sub-page h1 {
+    font-size: 27px;
+  }
+
+
+  /* KARTY */
+
+  .detail-card {
+    margin-bottom: 12px;
+
+    padding: 15px;
+
+    border-radius: 16px;
+  }
+
+  .detail-card h2 {
+    font-size: 18px;
+  }
+
+
+  /* ILOŚCI */
+
+  .detail-quantities {
+    gap: 6px;
+  }
+
+  .quantity-box {
+    padding: 11px;
+
+    border-radius: 12px;
+  }
+
+  .quantity-box span {
+    font-size: 12px;
+  }
+
+  .quantity-box strong {
+    font-size: 20px;
+  }
+
+
+  /* DOKUMENTY */
+
+  .document-row {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 8px;
+  }
+
+  .document-button {
+    width: 100%;
+  }
+
+
+  /* ZDJĘCIA */
+
+  .photos-grid {
+    grid-template-columns:
+      repeat(3,minmax(0,1fr));
+
+    gap: 7px;
+  }
+
+
+  /* FINANSE */
+
+  .finance-main-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .finance-main-card span {
+    font-size: 12px;
+  }
+
+  .finance-revenue-total {
+    font-size: 22px;
+  }
+
+  .finance-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .finance-table {
+    min-width: 680px;
+  }
+
+  .cost-person-summary {
+    gap: 7px;
+  }
+
+  .cost-person-summary > div {
+    padding: 10px;
+  }
+
+  .cost-person-summary span {
+    font-size: 11px;
+  }
+
+  .cost-person-summary strong {
+    font-size: 14px;
+  }
+
+  .profit-card {
+    padding: 17px;
+  }
+
+  .profit-card span {
+    font-size: 13px;
+  }
+
+  .profit-card strong {
+    font-size: 22px;
+  }
+}
+
+
+/* =========================================================
+   MAŁY IPHONE
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+  .main-header {
+    height: 94px;
+  }
+
+  .app-logo {
+    width: 210px;
+    max-width: 62%;
+  }
+
+  .main-header::after {
+    right: 10px;
+    top: 23px;
+
+    width: 41px;
+    height: 41px;
+
+    font-size: 14px;
+  }
+
+
+  .content {
+    padding: 0 8px;
+  }
+
+
+  /* WEATHER */
+
+  .weather-card {
+    padding: 11px;
+  }
+
+  .weather-main strong {
+    font-size: 27px;
+  }
+
+  .weather-icon {
+    font-size: 34px;
+  }
+
+
+  /* DASHBOARD */
+
+  .dashboard-card {
+    min-height: 86px;
+
+    padding: 9px;
+  }
+
+  .dashboard-icon {
+    flex-basis: 40px;
+
+    width: 40px;
+    height: 40px;
+  }
+
+  .dashboard-card span {
+    font-size: 10px;
+  }
+
+  .dashboard-card strong {
+    font-size: 24px;
+  }
+
+
+  /* ŁĄCZNA WARTOŚĆ */
+
+  .dashboard-value-card {
+    min-height: 86px;
+
+    padding: 10px;
+
+    gap: 9px;
+  }
+
+  .dashboard-value-icon {
+    flex-basis: 40px;
+
+    width: 40px;
+    height: 40px;
+
+    font-size: 18px;
+  }
+
+  .dashboard-value-card span {
+    font-size: 10px;
+  }
+
+  .dashboard-value-card strong {
+    font-size: 19px;
+  }
+
+
+  /* ROBOTY */
+
+  .job-card {
+    padding: 12px;
+  }
+
+  .job-header h3 {
+    font-size: 20px;
+  }
+
+  .job-footer strong {
+    font-size: 20px;
+  }
+
+
+  /* DOLNE MENU */
+
+  .bottom-navigation {
+    width: calc(100% - 10px);
+
+    bottom: 5px;
+  }
+
+  .nav-item > span {
+    font-size: 21px;
+  }
+
+  .nav-item small {
+    font-size: 9px;
+  }
+
+
+  /* SZCZEGÓŁY */
+
+  .detail-card {
+    padding: 13px;
+  }
+
+  .quantity-box {
+    padding: 9px;
+  }
+
+  .quantity-box strong {
+    font-size: 18px;
+  }
+
+
+  /* FINANSE */
+
+  .finance-revenue-total {
+    font-size: 20px;
+  }
+}
+/* =========================================================
+   AEROINSTAL — DOPRACOWANIE EKRANU POJEDYNCZEJ ROBOTY
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  /* -------------------------
+     NAGŁÓWEK ROBOTY
+     ------------------------- */
+
+  .sub-page {
+    padding: 10px 4px 115px;
+  }
+
+  .details-top {
+    margin: 2px 4px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .back-button {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .edit-button {
+    padding: 8px 16px;
+    border: 1px solid #dce4ea;
+    border-radius: 20px;
+    background: white;
+    color: #24345c;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .small-label {
+    margin: 0 0 5px;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .sub-page > h1 {
+    margin: 0;
+    text-align: center;
+    color: var(--blue-dark);
+    font-size: 38px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .job-location {
+    margin-top: 5px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: #65738b;
+    font-size: 21px;
+  }
+
+  .completed-date {
+    margin: 8px auto 12px;
+    width: fit-content;
+    padding: 7px 13px;
+    border-radius: 20px;
+    background: #e7f8ee;
+    color: #159447;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+
+  /* -------------------------
+     KARTY
+     ------------------------- */
+
+  .detail-card {
+    margin-bottom: 14px;
+    padding: 20px 16px;
+    border-radius: 22px;
+    box-shadow: 0 4px 18px rgba(30, 70, 105, 0.06);
+  }
+
+  .detail-card h2 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 25px;
+    line-height: 1.15;
+  }
+
+
+  /* -------------------------
+     POSTĘP
+     ------------------------- */
+
+  .detail-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .detail-title h2 {
+    margin-bottom: 4px;
+  }
+
+  .detail-title strong {
+    color: var(--blue-dark);
+    font-size: 34px;
+    line-height: 1;
+  }
+
+  .detail-card .progress-bar {
+    height: 15px;
+    margin-top: 12px;
+    border-radius: 999px;
+  }
+
+  .detail-card .progress-fill {
+    border-radius: 999px;
+  }
+
+  .large-progress {
+    width: 100%;
+    height: 36px;
+    margin-top: 10px;
+    accent-color: var(--blue);
+  }
+
+
+  /* -------------------------
+     ZAKRES ROBOTY
+     ------------------------- */
+
+  .detail-quantities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .quantity-box {
+    padding: 16px 7px;
+    border-radius: 17px;
+    text-align: center;
+  }
+
+  .quantity-box span {
+    font-size: 17px;
+  }
+
+  .quantity-box strong {
+    margin-top: 8px;
+    font-size: 27px;
+  }
+
+  .quantity-box input {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 3px;
+    border: 1px solid #d7e1e8;
+    border-radius: 9px;
+    text-align: center;
+    font-size: 21px;
+    color: var(--blue-dark);
+  }
+
+
+  /* -------------------------
+     STAWKI I WARTOŚĆ
+     ------------------------- */
+
+  .finance-row {
+    min-height: 72px;
+    padding: 14px 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #e8edf1;
+  }
+
+  .finance-row > div {
+    min-width: 0;
+  }
+
+  .finance-row > div > strong {
+    display: block;
+    color: var(--blue-dark);
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  .finance-row small {
+    display: block;
+    margin-top: 6px;
+    color: #7a8697;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .finance-row > strong {
+    color: var(--blue-dark);
+    font-size: 21px;
+    white-space: nowrap;
+  }
+
+  .rate-input {
+    width: 92px;
+    padding: 9px 8px;
+    border: 1px solid #d5e0e8;
+    border-radius: 10px;
+    text-align: right;
+    font-size: 17px;
+  }
+
+  .job-footer {
+    width: 100%;
+    min-width: 0;
+    margin-top: 5px;
+    padding: 18px 0 0;
+    border-left: 0;
+    border-top: 1px solid #e1e8ed;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .job-footer span {
+    color: #718095;
+    font-size: 18px;
+  }
+
+  .job-footer strong {
+    margin: 0;
+    color: var(--blue-dark);
+    font-size: 28px;
+    white-space: nowrap;
+  }
+
+
+  /* -------------------------
+     DOKUMENTACJA
+     ------------------------- */
+
+  .document-row {
+    min-height: 0;
+    padding: 17px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .document-row > div {
+    min-width: 0;
+  }
+
+  .document-row strong {
+    display: block;
+    color: var(--blue-dark);
+    font-size: 19px;
+    line-height: 1.25;
+  }
+
+  .document-info {
+    margin-top: 8px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: #f5f9fc;
+  }
+
+  .document-info span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #69778c;
+    font-size: 14px;
+  }
+
+  .document-open {
+    margin-top: 7px;
+    padding: 5px 0;
+    border: 0;
+    background: transparent;
+    color: var(--blue);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .document-button {
+    width: 100%;
+    min-height: 53px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 17px;
+  }
+
+
+  /* -------------------------
+     ZDJĘCIA
+     ------------------------- */
+
+  .photo-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    margin-bottom: 14px;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .photo-item {
+    border-radius: 13px;
+  }
+
+  .photo-remove {
+    width: 28px;
+    height: 28px;
+    top: 5px;
+    right: 5px;
+  }
+
+
+  /* -------------------------
+     NOTATKI
+     ------------------------- */
+
+  .note-form {
+    display: grid;
+    gap: 9px;
+  }
+
+  .note-text-input {
+    width: 100%;
+    min-height: 52px;
+    padding: 12px 14px;
+    border: 1px solid #d5dfe7;
+    border-radius: 14px;
+    background: #fbfcfd;
+    font-size: 17px;
+  }
+
+  .note-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .note-date-input,
+  .note-time-input {
+    width: 100%;
+    min-height: 50px;
+    padding: 8px 9px;
+    border: 1px solid #d5dfe7;
+    border-radius: 13px;
+    background: #fbfcfd;
+    color: #52617a;
+    font-size: 16px;
+  }
+
+  .note-date-row .document-button {
+    grid-column: 1 / -1;
+  }
+
+  .notes-list {
+    margin-top: 14px;
+  }
+
+  .note-item {
+    padding: 13px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid #edf1f4;
+  }
+
+  .note-main {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .note-main input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: var(--blue);
+  }
+
+  .note-main strong {
+    display: block;
+    color: var(--blue-dark);
+    font-size: 16px;
+    line-height: 1.3;
+  }
+
+  .note-date {
+    margin-top: 5px;
+    color: #7b8798;
+    font-size: 14px;
+  }
+
+  .note-done strong {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .document-remove {
+    flex: 0 0 auto;
+    padding: 5px 0;
+    border: 0;
+    background: transparent;
+    color: #a05a5a;
+    font-size: 13px;
+  }
+
+  .empty-notes {
+    padding: 15px 0 4px;
+    text-align: center;
+    color: #8a95a4;
+    font-size: 16px;
+  }
+
+
+  /* -------------------------
+     ZAKOŃCZENIE ROBOTY
+     ------------------------- */
+
+  .finish-button {
+    width: 100%;
+    min-height: 62px;
+    padding: 14px;
+    border: 0;
+    border-radius: 17px;
+    background: linear-gradient(
+      90deg,
+      #159c49,
+      #19b255
+    );
+    color: white;
+    font-size: 20px;
+    font-weight: 800;
+    box-shadow: 0 5px 15px rgba(20, 170, 85, 0.16);
+  }
+
+  .completed-message {
+    margin-bottom: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    background: #e7f8ee;
+    color: #159447;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .restore-button {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 15px;
+    font-size: 17px;
+  }
+
+  .save-button {
+    width: 100%;
+    min-height: 58px;
+    margin: 0 0 20px;
+    border-radius: 16px;
+    font-size: 18px;
+  }
+}
+
+
+/* =========================================================
+   MAŁY IPHONE
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .sub-page > h1 {
+    font-size: 34px;
+  }
+
+  .job-location {
+    font-size: 19px;
+  }
+
+  .detail-card {
+    padding: 17px 13px;
+    border-radius: 19px;
+  }
+
+  .detail-card h2 {
+    font-size: 23px;
+  }
+
+  .quantity-box strong {
+    font-size: 24px;
+  }
+
+  .job-footer strong {
+    font-size: 24px;
+  }
+
+  .finance-row > strong {
+    font-size: 19px;
+  }
+
+  .finance-row small {
+    font-size: 14px;
+  }
+}
+/* =====================================================
+   AEROINSTAL — NOWY MODUŁ NOTATEK
+   Spójny wygląd z logo i resztą aplikacji.
+   ===================================================== */
+
+
+.notes-card {
+  overflow: hidden;
+}
+
+.notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.notes-header h2 {
+  margin: 2px 0 0;
+}
+
+.note-add-button {
+  flex: 0 0 auto;
+  min-height: 42px;
+}
+
+/* Formularz nowej notatki */
+.note-form-modern {
+  padding: 18px;
+  margin-bottom: 18px;
+  border: 1px solid #d8e5ee;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f9fcff 0%, #f3f8fb 100%);
+  box-shadow: 0 5px 18px rgba(31, 74, 105, .06);
+}
+
+.note-form-modern .note-text-input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid #cfdce6;
+  border-radius: 13px;
+  padding: 13px 15px;
+  background: #fff;
+  color: #172d47;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.note-form-modern .note-text-input:focus {
+  border-color: #74b9e8;
+  box-shadow: 0 0 0 3px rgba(46, 153, 219, .12);
+}
+
+.note-reminder-toggle-row {
+  display: flex;
+  margin-top: 13px;
+}
+
+.note-reminder-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #d4e1e9;
+  border-radius: 11px;
+  background: #fff;
+  color: #52667b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note-reminder-button.active {
+  border-color: #78bde8;
+  background: #eaf6fd;
+  color: #17618a;
+}
+
+.note-bell-icon {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.note-reminder-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.note-reminder-fields label,
+.note-reminder-details label {
+  display: grid;
+  gap: 5px;
+}
+
+.note-reminder-fields label > span,
+.note-reminder-details label > span {
+  color: #68788b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.note-reminder-fields em {
+  font-style: normal;
+  font-weight: 500;
+  color: #98a6b3;
+}
+
+.note-date-input,
+.note-time-input {
+  width: 100%;
+  min-height: 43px;
+  box-sizing: border-box;
+  border: 1px solid #d0dce5;
+  border-radius: 11px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #172d47;
+  font: inherit;
+}
+
+.note-form-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.note-form-actions .save-button,
+.note-form-actions .restore-button {
+  margin: 0;
+}
+
+/* Lista */
+.notes-list-modern {
+  display: grid;
+  gap: 11px;
+}
+
+.note-item-modern {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #dce6ed;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(35, 65, 88, .05);
+}
+
+.note-checkbox {
+  width: 28px;
+  height: 28px;
+  margin: 1px 0 0;
+  padding: 0;
+  border: 2px solid #aebdca;
+  border-radius: 8px;
+  background: #fff;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: .15s ease;
+}
+
+.note-checkbox:hover {
+  border-color: var(--blue);
+}
+
+.note-checkbox.checked {
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
+.note-content {
+  min-width: 0;
+}
+
+.note-text-line strong {
+  display: block;
+  color: var(--blue-dark);
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.note-created-at {
+  margin-top: 5px;
+  color: #8a97a5;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Przyciski akcji */
+.note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.note-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 35px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.note-action-button:hover {
+  transform: translateY(-1px);
+}
+
+.note-edit-button {
+  border: 1px solid #d2e0e9;
+  background: #f6fafc;
+  color: var(--blue-dark);
+}
+
+.note-item-reminder {
+  border: 1px solid #d2e0e9;
+  background: #f6fafc;
+  color: #52667b;
+}
+
+.note-item-reminder.active {
+  border-color: #78bde8;
+  background: #eaf6fd;
+  color: #17618a;
+}
+
+.note-delete-button {
+  border: 1px solid #ead7d7;
+  background: #fff8f8;
+  color: #a45d5d;
+}
+
+/* Szczegóły aktywnego przypomnienia */
+.note-reminder-details {
+  margin-top: 11px;
+  padding: 12px;
+  border: 1px solid #d9e7ef;
+  border-radius: 13px;
+  background: #f7fbfd;
+}
+
+.note-reminder-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.note-bell-circle {
+  width: 25px;
+  height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e6f4fc;
+  font-size: 14px;
+}
+
+.note-reminder-details .note-reminder-fields {
+  margin-top: 0;
+}
+
+/* Edycja */
+.note-edit-box {
+  display: grid;
+  gap: 8px;
+}
+
+.note-edit-input {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+  border: 1px solid #cfdce6;
+  border-radius: 11px;
+  padding: 9px 11px;
+  font: inherit;
+  color: #172d47;
+}
+
+.note-edit-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.note-save-edit,
+.note-cancel-edit {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #d4e0e8;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.note-save-edit {
+  background: #eaf5fb;
+  color: #17618a;
+}
+
+.note-cancel-edit {
+  color: #68788b;
+}
+
+.note-item-modern.note-done {
+  background: #fafcfd;
+}
+
+.note-item-modern.note-done .note-text-line strong {
+  text-decoration: line-through;
+  opacity: .48;
+}
+
+.note-item-modern.note-done .note-created-at {
+  opacity: .65;
+}
+
+.empty-notes {
+  padding: 18px;
+  text-align: center;
+  color: #8a97a5;
+  font-size: 14px;
+}
+
+/* Telefon */
+@media (max-width: 600px) {
+  .notes-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .note-add-button {
+    width: 100%;
+  }
+
+  .note-form-modern {
+    padding: 14px;
+  }
+
+  .note-item-modern {
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .note-reminder-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .note-form-actions {
+    flex-direction: column;
+  }
+
+  .note-form-actions .save-button,
+  .note-form-actions .restore-button {
+    width: 100%;
+  }
+
+  .note-actions {
+    gap: 6px;
+  }
+
+  .note-action-button {
+    flex: 1 1 calc(50% - 6px);
+    min-height: 39px;
+  }
+
+  .note-delete-button {
+    flex-basis: 100%;
+  }
+}
+
+/* =========================================================
+   FINANSE — POPRAWA WYGLĄDU MOBILNEGO
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  /* -------------------------------------------------------
+     NAGŁÓWEK FINANSÓW
+     ------------------------------------------------------- */
+
+  .sub-page .page-heading {
+    margin: 4px 4px 14px;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .sub-page .page-heading .small-label {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    margin-bottom: 3px;
+  }
+
+  .sub-page .page-heading h1 {
+    font-size: 28px;
+    line-height: 1.05;
+  }
+
+
+  /* -------------------------------------------------------
+     WYBÓR MIESIĄCA / ROKU
+     ------------------------------------------------------- */
+
+  .month-select {
+    min-width: 132px;
+    height: 44px;
+
+    padding: 0 12px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+
+  /* -------------------------------------------------------
+     GŁÓWNE PODSUMOWANIE
+     ------------------------------------------------------- */
+
+  .finance-main-card {
+    margin-bottom: 12px;
+
+    padding: 16px;
+
+    border-radius: 17px;
+  }
+
+  .finance-main-card > div {
+    min-width: 0;
+  }
+
+  .finance-main-card span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .finance-revenue-total {
+    display: block;
+
+    margin-top: 2px;
+
+    font-size: 27px;
+    line-height: 1.1;
+  }
+
+  .finance-revenue-info {
+    display: block;
+
+    margin-top: 6px;
+
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+
+  /* -------------------------------------------------------
+     PRZYCHÓD / KOSZTY / ZYSK
+     ------------------------------------------------------- */
+
+  .finance-summary {
+    width: 100%;
+
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 7px;
+
+    margin-bottom: 12px;
+  }
+
+  .finance-summary > div {
+    min-width: 0;
+
+    display: flex !important;
+
+    flex-direction: column !important;
+
+    align-items: center !important;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 12px 6px;
+
+    border-radius: 13px;
+
+    background: #f6f9fc;
+
+    overflow: hidden;
+  }
+
+  .finance-summary span {
+    display: block;
+
+    width: 100%;
+
+    margin: 0 0 4px;
+
+    color: #68758a;
+
+    font-size: 11px;
+
+    line-height: 1.2;
+
+    white-space: normal;
+  }
+
+  .finance-summary strong {
+    display: block;
+
+    width: 100%;
+
+    margin: 0;
+
+    color: var(--blue-dark);
+
+    font-size: 17px;
+
+    line-height: 1.15;
+
+    white-space: nowrap;
+  }
+
+  .finance-summary small {
+    display: block;
+
+    width: 100%;
+
+    margin-top: 4px;
+
+    color: #7a8798;
+
+    font-size: 9px;
+
+    line-height: 1.2;
+
+    white-space: normal;
+  }
+
+
+  /* -------------------------------------------------------
+     KARTY
+     ------------------------------------------------------- */
+
+  .sub-page .detail-card {
+    margin-bottom: 12px;
+
+    padding: 15px;
+
+    border-radius: 17px;
+  }
+
+  .sub-page .detail-card h2 {
+    margin-top: 0;
+
+    color: var(--blue-dark);
+
+    font-size: 20px;
+    line-height: 1.15;
+  }
+
+
+  /* -------------------------------------------------------
+     NAGŁÓWKI KART FINANSOWYCH
+     ------------------------------------------------------- */
+
+  .finance-cost-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    min-width: 0;
+  }
+
+  .finance-cost-header > div {
+    min-width: 0;
+  }
+
+  .finance-cost-header h2 {
+    margin: 0 0 3px;
+
+    font-size: 19px;
+    line-height: 1.15;
+  }
+
+  .finance-cost-header span {
+    display: block;
+
+    color: #68758a;
+
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .finance-cost-header > strong {
+    flex-shrink: 0;
+
+    font-size: 18px;
+
+    white-space: nowrap;
+  }
+
+
+  /* -------------------------------------------------------
+     ROZLICZENIE — ŁUKASZ / PAWEŁ
+     ------------------------------------------------------- */
+
+  .cost-person-summary {
+    display: grid !important;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-top: 11px;
+  }
+
+  .cost-person-summary > div {
+    min-width: 0;
+
+    padding: 11px 9px;
+
+    border-radius: 12px;
+
+    background: #f6f9fc;
+
+    text-align: center;
+  }
+
+  .cost-person-summary span {
+    display: block;
+
+    color: #68758a;
+
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .cost-person-summary strong {
+    display: block;
+
+    margin-top: 4px;
+
+    color: var(--blue-dark);
+
+    font-size: 17px;
+    line-height: 1.15;
+
+    white-space: nowrap;
+  }
+
+
+  /* -------------------------------------------------------
+     INFORMACJA O ROZLICZENIU
+     ------------------------------------------------------- */
+
+  .settlement-card {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 0;
+
+    padding: 11px;
+
+    border-radius: 13px;
+  }
+
+  .settlement-card > div:last-child {
+    min-width: 0;
+  }
+
+  .settlement-card span {
+    display: block;
+
+    color: #68758a;
+
+    font-size: 11px;
+    line-height: 1.3;
+
+    overflow-wrap: anywhere;
+  }
+
+  .settlement-card strong {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 15px;
+    line-height: 1.2;
+  }
+
+  .settlement-amount {
+    margin-top: 3px;
+
+    font-size: 19px;
+    font-weight: 700;
+
+    line-height: 1.15;
+  }
+
+  .settlement-icon {
+    flex: 0 0 36px;
+
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    font-size: 20px;
+  }
+
+
+  /* -------------------------------------------------------
+     TABELA ZAKOŃCZONYCH ROBÓT
+     ------------------------------------------------------- */
+
+  .finance-table-wrapper {
+    width: 100%;
+
+    margin-top: 10px;
+
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .finance-table {
+    min-width: 620px;
+
+    font-size: 12px;
+  }
+
+  .finance-table th,
+  .finance-table td {
+    padding: 9px 8px;
+  }
+
+
+  /* -------------------------------------------------------
+     PUSTA LISTA
+     ------------------------------------------------------- */
+
+  .finance-table td[colspan] {
+    padding: 17px 10px;
+
+    color: #68758a;
+
+    text-align: center;
+
+    line-height: 1.35;
+  }
+
+
+  /* -------------------------------------------------------
+     HISTORIA FINANSÓW
+     ------------------------------------------------------- */
+
+  .finance-history {
+    margin-bottom: 12px;
+  }
+
+
+  /* -------------------------------------------------------
+     PODSUMOWANIE ROKU
+     ------------------------------------------------------- */
+
+  .detail-card .finance-summary {
+    margin-top: 10px;
+  }
+
+
+  /* -------------------------------------------------------
+     OGRANICZENIE PUSTEGO MIEJSCA NA DOLE
+     ------------------------------------------------------- */
+
+  .sub-page {
+    padding-bottom: 105px;
+  }
+
+}
+
+
+/* =========================================================
+   BARDZO MAŁE TELEFONY
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .finance-summary {
+    gap: 5px;
+  }
+
+  .finance-summary > div {
+    padding: 10px 4px;
+  }
+
+  .finance-summary strong {
+    font-size: 15px;
+  }
+
+  .finance-summary span {
+    font-size: 10px;
+  }
+
+  .finance-summary small {
+    font-size: 8px;
+  }
+
+  .cost-person-summary {
+    gap: 6px;
+  }
+
+  .cost-person-summary > div {
+    padding: 10px 6px;
+  }
+
+  .cost-person-summary strong {
+    font-size: 15px;
+  }
+
+}
+/* =========================================================
+   AEROINSTAL — START / MOBILE
+   DOPRACOWANIE WYGLĄDU
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  /* -------------------------------------------------------
+     GŁÓWNY KONTENER
+     ------------------------------------------------------- */
+
+  .app {
+    /* Zapas pod stałym dolnym menu — menu nie zasłania ostatnich kart. */
+    padding-bottom: 120px;
+  }
+
+  .content {
+    padding: 0 8px;
+  }
+
+
+  /* -------------------------------------------------------
+     HEADER / LOGO
+     ------------------------------------------------------- */
+
+  .main-header {
+    /* Odrobinę niższy nagłówek na telefonie. */
+    height: 88px;
+  }
+
+  .app-logo {
+    width: 205px;
+    max-width: 62%;
+  }
+
+  .main-header::after {
+    right: 10px;
+    top: 22px;
+
+    width: 42px;
+    height: 42px;
+
+    font-size: 14px;
+  }
+
+
+  /* -------------------------------------------------------
+     POGODA
+     ------------------------------------------------------- */
+
+  .weather-card {
+    margin-bottom: 10px;
+
+    padding: 9px;
+
+    border-radius: 17px;
+
+    gap: 8px;
+  }
+
+  .weather-main {
+    gap: 7px;
+  }
+
+  .weather-main strong {
+    font-size: 27px;
+  }
+
+  .weather-icon {
+    font-size: 34px;
+  }
+
+  .weather-location,
+  .weather-date {
+    padding-left: 9px;
+
+    gap: 2px;
+  }
+
+  .weather-location strong,
+  .weather-date strong {
+    font-size: 15px;
+  }
+
+  .weather-location span,
+  .weather-date span {
+    font-size: 11px;
+  }
+
+  .weather-forecast {
+    padding-top: 6px;
+
+    gap: 0;
+  }
+
+  .forecast-day {
+    min-width: 0;
+
+    flex: 1;
+  }
+
+  .forecast-day > span {
+    font-size: 11px;
+  }
+
+  .forecast-icon {
+    font-size: 20px;
+  }
+
+  .forecast-day strong {
+    font-size: 14px;
+  }
+
+  .forecast-day small {
+    font-size: 11px;
+  }
+
+  .forecast-day em {
+    font-size: 9px;
+  }
+
+
+  /* -------------------------------------------------------
+     4 GŁÓWNE STATYSTYKI
+     ------------------------------------------------------- */
+
+  .dashboard-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+  }
+
+  .dashboard-card {
+    min-height: 82px;
+
+    padding: 9px;
+
+    gap: 8px;
+
+    border-radius: 15px;
+  }
+
+  .dashboard-icon {
+    flex: 0 0 39px;
+
+    width: 39px;
+    height: 39px;
+
+    font-size: 19px;
+  }
+
+  .dashboard-card span {
+    font-size: 10px;
+
+    line-height: 1.15;
+  }
+
+  .dashboard-card strong {
+    margin-top: 2px;
+
+    font-size: 23px;
+
+    line-height: 1;
+  }
+
+
+  /* -------------------------------------------------------
+     ŁĄCZNA WARTOŚĆ ROBÓT
+     ------------------------------------------------------- */
+
+  .dashboard-value-card {
+    min-height: 82px;
+
+    padding: 10px;
+
+    gap: 9px;
+
+    border-radius: 15px;
+  }
+
+  .dashboard-value-icon {
+    flex: 0 0 40px;
+
+    width: 40px;
+    height: 40px;
+
+    font-size: 18px;
+  }
+
+  .dashboard-value-card span {
+    font-size: 10px;
+
+    line-height: 1.2;
+  }
+
+  .dashboard-value-card strong {
+    margin-top: 3px;
+
+    font-size: 20px;
+
+    line-height: 1.05;
+  }
+
+
+  /* -------------------------------------------------------
+     SEKCJE
+     ------------------------------------------------------- */
+
+  section {
+    margin-bottom: 17px;
+  }
+
+  .section-title {
+    margin: 0 2px 8px;
+  }
+
+  .section-title h2 {
+    font-size: 23px;
+
+    line-height: 1.1;
+  }
+
+  .section-link {
+    font-size: 13px;
+  }
+
+
+  /* -------------------------------------------------------
+     WARTOŚĆ ROBÓT
+     ------------------------------------------------------- */
+
+  .split {
+    gap: 8px;
+  }
+
+  .split > div {
+    padding: 13px 10px;
+
+    border-radius: 15px;
+  }
+
+  .split span {
+    font-size: 13px;
+  }
+
+  .split strong {
+    margin-top: 4px;
+
+    font-size: 21px;
+  }
+
+
+  /* -------------------------------------------------------
+     KARTY ROBÓT NA START
+     ------------------------------------------------------- */
+
+  .job-card {
+    width: 100%;
+
+    min-height: 0;
+
+    padding: 12px;
+
+    gap: 9px;
+
+    border-radius: 17px;
+  }
+
+  .job-header {
+    min-width: 0;
+  }
+
+  .job-header h3 {
+    font-size: 21px;
+
+    line-height: 1.05;
+  }
+
+  .job-header span {
+    font-size: 14px;
+
+    line-height: 1.2;
+  }
+
+  .status {
+    padding: 6px 9px;
+
+    font-size: 10px;
+
+    white-space: nowrap;
+  }
+
+
+  /* -------------------------------------------------------
+     POSTĘP
+     ------------------------------------------------------- */
+
+  .progress-label {
+    margin-bottom: 5px;
+  }
+
+  .progress-label span {
+    font-size: 14px;
+  }
+
+  .progress-label strong {
+    font-size: 22px;
+  }
+
+  .progress-bar {
+    height: 11px;
+  }
+
+
+  /* -------------------------------------------------------
+     ILOŚCI W KARCIE ROBOTY
+     ------------------------------------------------------- */
+
+  .quantities {
+    width: 100%;
+
+    padding: 9px 0 0;
+
+    border-left: 0;
+
+    border-top: 1px solid #edf1f4;
+
+    display: flex;
+
+    flex-direction: row;
+
+    gap: 0;
+  }
+
+  .quantities div {
+    flex: 1;
+
+    min-width: 0;
+
+    gap: 5px;
+  }
+
+  .quantities div::before {
+    display: none;
+  }
+
+  .quantities span,
+  .quantities strong {
+    font-size: 13px;
+  }
+
+
+  /* -------------------------------------------------------
+     WARTOŚĆ ROBOTY
+     ------------------------------------------------------- */
+
+  .job-footer {
+    width: 100%;
+
+    padding: 8px 0 0;
+
+    border-left: 0;
+
+    border-top: 1px solid #edf1f4;
+
+    display: flex;
+
+    flex-direction: row;
+
+    align-items: center;
+
+    justify-content: space-between;
+  }
+
+  .job-footer span {
+    font-size: 14px;
+  }
+
+  .job-footer strong {
+    margin-top: 0;
+
+    font-size: 22px;
+  }
+
+
+  /* -------------------------------------------------------
+     DO ZROBIENIA
+     ------------------------------------------------------- */
+
+  .notes-dashboard {
+    border-radius: 16px;
+  }
+
+  .dashboard-note {
+    min-height: 58px;
+
+    padding: 10px 13px;
+
+    gap: 10px;
+  }
+
+  .dashboard-note-icon {
+    flex: 0 0 36px;
+
+    width: 36px;
+    height: 36px;
+
+    font-size: 17px;
+  }
+
+  .dashboard-note strong {
+    font-size: 13px;
+  }
+
+  .dashboard-note span {
+    font-size: 11px;
+  }
+
+  .empty-notes {
+    padding: 15px 10px;
+
+    font-size: 14px;
+  }
+
+
+  /* -------------------------------------------------------
+     OSTATNIO ZAKOŃCZONE
+     ------------------------------------------------------- */
+
+  .empty-card {
+    min-height: 62px;
+
+    padding: 14px;
+
+    border-radius: 16px;
+  }
+
+
+  /* -------------------------------------------------------
+     DOLNE MENU
+     ------------------------------------------------------- */
+
+  .bottom-navigation {
+    width: calc(100% - 12px);
+
+    min-height: 72px;
+
+    bottom: 6px;
+
+    padding: 4px;
+
+    gap: 2px;
+
+    border-radius: 22px;
+  }
+
+  .nav-item {
+    gap: 2px;
+  }
+
+  .nav-item > span {
+    font-size: 22px;
+  }
+
+  .nav-item small {
+    font-size: 9px;
+  }
+
+}
+
+
+/* =========================================================
+   BARDZO MAŁE TELEFONY
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+  .main-header {
+    height: 88px;
+  }
+
+  .app-logo {
+    width: 195px;
+  }
+
+  .main-header::after {
+    width: 39px;
+    height: 39px;
+
+    top: 21px;
+    right: 9px;
+
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 0 7px;
+  }
+
+  .weather-card {
+    padding: 9px;
+  }
+
+  .weather-main strong {
+    font-size: 25px;
+  }
+
+  .weather-icon {
+    font-size: 31px;
+  }
+
+  .dashboard-card {
+    min-height: 78px;
+
+    padding: 8px;
+  }
+
+  .dashboard-icon {
+    flex-basis: 36px;
+
+    width: 36px;
+    height: 36px;
+
+    font-size: 18px;
+  }
+
+  .dashboard-card strong {
+    font-size: 21px;
+  }
+
+  .dashboard-value-card {
+    min-height: 78px;
+
+    padding: 9px;
+  }
+
+  .dashboard-value-icon {
+    flex-basis: 37px;
+
+    width: 37px;
+    height: 37px;
+
+    font-size: 17px;
+  }
+
+  .dashboard-value-card strong {
+    font-size: 18px;
+  }
+
+  .section-title h2 {
+    font-size: 21px;
+  }
+
+  .job-card {
+    padding: 11px;
+  }
+
+  .job-header h3 {
+    font-size: 20px;
+  }
+
+  .job-footer strong {
+    font-size: 20px;
+  }
+
+  .bottom-navigation {
+    width: calc(100% - 10px);
+
+    min-height: 69px;
+  }
+
+  .nav-item > span {
+    font-size: 20px;
+  }
+
+  .nav-item small {
+    font-size: 8px;
+  }
+
+}/* =========================================================
+   AEROINSTAL — OSTATECZNE DOPRACOWANIE START / MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  /* =======================================================
+     1. BEZPIECZNY OBSZAR POD DOLNYM MENU
+     ======================================================= */
+
+  .app {
+    padding-bottom: 135px !important;
+  }
+
+  .content {
+    padding-bottom: 20px;
+  }
+
+
+  /* =======================================================
+     2. NAGŁÓWEK / LOGO
+     ======================================================= */
+
+  .main-header {
+    height: 90px !important;
+  }
+
+  .app-logo {
+    width: 200px !important;
+    max-width: 60% !important;
+  }
+
+  .main-header::after {
+    width: 41px !important;
+    height: 41px !important;
+
+    right: 10px !important;
+    top: 22px !important;
+
+    font-size: 14px !important;
+  }
+
+
+  /* =======================================================
+     3. KARTA POGODY
+     ======================================================= */
+
+  .weather-card {
+    margin-bottom: 12px !important;
+
+    padding: 10px 12px 9px !important;
+
+    grid-template-columns:
+      1fr 1fr !important;
+
+    grid-template-rows:
+      auto auto !important;
+
+    column-gap: 8px !important;
+    row-gap: 4px !important;
+
+    border-radius: 18px !important;
+
+    overflow: hidden;
+  }
+
+
+  /* -------------------------------------------------------
+     GÓRNA LEWA — TEMPERATURA
+     ------------------------------------------------------- */
+
+  .weather-main {
+    min-height: 70px;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    gap: 7px !important;
+
+    padding-left: 8px;
+  }
+
+  .weather-icon {
+    font-size: 34px !important;
+
+    line-height: 1 !important;
+  }
+
+  .weather-main strong {
+    font-size: 28px !important;
+
+    line-height: 1 !important;
+  }
+
+
+  /* -------------------------------------------------------
+     GÓRNA PRAWA — GDAŃSK
+     ------------------------------------------------------- */
+
+  .weather-location {
+    min-height: 70px;
+
+    padding-left: 12px !important;
+
+    border-left: 1px solid #dce5ec;
+
+    display: flex !important;
+
+    align-items: flex-start !important;
+    justify-content: center !important;
+
+    gap: 2px !important;
+  }
+
+  .weather-location strong {
+    font-size: 17px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .weather-location span {
+    font-size: 12px !important;
+
+    line-height: 1.1 !important;
+  }
+
+
+  /* -------------------------------------------------------
+     DZISIAJ — ŚRODEK KARTY
+     ------------------------------------------------------- */
+
+  .weather-date {
+    grid-column: 1 / -1 !important;
+
+    width: 100%;
+
+    min-height: 49px;
+
+    margin: 0 !important;
+
+    padding: 5px 0 4px !important;
+
+    border-left: 0 !important;
+
+    border-top: 0 !important;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    text-align: center !important;
+
+    gap: 3px !important;
+  }
+
+  .weather-date strong {
+    font-size: 17px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .weather-date span {
+    font-size: 12px !important;
+
+    line-height: 1.1 !important;
+  }
+
+
+  /* -------------------------------------------------------
+     LINIA PRZED PROGNOZĄ
+     ------------------------------------------------------- */
+
+  .weather-forecast {
+    grid-column: 1 / -1 !important;
+
+    width: 100%;
+
+    margin-top: 1px;
+
+    padding-top: 8px !important;
+
+    border-top: 1px solid #edf1f4 !important;
+
+    display: flex !important;
+
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+
+    gap: 0 !important;
+  }
+
+
+  /* -------------------------------------------------------
+     5 DNI PROGNOZY
+     ------------------------------------------------------- */
+
+  .forecast-day {
+    flex: 1 1 20%;
+
+    min-width: 0 !important;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: flex-start;
+
+    gap: 2px !important;
+  }
+
+  .forecast-day > span {
+    font-size: 11px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .forecast-icon {
+    font-size: 19px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .forecast-day strong {
+    font-size: 14px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .forecast-day small {
+    font-size: 10px !important;
+
+    line-height: 1.1 !important;
+  }
+
+  .forecast-day em {
+    font-size: 9px !important;
+  }
+
+
+  /* =======================================================
+     4. STATYSTYKI
+     ======================================================= */
+
+  .dashboard-grid {
+    gap: 8px !important;
+
+    margin-bottom: 12px !important;
+  }
+
+  .dashboard-card {
+    min-height: 82px !important;
+
+    padding: 9px !important;
+
+    border-radius: 15px !important;
+  }
+
+
+  /* =======================================================
+     5. ŁĄCZNA WARTOŚĆ
+     ======================================================= */
+
+  .dashboard-value-card {
+    min-height: 84px !important;
+
+    padding: 10px !important;
+
+    border-radius: 15px !important;
+  }
+
+
+  /* =======================================================
+     6. KARTY ROBÓT
+     ======================================================= */
+
+  .job-card {
+    padding: 12px !important;
+
+    border-radius: 17px !important;
+  }
+
+
+  /* =======================================================
+     7. SEKCJE
+     ======================================================= */
+
+  .section-title {
+    margin-bottom: 8px !important;
+  }
+
+
+  /* =======================================================
+     8. PUSTE SEKCJE — MNIEJ NIEPOTRZEBNEGO MIEJSCA
+     ======================================================= */
+
+  .empty-card {
+    min-height: 58px !important;
+
+    padding: 12px !important;
+  }
+
+  .empty-notes {
+    padding: 13px 10px !important;
+  }
+
+
+  /* =======================================================
+     9. DOLNE MENU
+     ======================================================= */
+
+  .bottom-navigation {
+    width: calc(100% - 10px) !important;
+
+    bottom: 5px !important;
+
+    min-height: 70px !important;
+
+    padding: 4px !important;
+
+    border-radius: 22px !important;
+  }
+
+  .nav-item {
+    gap: 2px !important;
+  }
+
+  .nav-item > span {
+    font-size: 21px !important;
+  }
+
+  .nav-item small {
+    font-size: 9px !important;
+  }
+
+}
+
+
+/* =========================================================
+   MAŁY IPHONE
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+  .main-header {
+    height: 88px !important;
+  }
+
+  .app-logo {
+    width: 195px !important;
+    max-width: 60% !important;
+  }
+
+  .main-header::after {
+    width: 39px !important;
+    height: 39px !important;
+
+    right: 9px !important;
+    top: 21px !important;
+
+    font-size: 13px !important;
+  }
+
+  .weather-card {
+    padding: 9px 10px 8px !important;
+  }
+
+  .weather-main {
+    min-height: 66px;
+  }
+
+  .weather-main strong {
+    font-size: 26px !important;
+  }
+
+  .weather-icon {
+    font-size: 31px !important;
+  }
+
+  .weather-location {
+    min-height: 66px;
+
+    padding-left: 10px !important;
+  }
+
+  .weather-location strong {
+    font-size: 16px !important;
+  }
+
+  .weather-location span {
+    font-size: 11px !important;
+  }
+
+  .weather-date {
+    min-height: 45px;
+
+    padding-top: 4px !important;
+    padding-bottom: 3px !important;
+  }
+
+  .weather-date strong {
+    font-size: 16px !important;
+  }
+
+  .weather-date span {
+    font-size: 11px !important;
+  }
+
+  .weather-forecast {
+    padding-top: 7px !important;
+  }
+
+  .forecast-icon {
+    font-size: 18px !important;
+  }
+
+  .forecast-day strong {
+    font-size: 13px !important;
+  }
+
+  .forecast-day small {
+    font-size: 10px !important;
+  }
+
+  .dashboard-card {
+    min-height: 80px !important;
+  }
+
+  .dashboard-value-card {
+    min-height: 82px !important;
+  }
+
+}
+
+/* =====================================================
+   ROBOTA — EDYCJA NAZWY I LOKALIZACJI
+   ===================================================== */
+
+.job-edit-input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d5dfe7;
+  border-radius: 14px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000;
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
+}
+
+.job-edit-input::placeholder {
+  color: #66758f !important;
+  opacity: 1;
+}
+
+.job-edit-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.14);
+}
+
+.settings-item-locked {
+  cursor: default;
+}
+
+.settings-locked-info {
+  margin-top: 5px;
+  color: #52617a;
+  font-size: 13px;
+}
+
+.settings-locked-note {
+  margin-top: 3px;
+  color: #8a97a8;
+  font-size: 12px;
+}
+
+.settings-lock-icon {
+  font-size: 17px;
+  opacity: 0.75;
+}
+
+/* =====================================================
+   ROBOTA — EDYCJA NAZWY I LOKALIZACJI
+   ===================================================== */
+
+.job-edit-input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d5dfe7;
+  border-radius: 14px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000;
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
+}
+
+.job-edit-input::placeholder {
+  color: #66758f !important;
+  opacity: 1;
+}
+
+.job-edit-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.14);
+}
+
+.settings-item-locked {
+  cursor: default;
+}
+
+.settings-locked-info {
+  margin-top: 5px;
+  color: #52617a;
+  font-size: 13px;
+}
+
+.settings-locked-note {
+  margin-top: 3px;
+  color: #8a97a8;
+  font-size: 12px;
+}
+
+.settings-lock-icon {
+  font-size: 17px;
+  opacity: 0.75;
+}
+
+
+
+/* =====================================================
+   URZĄDZENIE — PRZYPISANIE UŻYTKOWNIKA
+   ===================================================== */
+
+.settings-item-locked {
+  cursor: default;
+}
+
+.settings-locked-info {
+  margin-top: 5px;
+  color: #52617a;
+  font-size: 13px;
+}
+
+.settings-locked-note {
+  margin-top: 3px;
+  color: #8a97a8;
+  font-size: 12px;
+}
+
+.settings-locked-note strong {
+  color: #52617a;
+}
+
+.settings-lock-icon {
+  font-size: 17px;
+  opacity: 0.75;
+}
+
+/* =====================================================
+   ROBOTA — EDYCJA NAZWY I LOKALIZACJI
+   ===================================================== */
+
+.job-edit-input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d5dfe7;
+  border-radius: 14px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000;
+  font-size: 17px;
+  font-weight: 600;
+  outline: none;
+}
+
+.job-edit-input::placeholder {
+  color: #66758f !important;
+  opacity: 1;
+}
+
+.job-edit-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.14);
+}
+
+
+/* =====================================================
+   EDYCJA ROBOTY — POLA LICZBOWE
+   ===================================================== */
+
+.quantity-box input,
+.rate-input,
+.quantity-box input[type='text'],
+input.rate-input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d5dfe7;
+  border-radius: 12px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+
+.quantity-box input::placeholder,
+.rate-input::placeholder {
+  color: #66758f !important;
+  opacity: 1;
+}
+
+.quantity-box input:focus,
+.rate-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.14);
+}
+
+/* Pole edycji postępu również ma być jasne i czytelne. */
+.large-progress + div input[type='number'] {
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 1px solid #d5dfe7;
+  border-radius: 12px;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   PRZYPISANIE URZĄDZENIA
+   ========================================================= */
+
+.device-setup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(16, 27, 69, 0.88);
+}
+
+.device-setup-card {
+  width: min(100%, 460px);
+  box-sizing: border-box;
+  padding: 30px 24px 24px;
+  border-radius: 24px;
+  background: #ffffff;
+  color: #101b45;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.device-setup-icon {
+  font-size: 42px;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+.device-setup-card h2 {
+  margin: 8px 0 10px;
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+.device-setup-card p {
+  margin: 0 auto;
+  max-width: 390px;
+  color: #66758f;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.device-setup-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.device-setup-buttons button {
+  min-height: 58px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.device-setup-buttons button:active {
+  transform: translateY(1px);
+}
+
+.device-setup-device {
+  margin-top: 18px;
+  color: #66758f;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .device-setup-card {
+    padding: 26px 18px 20px;
+    border-radius: 20px;
+  }
+
+  .device-setup-card h2 {
+    font-size: 22px;
+  }
+
+  .device-setup-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   ROBOTA — PORZĄDEK W TRYBIE EDYCJI
+   ========================================================= */
+
+/* Stawki: w edycji pole stawki jest pod opisem,
+   a nie obok niego. Zapobiega nachodzeniu elementów. */
+.finance-row-editing {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+  padding: 16px 0 !important;
+}
+
+.finance-row-editing > div {
+  width: 100%;
+  min-width: 0;
+}
+
+.finance-row-editing .rate-input {
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 52px;
+  margin: 0 !important;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border: 1px solid #d5dfe7;
+  border-radius: 14px;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+
+.finance-row-editing .rate-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.14);
+}
+
+.finance-row-editing small {
+  margin-top: 5px;
+}
+
+/* W trybie edycji opis stawki pozostaje czytelny. */
+.finance-row-editing > div > strong {
+  font-size: 21px;
+}
+
+.finance-row-editing + .finance-row-editing {
+  margin-top: 0;
+}
+
+/* Pola zakresu: jednakowa wysokość i czytelne odstępy. */
+.detail-quantities .quantity-box {
+  overflow: hidden;
+}
+
+.detail-quantities .quantity-box input {
+  width: calc(100% - 2px) !important;
+  max-width: 100%;
+}
+
+/* Pole postępu: nie może dziedziczyć ciemnego wyglądu. */
+.large-progress input[type="number"],
+.large-progress input[type="text"] {
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 1px solid #d5dfe7 !important;
+}
+
+/* Na telefonie przyciski dokumentów i zdjęć zachowują
+   równy, spokojny wygląd w trybie edycji. */
+.detail-card .document-open,
+.detail-card .document-add,
+.detail-card .photo-add {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .finance-row-editing {
+    padding: 15px 0 !important;
+  }
+
+  .finance-row-editing > div > strong {
+    font-size: 20px;
+  }
+
+  .finance-row-editing small {
+    font-size: 15px;
+  }
+
+  .finance-row-editing .rate-input {
+    min-height: 54px;
+    font-size: 23px;
+  }
+}
+
+/* =========================================================
+   AEROINSTAL — NOWY WYGLĄD: FINANSE / KOSZTY
+   ========================================================= */
+
+.finance-cost-card {
+  overflow: hidden;
+}
+
+.finance-cost-header-modern {
+  align-items: center;
+  gap: 18px;
+}
+
+.finance-cost-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.finance-cost-title-icon {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--blue-light);
+  color: var(--blue);
+}
+
+.finance-cost-title-icon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.finance-cost-header-modern h2 {
+  margin: 0 0 4px;
+  color: var(--blue-dark);
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.finance-cost-header-modern span {
+  color: #718099;
+  font-size: 15px;
+}
+
+.finance-cost-total {
+  color: var(--blue-dark);
+  font-size: 30px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.cost-table {
+  width: 100%;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid #e4ebf2;
+  border-radius: 17px;
+  background: #fff;
+}
+
+.cost-table-header,
+.cost-table-row {
+  display: grid;
+  grid-template-columns: minmax(135px, 1.1fr) minmax(150px, 1.4fr) 105px 95px 125px 92px;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.cost-table-header {
+  min-height: 43px;
+  padding: 0 14px;
+  background: #f5f8fb;
+  color: #718099;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .45px;
+}
+
+.cost-table-header-amount {
+  text-align: right;
+}
+
+.cost-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.cost-table-row {
+  min-height: 82px;
+  padding: 10px 14px;
+  border-top: 1px solid #edf1f5;
+  background: #fff;
+  transition: background .15s ease;
+}
+
+.cost-table-row:first-child {
+  border-top: 0;
+}
+
+.cost-table-row:hover {
+  background: #fbfdff;
+}
+
+.cost-category-cell,
+.cost-description-cell,
+.cost-date-cell,
+.cost-payer-cell,
+.cost-amount-cell {
+  min-width: 0;
+}
+
+.cost-category-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.cost-category-cell > div:last-child {
+  min-width: 0;
+}
+
+.cost-category-cell strong {
+  display: block;
+  color: var(--blue-dark);
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.cost-description-cell span,
+.cost-date-cell,
+.cost-payer-cell span {
+  display: block;
+  color: #65748d;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cost-description-cell span {
+  max-width: 100%;
+}
+
+.cost-date-cell,
+.cost-payer-cell {
+  color: #53647e;
+}
+
+.cost-amount-cell {
+  color: var(--blue-dark);
+  font-size: 17px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cost-mobile-date {
+  display: none;
+}
+
+.cost-icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+}
+
+.cost-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.cost-icon-zus {
+  background: #eaf3ff;
+  color: #2364a4;
+}
+
+.cost-icon-tax {
+  background: #f0f1f7;
+  color: #5f6d88;
+}
+
+.cost-icon-fuel {
+  background: #fff2e7;
+  color: #c56d2c;
+}
+
+.cost-icon-material {
+  background: #eaf8ef;
+  color: #2c8b50;
+}
+
+.cost-icon-other {
+  background: #eef2f7;
+  color: #61718b;
+}
+
+.cost-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.cost-edit-button,
+.cost-delete-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  transition: transform .12s ease, filter .12s ease;
+}
+
+.cost-edit-button {
+  background: var(--blue);
+  box-shadow: 0 5px 12px rgba(7, 135, 232, .18);
+}
+
+.cost-delete-button {
+  background: #ef4444;
+  box-shadow: 0 5px 12px rgba(239, 68, 68, .15);
+}
+
+.cost-edit-button:hover,
+.cost-delete-button:hover {
+  filter: brightness(.96);
+}
+
+.cost-edit-button:active,
+.cost-delete-button:active,
+.cost-add-button-modern:active {
+  transform: translateY(1px);
+}
+
+.cost-edit-button svg,
+.cost-delete-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cost-add-button-modern {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 15px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 15px;
+  background: linear-gradient(110deg, #087ddd 0%, #0998ed 100%);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 9px 22px rgba(7, 135, 232, .18);
+}
+
+.cost-add-icon {
+  width: 25px;
+  height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cost-add-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.cost-empty-state {
+  margin-top: 18px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid #e6edf3;
+  border-radius: 15px;
+  background: #f8fafc;
+}
+
+.cost-empty-icon {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: var(--blue-light);
+  color: var(--blue);
+}
+
+.cost-empty-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.cost-empty-state strong {
+  display: block;
+  color: var(--blue-dark);
+  font-size: 15px;
+}
+
+.cost-empty-state span {
+  display: block;
+  margin-top: 3px;
+  color: #718099;
+  font-size: 13px;
+}
+
+.cost-form-modern {
+  border: 1px solid #e2eaf1;
+  border-radius: 17px;
+  background: #f8fbfe;
+}
+
+.cost-form-modern h3 {
+  color: var(--blue-dark);
+}
+
+@media (max-width: 800px) {
+  .cost-table-header,
+  .cost-table-row {
+    grid-template-columns: minmax(145px, 1.2fr) minmax(110px, 1fr) 105px 88px;
+  }
+
+  .cost-table-header > span:nth-child(3),
+  .cost-table-header > span:nth-child(4),
+  .cost-table-header > span:nth-child(5),
+  .cost-table-row > .cost-date-cell,
+  .cost-table-row > .cost-payer-cell,
+  .cost-table-row > .cost-amount-cell {
+    display: none;
+  }
+
+  .cost-table-header > span:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .cost-table-header > span:last-child {
+    grid-column: 4;
+  }
+
+  .cost-table-row {
+    grid-template-columns: minmax(145px, 1.2fr) minmax(90px, 1fr) auto;
+    column-gap: 8px;
+  }
+
+  .cost-description-cell {
+    display: block;
+  }
+
+  .cost-amount-cell {
+    display: block !important;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    padding-top: 4px;
+    text-align: right;
+  }
+
+  .cost-actions {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .cost-mobile-date {
+    display: block;
+    margin-top: 4px;
+    color: #8a96a8;
+    font-size: 11px;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 600px) {
+  .finance-cost-header-modern {
+    align-items: center;
+  }
+
+  .finance-cost-title-wrap {
+    gap: 10px;
+  }
+
+  .finance-cost-title-icon {
+    flex-basis: 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .finance-cost-title-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .finance-cost-header-modern h2 {
+    font-size: 21px;
+  }
+
+  .finance-cost-header-modern span {
+    font-size: 13px;
+  }
+
+  .finance-cost-total {
+    font-size: 22px;
+  }
+
+  .cost-table {
+    margin-top: 15px;
+    border-radius: 15px;
+  }
+
+  .cost-table-header {
+    display: none;
+  }
+
+  .cost-table-row {
+    min-height: 78px;
+    padding: 11px 10px;
+    grid-template-columns: minmax(105px, 1fr) minmax(68px, .72fr) auto;
+    column-gap: 6px;
+  }
+
+  .cost-category-cell {
+    gap: 8px;
+  }
+
+  .cost-category-cell strong {
+    font-size: 14px;
+  }
+
+  .cost-icon {
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .cost-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .cost-description-cell span {
+    font-size: 12px;
+    color: #66758e;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .cost-amount-cell {
+    font-size: 14px;
+    padding-top: 3px;
+  }
+
+  .cost-actions {
+    gap: 5px;
+  }
+
+  .cost-edit-button,
+  .cost-delete-button {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+  }
+
+  .cost-edit-button svg,
+  .cost-delete-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .cost-add-button-modern {
+    min-height: 54px;
+    margin-top: 13px;
+    font-size: 16px;
+  }
+
+  .cost-empty-state {
+    padding: 15px;
+  }
+}
+
+
+
+/* =========================================================
+   FINANSE — NOWOCZESNE FORMULARZE DODAWANIA I EDYCJI KOSZTU
+   ========================================================= */
+
+.cost-form-modern {
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e1e9f0;
+  border-radius: 20px;
+  box-shadow: 0 7px 24px rgba(30, 70, 105, 0.06);
+}
+
+.cost-form-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 20px;
+}
+
+.cost-form-header-icon {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+}
+
+.cost-form-header-icon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.cost-form-header-icon-add {
+  background: var(--blue-light);
+  color: var(--blue);
+}
+
+.cost-form-header-icon-edit {
+  background: #eaf3ff;
+  color: #087ddd;
+}
+
+.cost-form-header h3 {
+  margin: 0;
+  color: var(--blue-dark);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.cost-form-header p {
+  margin: 4px 0 0;
+  color: #718099;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.cost-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.cost-form-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cost-form-field-wide {
+  grid-column: span 2;
+}
+
+.cost-form-field label {
+  margin: 0;
+  color: #52617d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cost-form-field input,
+.cost-form-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid #d7e1e9;
+  border-radius: 12px;
+  outline: none;
+  background: #fbfcfd;
+  color: #17244a;
+  font-size: 16px;
+  font-weight: 500;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.cost-form-field input:focus,
+.cost-form-field select:focus {
+  border-color: var(--blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.10);
+}
+
+.cost-form-field input::placeholder {
+  color: #9aa5b4;
+  opacity: 1;
+}
+
+.cost-form-field input[type="date"] {
+  color-scheme: light;
+}
+
+.cost-form-actions-modern {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(120px, .8fr);
+  gap: 10px;
+}
+
+.cost-form-actions-modern button {
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 13px;
+  font-size: 16px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cost-form-actions-modern button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cost-form-actions-modern .cost-save-button {
+  border: 0;
+  background: linear-gradient(110deg, #087ddd 0%, #0998ed 100%);
+  color: #ffffff;
+  box-shadow: 0 7px 17px rgba(7, 135, 232, 0.18);
+}
+
+.cost-form-actions-modern .cost-cancel-button {
+  border: 1px solid #e1c9c9;
+  background: #fff7f7;
+  color: #c23b3b;
+}
+
+.cost-form-actions-modern button:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 600px) {
+  .cost-form-modern {
+    padding: 17px 14px;
+    border-radius: 18px;
+  }
+
+  .cost-form-header {
+    gap: 11px;
+    margin-bottom: 16px;
+  }
+
+  .cost-form-header-icon {
+    flex-basis: 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .cost-form-header-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cost-form-header h3 {
+    font-size: 22px;
+  }
+
+  .cost-form-header p {
+    font-size: 12px;
+  }
+
+  .cost-form-grid {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .cost-form-field-wide {
+    grid-column: auto;
+  }
+
+  .cost-form-field {
+    gap: 5px;
+  }
+
+  .cost-form-field label {
+    font-size: 13px;
+  }
+
+  .cost-form-field input,
+  .cost-form-field select {
+    min-height: 47px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .cost-form-actions-modern {
+    margin-top: 16px;
+    grid-template-columns: minmax(0, 1fr) minmax(92px, .65fr);
+    gap: 8px;
+  }
+
+  .cost-form-actions-modern button {
+    min-height: 49px;
+    padding: 0 10px;
+    font-size: 15px;
+  }
+}
+
+/* =====================================================
+   ZADANIA I PRZYPOMNIENIA — NOWY WIDOK START
+   ===================================================== */
+
+.general-reminders-section .section-title {
+  align-items: flex-end;
+}
+
+.general-reminders-section .section-title > div {
+  min-width: 0;
+}
+
+.general-reminders-section .section-title h2 {
+  margin-top: 0;
+}
+
+.general-reminders-count {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e8f5ff;
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.general-reminders-card {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e2eaf0;
+  border-radius: 21px;
+  box-shadow: var(--shadow);
+}
+
+.general-reminders-list {
+  width: 100%;
+}
+
+.general-reminder-row {
+  min-height: 70px;
+  padding: 10px 15px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.general-reminder-row:last-child {
+  border-bottom: 0;
+}
+
+.general-reminder-row.overdue {
+  background: #fffafa;
+}
+
+.general-reminder-row.done {
+  opacity: 0.68;
+}
+
+.general-reminder-checkbox,
+.job-task-checkbox,
+.note-checkbox {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #8b9ab0;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  flex: 0 0 auto;
+}
+
+.general-reminder-checkbox.checked,
+.job-task-checkbox.checked,
+.note-checkbox.checked {
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
+.general-reminder-main {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--blue-dark);
+}
+
+.general-reminder-main strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.general-reminder-row.done .general-reminder-main strong {
+  text-decoration: line-through;
+}
+
+.general-reminder-main span {
+  display: block;
+  margin-top: 3px;
+  color: #718099;
+  font-size: 12px;
+}
+
+.general-reminder-row.overdue .general-reminder-main span {
+  color: #c24e4e;
+  font-weight: 700;
+}
+
+.general-reminder-delete {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #9aa6b5;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.general-reminder-delete:hover {
+  background: #fff0f0;
+  color: #e34b4b;
+}
+
+.general-reminder-empty {
+  min-height: 130px;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  color: #7a8799;
+}
+
+.general-reminder-empty strong {
+  color: var(--blue-dark);
+  font-size: 16px;
+}
+
+.general-reminder-empty > span:last-child {
+  font-size: 13px;
+}
+
+.general-reminder-empty-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e7f8ee;
+  color: var(--green);
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.general-reminders-alert {
+  min-height: 42px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #f0d6d6;
+  border-radius: 13px;
+  background: #fff8f8;
+  color: #bd4c4c;
+  font-size: 14px;
+}
+
+.general-reminders-alert > span {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e85b5b;
+  color: white;
+  font-weight: 900;
+}
+
+.general-reminder-add-button {
+  width: calc(100% - 28px);
+  min-height: 48px;
+  margin: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 13px;
+  background: #e8f5ff;
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.general-reminder-add-button > span {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.general-reminder-form {
+  margin: 14px;
+  padding: 15px;
+  border: 1px solid #dce7ef;
+  border-radius: 16px;
+  background: #f7fbfe;
+}
+
+.general-reminder-form-title {
+  margin-bottom: 9px;
+  color: var(--blue-dark);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.general-reminder-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #d3dee7;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #18294e;
+  font-size: 15px;
+  outline: none;
+}
+
+.general-reminder-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, 0.08);
+}
+
+.general-reminder-date-row {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+}
+
+.general-reminder-save,
+.general-reminder-cancel {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.general-reminder-save {
+  border: 0;
+  background: var(--blue);
+  color: white;
+}
+
+.general-reminder-save:disabled {
+  opacity: 0.45;
+}
+
+.general-reminder-cancel {
+  border: 1px solid #efcaca;
+  background: #fff7f7;
+  color: #c34f4f;
+}
+
+/* -----------------------------------------------------
+   ZADANIA W KARTACH ROBÓT
+   ----------------------------------------------------- */
+
+.job-card-with-tasks {
+  display: block !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.job-card-main {
+  padding: 14px 20px 0;
+  cursor: pointer;
+}
+
+.job-card-tasks {
+  margin: 14px 20px 0;
+  padding: 13px 14px 8px;
+  border-radius: 16px;
+  background: #f5f9fc;
+  border: 1px solid #e6eef4;
+}
+
+.job-card-tasks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.job-card-tasks-header > div {
+  min-width: 0;
+}
+
+.job-card-tasks-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.job-card-tasks-header strong {
+  color: var(--blue-dark);
+  font-size: 15px;
+}
+
+.job-card-task-count {
+  flex: 0 0 auto;
+  color: #65738c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.job-task-row {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border-top: 1px solid #e3ebf1;
+}
+
+.job-task-text {
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.job-task-text strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #24345b;
+  font-size: 14px;
+}
+
+.job-task-text span {
+  display: block;
+  margin-top: 2px;
+  color: #7a8799;
+  font-size: 11px;
+}
+
+.job-task-row.done .job-task-text strong {
+  color: #7b8799;
+  text-decoration: line-through;
+}
+
+.job-card-add-task-hint,
+.job-card-more-tasks {
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 5px;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.job-card-all-done {
+  padding: 7px 0 5px;
+  color: var(--green);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.job-card-with-tasks .job-footer {
+  margin: 14px 20px 0;
+  padding: 14px 0 16px;
+}
+
+/* -----------------------------------------------------
+   SZCZEGÓŁ ROBOTY — NOTATKI JAKO ZADANIA
+   ----------------------------------------------------- */
+
+.notes-card .notes-header h2 {
+  margin-bottom: 0;
+}
+
+.notes-card .notes-header .small-label {
+  margin-bottom: 4px;
+}
+
+.notes-card .note-add-button {
+  border-color: #cfe5f6;
+  background: #e8f5ff;
+  color: var(--blue);
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .job-card-main {
+    padding: 13px 13px 0;
+  }
+
+  .job-card-tasks {
+    margin: 12px 13px 0;
+    padding: 12px 11px 7px;
+    border-radius: 15px;
+  }
+
+  .job-card-tasks-header strong {
+    font-size: 14px;
+  }
+
+  .job-card-with-tasks .job-footer {
+    margin: 12px 13px 0;
+    padding: 12px 0 14px;
+  }
+
+  .general-reminder-row {
+    min-height: 66px;
+    padding: 9px 12px;
+    grid-template-columns: 34px minmax(0, 1fr) 28px;
+    gap: 9px;
+  }
+
+  .general-reminder-checkbox,
+  .job-task-checkbox {
+    width: 28px;
+    height: 28px;
+  }
+
+  .general-reminder-main strong {
+    font-size: 14px;
+  }
+
+  .general-reminder-date-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .general-reminder-date-row .general-reminder-input {
+    grid-column: 1 / -1;
+  }
+
+  .general-reminder-cancel,
+  .general-reminder-save {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .general-reminder-add-button {
+    width: calc(100% - 20px);
+    margin: 10px;
+  }
+
+  .general-reminder-form {
+    margin: 10px;
+    padding: 12px;
+  }
+
+  .job-card-tasks {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .job-card-with-tasks .job-footer {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+/* =========================================================
+   POPRAWKA — WARTOŚĆ ROBOTY Z ZADANIAMI
+   =========================================================
+
+   .job-footer ma margines boczny, więc width: 100% powodował
+   przekroczenie szerokości karty na telefonie. Dla kart z zadaniami
+   szerokość ma być liczona pomiędzy marginesami.
+*/
+
+.job-card-with-tasks .job-footer {
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.job-card-with-tasks .job-footer span {
+  flex: 0 0 auto;
+}
+
+.job-card-with-tasks .job-footer strong {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* -----------------------------------------------------
+   OBIEG ROBOTY — ETAPY I ROZLICZENIE
+   ----------------------------------------------------- */
+
+.job-stage-card .detail-title { align-items: center; }
+.job-stage-pill { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:6px 11px; border-radius:999px; font-size:11px; font-weight:800; white-space:nowrap; }
+.job-stage-select-label { display:block; margin-top:14px; }
+.job-stage-select-label > span, .invoice-info-grid label > span { display:block; margin-bottom:6px; color:#657491; font-size:12px; font-weight:700; }
+.job-stage-select-label select, .invoice-info-grid input { width:100%; min-height:46px; box-sizing:border-box; padding:10px 12px; border:1px solid #dce6ee; border-radius:12px; background:#fff; color:#101b45; font-size:15px; font-weight:600; outline:none; }
+.job-stage-select-label select:focus, .invoice-info-grid input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(7,135,232,.09); }
+.job-stage-steps { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:7px; margin-top:16px; }
+.job-stage-step { min-width:0; padding:9px 5px; border:1px solid #e1e9f0; border-radius:12px; background:#f7f9fb; text-align:center; opacity:.65; }
+.job-stage-step span { display:flex; width:24px; height:24px; margin:0 auto 5px; align-items:center; justify-content:center; border-radius:50%; background:#e5ebf1; color:#718096; font-size:11px; font-weight:800; }
+.job-stage-step strong { display:block; color:#657491; font-size:10px; line-height:1.25; }
+.job-stage-step.active { opacity:1; border-color:#cfe5f6; background:#eef8ff; }
+.job-stage-step.active span { background:var(--blue); color:#fff; }
+.job-stage-step.active strong { color:var(--blue-dark); }
+.invoice-info-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; margin-top:16px; padding-top:15px; border-top:1px solid #edf1f4; }
+.job-paid-info { margin-top:13px; padding:11px 13px; border-radius:12px; background:var(--green-light); color:var(--green); font-size:13px; font-weight:800; }
+.job-stage-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding:11px 2px 0; color:#657491; font-size:12px; }
+.job-stage-actions span { min-width:0; }
+.job-stage-actions strong { color:var(--blue-dark); }
+
+@media (max-width:760px) {
+  .job-filters { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .job-stage-steps { grid-template-columns:repeat(5,minmax(70px,1fr)); overflow-x:auto; padding-bottom:3px; }
+  .job-stage-step { min-width:70px; }
+  .invoice-info-grid { grid-template-columns:1fr; }
+  .job-stage-actions { align-items:stretch; flex-direction:column; }
+  .job-stage-actions .restore-button { width:100%; }
+}
+
+.job-card .status {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 760px) {
+  .job-card .status {
+    max-width: 145px;
+    font-size: 10px !important;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+}
+
+
+/* =========================================================
+   ROBOTY — PODSUMOWANIE STATUSÓW
+   ========================================================= */
+
+.job-summary {
+  align-items: stretch;
+}
+
+.job-summary-item {
+  min-width: 0;
+  padding: 9px 5px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid #e3eaf0;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.62);
+  text-align: center;
+}
+
+.job-summary-item strong {
+  color: var(--blue-dark);
+  font-size: 19px;
+  line-height: 1;
+}
+
+.job-summary-item span {
+  color: #657491;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .job-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .job-summary-item {
+    padding: 8px 3px 9px;
+    border-radius: 11px;
+  }
+
+  .job-summary-item strong {
+    font-size: 18px;
+  }
+
+  .job-summary-item span {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .job-summary {
+    gap: 6px !important;
+  }
+
+  .job-summary-item {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+}

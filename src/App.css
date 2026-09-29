@@ -6356,3 +6356,325 @@ input.rate-input {
     padding-right: 2px;
   }
 }
+
+
+/* =====================================================
+   FINANSE — UPROSZCZONY WIDOK
+   ===================================================== */
+
+.finance-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.finance-overview-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border, #e1e9f0);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--shadow, 0 7px 24px rgba(30, 70, 105, 0.07));
+}
+
+.finance-overview-card-main {
+  background: linear-gradient(135deg, #f7fbff 0%, #ffffff 72%);
+}
+
+.finance-overview-label {
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: #718096;
+}
+
+.finance-overview-title {
+  margin-top: 5px;
+  color: #18284f;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.finance-overview-value {
+  margin-top: 9px;
+  color: #10245b;
+  font-size: 30px;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.finance-overview-subtitle {
+  margin-top: 5px;
+  color: #718096;
+  font-size: 12px;
+}
+
+.finance-share-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.finance-share-item {
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #edf6ff;
+}
+
+.finance-share-item span,
+.finance-share-item strong {
+  display: block;
+}
+
+.finance-share-item span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.finance-share-item strong {
+  margin-top: 3px;
+  color: #123f70;
+  font-size: 17px;
+}
+
+.finance-cost-person-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.finance-cost-person-row span {
+  color: #66758f;
+  font-size: 13px;
+}
+
+.finance-cost-person-row strong {
+  color: #24345c;
+  font-size: 16px;
+}
+
+.finance-cost-difference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 4px;
+}
+
+.finance-cost-difference span {
+  color: #66758f;
+  font-size: 12px;
+}
+
+.finance-cost-difference strong {
+  color: #24345c;
+  font-size: 15px;
+}
+
+.finance-partner-card {
+  margin-bottom: 14px;
+  padding: 18px;
+  border: 1px solid var(--border, #e1e9f0);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--shadow, 0 7px 24px rgba(30, 70, 105, 0.07));
+}
+
+.finance-partner-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.finance-partner-card-header h2 {
+  margin: 5px 0 3px;
+  color: #18284f;
+  font-size: 19px;
+}
+
+.finance-partner-card-header p {
+  margin: 0;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.finance-status-ok {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e7f8ee;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.finance-balance-box {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+}
+
+.finance-balance-box.is-lukasz-creditor {
+  background: #fff7e8;
+  border-color: #f5dfb1;
+}
+
+.finance-balance-box.is-pawel-creditor {
+  background: #edf6ff;
+  border-color: #cfe5f7;
+}
+
+.finance-balance-box.is-settled {
+  background: #edf9f1;
+  border-color: #cdebd8;
+}
+
+.finance-balance-caption {
+  display: block;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.finance-balance-direction {
+  display: block;
+  margin-top: 5px;
+  color: #24345c;
+  font-size: 15px;
+}
+
+.finance-balance-amount {
+  display: block;
+  margin-top: 2px;
+  color: #12234f;
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.finance-balance-note {
+  display: block;
+  margin-top: 7px;
+  color: #718096;
+  font-size: 12px;
+}
+
+.finance-settlement-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.finance-settle-button,
+.finance-partial-settle-button {
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.finance-settle-button {
+  border: none;
+  background: #16a34a;
+  color: #fff;
+}
+
+.finance-settle-button:disabled,
+.finance-partial-settle-button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.finance-partial-settle-button {
+  border: 1px solid #d9e2eb;
+  background: #f7f9fb;
+  color: #526174;
+}
+
+.finance-partner-explanation {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #edf1f5;
+}
+
+.finance-partner-explanation span {
+  display: block;
+  color: #24345c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-partner-explanation p {
+  margin: 5px 0 0;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 700px) {
+  .finance-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .finance-overview-card,
+  .finance-partner-card {
+    padding: 15px;
+    border-radius: 17px;
+  }
+
+  .finance-overview-value {
+    font-size: 27px;
+  }
+
+  .finance-partner-card-header {
+    gap: 8px;
+  }
+
+  .finance-partner-card-header h2 {
+    font-size: 17px;
+  }
+
+  .finance-settlement-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-settle-button,
+  .finance-partial-settle-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .finance-share-grid {
+    gap: 8px;
+  }
+
+  .finance-share-item {
+    padding: 10px;
+  }
+
+  .finance-overview-value {
+    font-size: 25px;
+  }
+
+  .finance-balance-amount {
+    font-size: 23px;
+  }
+}

@@ -6678,3 +6678,473 @@ input.rate-input {
     font-size: 23px;
   }
 }
+
+
+/* =========================================================
+   AEROINSTAL — PRO UI PASS
+   Start + Roboty + wspólne elementy
+   Warstwa wizualna — bez zmiany logiki aplikacji.
+   ========================================================= */
+
+:root {
+  --pro-surface: rgba(255, 255, 255, 0.96);
+  --pro-surface-soft: #f7fafc;
+  --pro-border: #e3eaf0;
+  --pro-text: #12234f;
+  --pro-muted: #718096;
+  --pro-shadow: 0 10px 30px rgba(25, 60, 95, 0.065);
+  --pro-shadow-hover: 0 14px 36px rgba(25, 60, 95, 0.105);
+}
+
+/* Delikatniejszy, bardziej aplikacyjny background */
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(7, 135, 232, 0.075), transparent 34%),
+    linear-gradient(180deg, #f9fbfd 0%, #f1f6fa 100%);
+}
+
+/* Górny nagłówek */
+.main-header {
+  height: 118px;
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: rgba(219, 228, 236, 0.9);
+  box-shadow: 0 1px 0 rgba(16, 27, 69, 0.025);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.app-logo {
+  max-height: 76px;
+  width: auto;
+}
+
+/* Dashboard — mniej „kafelkowo”, bardziej jak panel biznesowy */
+.dashboard-grid {
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.dashboard-card,
+.dashboard-value-card {
+  min-height: 104px;
+  border-radius: 18px;
+}
+
+.dashboard-card {
+  padding: 16px 18px;
+  gap: 14px;
+  border-color: var(--pro-border);
+  box-shadow: var(--pro-shadow);
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pro-shadow-hover);
+  border-color: #d5e5ef;
+}
+
+.dashboard-icon,
+.dashboard-value-icon {
+  width: 56px;
+  height: 56px;
+  flex-basis: 56px;
+}
+
+.dashboard-icon {
+  border-radius: 17px;
+  background: #edf7ff;
+  font-size: 25px;
+}
+
+.dashboard-icon.completed {
+  background: #eaf8f0;
+}
+
+.dashboard-card span {
+  color: #53627b;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.dashboard-card strong {
+  margin-top: 5px;
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-value-card {
+  padding: 16px 18px;
+  gap: 14px;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(0, 130, 225, 0.16);
+}
+
+.dashboard-value-icon {
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 25px;
+}
+
+.dashboard-value-card span {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: .9;
+}
+
+.dashboard-value-card strong {
+  margin-top: 5px;
+  font-size: 27px;
+  letter-spacing: -0.025em;
+}
+
+/* Nagłówki sekcji */
+section {
+  margin-bottom: 26px;
+}
+
+.section-title {
+  margin: 0 4px 11px;
+}
+
+.section-title h2 {
+  font-size: 20px;
+  letter-spacing: -0.015em;
+}
+
+.section-link {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Karty robót — bardziej „systemowo” */
+.jobs {
+  gap: 10px;
+}
+
+.job-card {
+  min-height: 104px;
+  padding: 14px 17px;
+  grid-template-columns:
+    minmax(190px, 1.35fr)
+    minmax(155px, 1fr)
+    minmax(165px, 1fr);
+  gap: 16px;
+  border-color: var(--pro-border);
+  border-radius: 18px;
+  box-shadow: var(--pro-shadow);
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+  border-color: #d5e5ef;
+  box-shadow: var(--pro-shadow-hover);
+}
+
+.job-header {
+  gap: 11px;
+}
+
+.job-header h3 {
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+
+.job-header span {
+  margin-top: 4px;
+  color: #75839a;
+  font-size: 13px;
+}
+
+.status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+
+.progress-label {
+  margin-bottom: 6px;
+}
+
+.progress-label span {
+  color: #718096;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.progress-label strong {
+  font-size: 17px;
+}
+
+.job-footer {
+  border-top-color: #edf1f4;
+}
+
+.job-footer span {
+  color: #7a8799;
+  font-size: 12px;
+}
+
+.job-footer strong {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+/* Strona Roboty */
+.sub-page {
+  padding-top: 14px;
+}
+
+.page-heading {
+  margin: 5px 4px 17px;
+}
+
+.page-heading h1,
+.sub-page h1 {
+  font-size: 29px;
+  letter-spacing: -0.035em;
+}
+
+.small-label {
+  margin-bottom: 4px;
+  color: #0787e8;
+  font-size: 10px;
+  letter-spacing: 1.65px;
+}
+
+/* Filtry robót — spójne z resztą aplikacji */
+.job-filters {
+  gap: 7px !important;
+}
+
+.job-filters button {
+  min-height: 42px;
+  border-radius: 12px !important;
+  padding: 9px 8px !important;
+  font-size: 12px !important;
+  box-shadow: none !important;
+  transition:
+    background .16s ease,
+    border-color .16s ease,
+    transform .16s ease;
+}
+
+.job-filters button:active {
+  transform: scale(.98);
+}
+
+/* Liczniki statusów */
+.job-summary {
+  gap: 7px !important;
+}
+
+.job-summary-item {
+  min-height: 64px;
+  padding: 8px 4px 9px;
+  border-color: #e2e9ef;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.job-summary-item strong {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.job-summary-item span {
+  color: #77849a;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+/* Wspólne karty */
+.detail-card {
+  border-color: var(--pro-border);
+  border-radius: 18px;
+  box-shadow: var(--pro-shadow);
+}
+
+/* Dolna nawigacja — bardziej jak natywna aplikacja */
+.bottom-navigation {
+  min-height: 78px;
+  bottom: 12px;
+  width: min(calc(100% - 28px), 620px);
+  padding: 6px 8px;
+  gap: 4px;
+  border-radius: 22px;
+  border-color: rgba(218, 228, 237, .95);
+  box-shadow: 0 16px 40px rgba(27, 62, 95, .14);
+}
+
+.nav-item {
+  gap: 3px;
+  border-radius: 16px;
+  transition: background .16s ease, color .16s ease;
+}
+
+.nav-item > span {
+  font-size: 23px;
+}
+
+.nav-item small {
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.nav-item.active {
+  background: #edf7ff;
+  color: var(--blue);
+}
+
+/* Start — przypomnienia i karty nie powinny wyglądać ciężko */
+.general-reminders-section .section-title {
+  margin-bottom: 10px;
+}
+
+.general-reminders-card {
+  border-color: var(--pro-border);
+  border-radius: 18px;
+  box-shadow: var(--pro-shadow);
+}
+
+/* Przyciski akcji */
+.edit-button,
+.save-button {
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.edit-button:hover,
+.save-button:hover {
+  transform: translateY(-1px);
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .main-header {
+    height: 96px;
+  }
+
+  .app-logo {
+    max-height: 61px;
+    max-width: 180px;
+  }
+
+  .dashboard-grid {
+    gap: 9px;
+    margin-bottom: 22px;
+  }
+
+  .dashboard-card {
+    min-height: 88px;
+    padding: 12px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+
+  .dashboard-icon,
+  .dashboard-value-icon {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+    border-radius: 14px;
+    font-size: 21px;
+  }
+
+  .dashboard-card span {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .dashboard-card strong {
+    margin-top: 4px;
+    font-size: 25px;
+  }
+
+  .dashboard-value-card {
+    min-height: 88px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .dashboard-value-card span {
+    font-size: 11px;
+  }
+
+  .dashboard-value-card strong {
+    font-size: 22px;
+  }
+
+  .section-title h2 {
+    font-size: 18px;
+  }
+
+  .job-card {
+    border-radius: 16px;
+    box-shadow: 0 7px 22px rgba(30, 70, 105, .06);
+  }
+
+  .job-header h3 {
+    font-size: 17px;
+  }
+
+  .job-header span {
+    font-size: 12px;
+  }
+
+  .page-heading {
+    margin-bottom: 14px;
+  }
+
+  .page-heading h1,
+  .sub-page h1 {
+    font-size: 27px;
+  }
+
+  .bottom-navigation {
+    min-height: 70px;
+    bottom: 9px;
+    width: calc(100% - 18px);
+    border-radius: 20px;
+  }
+
+  .nav-item > span {
+    font-size: 21px;
+  }
+
+  .nav-item small {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-card {
+    padding: 10px;
+  }
+
+  .dashboard-icon,
+  .dashboard-value-icon {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .dashboard-card strong {
+    font-size: 23px;
+  }
+
+  .dashboard-value-card strong {
+    font-size: 20px;
+  }
+
+  .job-card {
+    box-shadow: 0 6px 19px rgba(30, 70, 105, .055);
+  }
+}

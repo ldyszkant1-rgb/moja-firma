@@ -23,6 +23,22 @@ import {
   deleteFinance,
   subscribeToFinance,
 } from './lib/financeApi'
+import {
+  getJobPayments,
+  getAllJobPayments,
+  createJobPayment,
+  deleteJobPayment,
+  subscribeToJobPayments,
+  calculatePaidAmount,
+} from './lib/jobPaymentsApi'
+import {
+  getPartnerSettlements,
+  savePartnerSettlement,
+  getPartnerTransfers,
+  createPartnerTransfer,
+  deletePartnerTransfer,
+  subscribeToPartnerSettlements,
+} from './lib/partnerSettlementApi'
 import { supabase } from './lib/supabase'
 
 
@@ -4329,9 +4345,208 @@ function JobDetails({
     )
 
   }, [job])
+  const [paymentHistory, setPaymentHistory] = useState([])
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    paidAt: getTodayString(),
+    note: '',
+  })
+  const [paymentLoading, setPaymentLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPayments = async () => {
+      try {
+        const rows = await getJobPayments(job?.id)
+        if (!cancelled) setPaymentHistory(rows)
+      } catch (error) {
+        console.error('Nie udało się wczytać historii wpłat:', error)
+      }
+    }
+
+    loadPayments()
+
+    const unsubscribe = subscribeToJobPayments(job?.id, (payload) => {
+      if (!payload) return
+
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const incoming = {
+          id: payload.new.id,
+          jobId: payload.new.job_id,
+          amount: Number(payload.new.amount || 0),
+          paidAt: payload.new.paid_at || null,
+          note: payload.new.note || '',
+          createdAt: payload.new.created_at || null,
+        }
+        setPaymentHistory((current) =>
+          current.some((item) => item.id === incoming.id)
+            ? current
+            : [...current, incoming].sort((a, b) =>
+                String(a.paidAt || '').localeCompare(String(b.paidAt || ''))
+              )
+        )
+      }
+
+      if (payload.eventType === 'UPDATE' && payload.new) {
+        const incoming = {
+          id: payload.new.id,
+          jobId: payload.new.job_id,
+          amount: Number(payload.new.amount || 0),
+          paidAt: payload.new.paid_at || null,
+          note: payload.new.note || '',
+          createdAt: payload.new.created_at || null,
+        }
+        setPaymentHistory((current) =>
+          current.map((item) => item.id === incoming.id ? incoming : item)
+        )
+      }
+
+      if (payload.eventType === 'DELETE' && payload.old?.id) {
+        setPaymentHistory((current) =>
+          current.filter((item) => item.id !== payload.old.id)
+        )
+      }
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [job?.id])
+
+  const invoiceAmountForPayment =
+    Number(editedJob.invoiceAmount || 0) ||
+    calculateTotal(editedJob)
+
+  const paidAmountForPayment = calculatePaidAmount(paymentHistory)
+  const remainingInvoiceAmount = Math.max(
+    0,
+    invoiceAmountForPayment - paidAmountForPayment
+  )
+  const invoicePaymentStatus =
+    invoiceAmountForPayment <= 0
+      ? 'Brak kwoty faktury'
+      : paidAmountForPayment <= 0
+        ? 'Nieopłacona'
+        : paidAmountForPayment + 0.009 < invoiceAmountForPayment
+          ? 'Częściowo zapłacona'
+          : 'Opłacona'
+
+  const refreshJobAfterPayment = async (nextPayments) => {
+    const nextPaidAmount = calculatePaidAmount(nextPayments)
+    const invoiceAmount =
+      Number(editedJob.invoiceAmount || 0) ||
+      calculateTotal(editedJob)
+
+    if (invoiceAmount > 0 && nextPaidAmount + 0.009 >= invoiceAmount) {
+      const completedJob = {
+        ...editedJob,
+        status: 'Zakończone',
+        completed: true,
+        completedAt: editedJob.completedAt || getTodayString(),
+        paidAt:
+          nextPayments
+            .map((item) => item.paidAt)
+            .filter(Boolean)
+            .sort()
+            .at(-1) || getTodayString(),
+      }
+      setEditedJob(completedJob)
+      await onUpdate(completedJob)
+    } else if (normalizeJobStage(editedJob) === 'Zakończone') {
+      const openJob = {
+        ...editedJob,
+        status: 'Faktura wystawiona',
+        completed: false,
+        completedAt: null,
+        paidAt: null,
+      }
+      setEditedJob(openJob)
+      await onUpdate(openJob)
+    }
+  }
+
+  const addInvoicePayment = async () => {
+    const amount = parseDecimal(paymentForm.amount)
+
+    if (invoiceAmountForPayment <= 0) {
+      showCustomAlert('Najpierw wpisz kwotę faktury.')
+      return
+    }
+
+    if (!amount || amount <= 0) {
+      showCustomAlert('Podaj prawidłową kwotę wpłaty.')
+      return
+    }
+
+    if (amount > remainingInvoiceAmount + 0.009) {
+      showCustomAlert(
+        `Wpłata jest za duża. Do zapłaty zostało ${formatMoney(remainingInvoiceAmount)}.`
+      )
+      return
+    }
+
+    try {
+      setPaymentLoading(true)
+      const savedPayment = await createJobPayment({
+        jobId: editedJob.id,
+        amount,
+        paidAt: paymentForm.paidAt || getTodayString(),
+        note: paymentForm.note,
+      })
+
+      const nextPayments = [...paymentHistory, savedPayment]
+      setPaymentHistory(nextPayments)
+      setPaymentForm({
+        amount: '',
+        paidAt: getTodayString(),
+        note: '',
+      })
+      await refreshJobAfterPayment(nextPayments)
+    } catch (error) {
+      console.error('Nie udało się zapisać wpłaty:', error)
+      showCustomAlert('Nie udało się zapisać wpłaty.')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
+  const removeInvoicePayment = async (payment) => {
+    const confirmed = await showCustomConfirm(
+      `Usunąć wpłatę ${formatMoney(payment.amount)} z dnia ${formatDate(payment.paidAt)}?`
+    )
+    if (!confirmed) return
+
+    try {
+      setPaymentLoading(true)
+      await deleteJobPayment(payment.id)
+      const nextPayments = paymentHistory.filter((item) => item.id !== payment.id)
+      setPaymentHistory(nextPayments)
+      await refreshJobAfterPayment(nextPayments)
+    } catch (error) {
+      console.error('Nie udało się usunąć wpłaty:', error)
+      showCustomAlert('Nie udało się usunąć wpłaty.')
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
 
 
-  const saveChanges = () => {
+
+
+  const saveChanges = async () => {
+    const stageBeforeSave = normalizeJobStage(editedJob)
+    if (stageBeforeSave === 'Zakończone') {
+      const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
+      const paidAmount = calculatePaidAmount(paymentHistory)
+      const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
+
+      if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
+        showCustomAlert('Nie można zakończyć roboty. Faktura nie jest jeszcze w pełni opłacona.')
+        return
+      }
+    }
 
     if (!editedJob.name.trim()) {
 
@@ -4454,6 +4669,20 @@ function JobDetails({
 
   const changeStage = async (nextStage) => {
     const today = getTodayString()
+
+    if (nextStage === 'Zakończone') {
+      const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
+      const paidAmount = calculatePaidAmount(paymentHistory)
+      const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
+
+      if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
+        showCustomAlert(
+          `Najpierw rozlicz całą fakturę. Pozostało do zapłaty: ${formatMoney(Math.max(0, invoiceAmount - paidAmount))}.`
+        )
+        return
+      }
+    }
+
     const updatedJob = {
       ...editedJob,
       status: nextStage,
@@ -5644,6 +5873,159 @@ function JobDetails({
         )}
       </div>
 
+
+
+      {(normalizeJobStage(editedJob) === 'Faktura wystawiona' || normalizeJobStage(editedJob) === 'Zakończone') && (
+        <div className="detail-card" style={{ marginTop: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+            <div>
+              <div className="small-label">PŁATNOŚCI FAKTURY</div>
+              <h2 style={{ marginBottom: '4px' }}>Historia wpłat</h2>
+              <span style={{ color: '#6b7280', fontSize: '13px' }}>
+                {invoicePaymentStatus}
+              </span>
+            </div>
+            <strong style={{
+              fontSize: '18px',
+              color: invoicePaymentStatus === 'Opłacona' ? '#159447' : '#24345c',
+              whiteSpace: 'nowrap',
+            }}>
+              {formatMoney(paidAmountForPayment)}
+            </strong>
+          </div>
+
+          <div style={{
+            height: '9px',
+            background: '#edf2f6',
+            borderRadius: '999px',
+            overflow: 'hidden',
+            marginBottom: '10px',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${invoiceAmountForPayment > 0 ? Math.min(100, (paidAmountForPayment / invoiceAmountForPayment) * 100) : 0}%`,
+              background: invoicePaymentStatus === 'Opłacona' ? '#16a34a' : '#0787e8',
+              borderRadius: '999px',
+            }} />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: '10px',
+            fontSize: '13px',
+            color: '#66758f',
+            marginBottom: '14px',
+          }}>
+            <span>Faktura: {formatMoney(invoiceAmountForPayment)}</span>
+            <strong style={{ color: '#24345c' }}>
+              Pozostało: {formatMoney(remainingInvoiceAmount)}
+            </strong>
+          </div>
+
+          {paymentHistory.length > 0 ? (
+            <div style={{ borderTop: '1px solid #e5ebf0' }}>
+              {paymentHistory.map((payment) => (
+                <div key={payment.id} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '11px 0',
+                  borderBottom: '1px solid #eef2f5',
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: 'block', color: '#24345c', fontSize: '14px' }}>
+                      {formatDate(payment.paidAt)}
+                    </strong>
+                    {payment.note && (
+                      <span style={{ display: 'block', marginTop: '2px', color: '#7a8799', fontSize: '12px' }}>
+                        {payment.note}
+                      </span>
+                    )}
+                  </div>
+                  <strong style={{ color: '#159447', whiteSpace: 'nowrap' }}>
+                    + {formatMoney(payment.amount)}
+                  </strong>
+                  <button
+                    type="button"
+                    className="document-remove"
+                    onClick={() => removeInvoicePayment(payment)}
+                    disabled={paymentLoading}
+                    style={{ padding: '7px 9px', fontSize: '12px' }}
+                  >
+                    Usuń
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '10px 0 14px', color: '#7a8799', fontSize: '13px' }}>
+              Brak zapisanych wpłat.
+            </div>
+          )}
+
+          {invoicePaymentStatus !== 'Opłacona' && (
+            <div style={{
+              marginTop: '12px',
+              paddingTop: '14px',
+              borderTop: '1px solid #e5ebf0',
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+              gap: '10px',
+            }}>
+              <label>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Kwota wpłaty
+                </span>
+                <input
+                  className="rate-input"
+                  type="text"
+                  inputMode="decimal"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  placeholder={String(remainingInvoiceAmount)}
+                  disabled={paymentLoading}
+                />
+              </label>
+              <label>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Data wpłaty
+                </span>
+                <input
+                  className="rate-input"
+                  type="date"
+                  value={paymentForm.paidAt}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
+                  disabled={paymentLoading}
+                />
+              </label>
+              <label style={{ gridColumn: '1 / -1' }}>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Opis (opcjonalnie)
+                </span>
+                <input
+                  className="rate-input"
+                  type="text"
+                  value={paymentForm.note}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
+                  placeholder="np. przelew częściowy"
+                  disabled={paymentLoading}
+                />
+              </label>
+              <button
+                type="button"
+                className="save-button"
+                onClick={addInvoicePayment}
+                disabled={paymentLoading}
+                style={{ gridColumn: '1 / -1' }}
+              >
+                {paymentLoading ? 'Zapisywanie…' : '+ Dodaj wpłatę'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ZDJĘCIE GŁÓWNE */}
 
@@ -7146,6 +7528,132 @@ function FinancePage({
     return unsubscribe
   }, [])
 
+
+  const [allJobPayments, setAllJobPayments] = useState([])
+  const [partnerSettlements, setPartnerSettlements] = useState([])
+  const [partnerTransfers, setPartnerTransfers] = useState([])
+  const [settlementForm, setSettlementForm] = useState({
+    lukaszPaid: '',
+    pawelPaid: '',
+    note: '',
+  })
+  const [transferForm, setTransferForm] = useState({
+    fromPerson: 'Paweł',
+    toPerson: 'Łukasz',
+    amount: '',
+    note: '',
+  })
+  const [settlementSaving, setSettlementSaving] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadPaymentAndSettlementData = async () => {
+      try {
+        const [payments, settlements, transfers] = await Promise.all([
+          getAllJobPayments(),
+          getPartnerSettlements(),
+          getPartnerTransfers(),
+        ])
+
+        if (!cancelled) {
+          setAllJobPayments(payments)
+          setPartnerSettlements(settlements)
+          setPartnerTransfers(transfers)
+        }
+      } catch (error) {
+        console.error('Nie udało się wczytać płatności lub rozliczeń wspólników:', error)
+      }
+    }
+
+    loadPaymentAndSettlementData()
+
+    const unsubscribePayments = supabase
+      .channel('aeroinstal-finance-job-payments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'job_payments' },
+        (payload) => {
+          if (payload.eventType === 'DELETE' && payload.old?.id) {
+            setAllJobPayments((current) => current.filter((item) => item.id !== payload.old.id))
+            return
+          }
+          if (payload.new?.id) {
+            const incoming = {
+              id: payload.new.id,
+              jobId: payload.new.job_id,
+              amount: Number(payload.new.amount || 0),
+              paidAt: payload.new.paid_at || null,
+              note: payload.new.note || '',
+              createdAt: payload.new.created_at || null,
+            }
+            setAllJobPayments((current) =>
+              current.some((item) => item.id === incoming.id)
+                ? current.map((item) => item.id === incoming.id ? incoming : item)
+                : [...current, incoming]
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    const unsubscribeSettlements = subscribeToPartnerSettlements((event) => {
+      const { type, payload } = event || {}
+      if (type === 'settlement') {
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          setPartnerSettlements((current) => current.filter((item) => item.id !== payload.old.id))
+        } else if (payload.new?.id) {
+          const row = payload.new
+          const incoming = {
+            id: row.id,
+            month: row.month,
+            profit: Number(row.profit || 0),
+            lukaszShare: Number(row.lukasz_share || 0),
+            pawelShare: Number(row.pawel_share || 0),
+            lukaszPaid: Number(row.lukasz_paid || 0),
+            pawelPaid: Number(row.pawel_paid || 0),
+            closed: Boolean(row.closed),
+            closedAt: row.closed_at || null,
+            note: row.note || '',
+          }
+          setPartnerSettlements((current) =>
+            current.some((item) => item.id === incoming.id)
+              ? current.map((item) => item.id === incoming.id ? incoming : item)
+              : [...current, incoming]
+          )
+        }
+      }
+
+      if (type === 'transfer') {
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          setPartnerTransfers((current) => current.filter((item) => item.id !== payload.old.id))
+        } else if (payload.new?.id) {
+          const row = payload.new
+          const incoming = {
+            id: row.id,
+            settlementId: row.settlement_id || null,
+            transferDate: row.transfer_date,
+            fromPerson: row.from_person,
+            toPerson: row.to_person,
+            amount: Number(row.amount || 0),
+            note: row.note || '',
+          }
+          setPartnerTransfers((current) =>
+            current.some((item) => item.id === incoming.id)
+              ? current.map((item) => item.id === incoming.id ? incoming : item)
+              : [...current, incoming]
+          )
+        }
+      }
+    })
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(unsubscribePayments)
+      unsubscribeSettlements()
+    }
+  }, [])
+
   const [showForm, setShowForm] = useState(false)
   const [showMonthPicker, setShowMonthPicker] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
@@ -7188,10 +7696,29 @@ function FinancePage({
       job.completedAt.startsWith(selectedMonthKey)
   )
 
-  const revenue = completedJobsThisMonth.reduce(
-    (sum, job) => sum + calculateTotal(job),
-    0
+  const monthPayments = allJobPayments.filter(
+    (payment) =>
+      payment.paidAt &&
+      payment.paidAt.startsWith(selectedMonthKey)
   )
+
+  const jobsWithPaymentHistory = new Set(
+    allJobPayments.map((payment) => String(payment.jobId))
+  )
+
+  const legacyCompletedJobsThisMonth = completedJobsThisMonth.filter(
+    (job) => !jobsWithPaymentHistory.has(String(job.id))
+  )
+
+  const revenue =
+    monthPayments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    ) +
+    legacyCompletedJobsThisMonth.reduce(
+      (sum, job) => sum + calculateTotal(job),
+      0
+    )
 
   const monthCosts = costs.filter(
     (cost) =>
@@ -7257,6 +7784,143 @@ function FinancePage({
   } else if (pawelBalance > 0.01) {
     settlementText = 'Łukasz oddaje Pawłowi'
     settlementAmount = pawelBalance
+  }
+
+
+  const selectedSettlement = partnerSettlements.find(
+    (item) => item.month === `${selectedMonthKey}-01`
+  ) || null
+
+  const priorSettlements = partnerSettlements.filter(
+    (item) => item.month < `${selectedMonthKey}-01`
+  )
+
+  const previousSettlementBalance = priorSettlements.reduce(
+    (sum, item) =>
+      sum + (Number(item.lukaszPaid || 0) - Number(item.pawelPaid || 0)) / 2,
+    0
+  )
+
+  const previousTransfersBalance = partnerTransfers
+    .filter((item) => item.transferDate && item.transferDate < `${selectedMonthKey}-01`)
+    .reduce(
+      (sum, item) => {
+        const amount = Number(item.amount || 0)
+        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum - amount
+        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum + amount
+        return sum
+      },
+      0
+    )
+
+  const previousCarryoverBalance =
+    previousSettlementBalance + previousTransfersBalance
+
+  const currentLukaszPaid = selectedSettlement
+    ? Number(selectedSettlement.lukaszPaid || 0)
+    : parseDecimal(settlementForm.lukaszPaid)
+
+  const currentPawelPaid = selectedSettlement
+    ? Number(selectedSettlement.pawelPaid || 0)
+    : parseDecimal(settlementForm.pawelPaid)
+
+  const currentSettlementBalance =
+    (currentLukaszPaid - currentPawelPaid) / 2
+
+  const totalSettlementBalance =
+    previousCarryoverBalance + currentSettlementBalance
+
+  const settlementDirection =
+    totalSettlementBalance > 0.01
+      ? 'Paweł powinien oddać Łukaszowi'
+      : totalSettlementBalance < -0.01
+        ? 'Łukasz powinien oddać Pawłowi'
+        : 'Brak wzajemnego zadłużenia'
+
+  const saveCurrentSettlement = async (closeMonth = false) => {
+    if (selectedSettlement?.closed && closeMonth) {
+      showCustomAlert('Ten miesiąc jest już zamknięty.')
+      return
+    }
+
+    const lukaszPaid = parseDecimal(
+      selectedSettlement ? selectedSettlement.lukaszPaid : settlementForm.lukaszPaid
+    )
+    const pawelPaid = parseDecimal(
+      selectedSettlement ? selectedSettlement.pawelPaid : settlementForm.pawelPaid
+    )
+
+    if (lukaszPaid < 0 || pawelPaid < 0) {
+      showCustomAlert('Kwoty wypłat nie mogą być ujemne.')
+      return
+    }
+
+    if (lukaszPaid + pawelPaid > profit + 0.01) {
+      showCustomAlert('Łączne wypłaty wspólników nie mogą przekroczyć zysku miesiąca.')
+      return
+    }
+
+    try {
+      setSettlementSaving(true)
+      const saved = await savePartnerSettlement({
+        month: `${selectedMonthKey}-01`,
+        profit,
+        lukaszShare: share,
+        pawelShare: share,
+        lukaszPaid,
+        pawelPaid,
+        closed: closeMonth,
+        note: settlementForm.note,
+      })
+
+      setPartnerSettlements((current) =>
+        current.some((item) => item.id === saved.id)
+          ? current.map((item) => item.id === saved.id ? saved : item)
+          : [...current, saved]
+      )
+
+      setSettlementForm((current) => ({
+        ...current,
+        lukaszPaid: String(saved.lukaszPaid),
+        pawelPaid: String(saved.pawelPaid),
+      }))
+
+      if (closeMonth) {
+        showCustomAlert('Miesiąc został zamknięty i rozliczenie zapisane.')
+      }
+    } catch (error) {
+      console.error('Nie udało się zapisać rozliczenia wspólników:', error)
+      showCustomAlert('Nie udało się zapisać rozliczenia wspólników.')
+    } finally {
+      setSettlementSaving(false)
+    }
+  }
+
+  const addPartnerTransfer = async () => {
+    const amount = parseDecimal(transferForm.amount)
+    if (!amount || amount <= 0) {
+      showCustomAlert('Podaj kwotę przekazania.')
+      return
+    }
+
+    try {
+      setSettlementSaving(true)
+      const saved = await createPartnerTransfer({
+        settlementId: selectedSettlement?.id || null,
+        transferDate: getTodayString(),
+        fromPerson: transferForm.fromPerson,
+        toPerson: transferForm.toPerson,
+        amount,
+        note: transferForm.note,
+      })
+      setPartnerTransfers((current) => [...current, saved])
+      setTransferForm((current) => ({ ...current, amount: '', note: '' }))
+    } catch (error) {
+      console.error('Nie udało się zapisać przekazania wspólnika:', error)
+      showCustomAlert('Nie udało się zapisać przekazania.')
+    } finally {
+      setSettlementSaving(false)
+    }
   }
 
   const addCost = async () => {
@@ -7641,6 +8305,259 @@ function FinancePage({
         >
           <span>Połowa zysku</span>
           <strong>{formatMoney(share)}</strong>
+        </div>
+      </div>
+
+
+      <div className="detail-card" style={{ marginBottom: '14px' }}>
+        <div className="finance-cost-header">
+          <div>
+            <h2 style={{ marginBottom: '4px' }}>Rozliczenie wspólników</h2>
+            <span>Faktyczne wypłaty zysku 50/50 i saldo przenoszone dalej</span>
+          </div>
+          {selectedSettlement?.closed && (
+            <span style={{
+              padding: '6px 9px',
+              borderRadius: '999px',
+              background: '#e7f8ee',
+              color: '#15803d',
+              fontSize: '12px',
+              fontWeight: 800,
+            }}>
+              Zamknięty
+            </span>
+          )}
+        </div>
+
+        <div className="cost-person-summary">
+          <div>
+            <span>Zysk do podziału</span>
+            <strong>{formatMoney(profit)}</strong>
+          </div>
+          <div>
+            <span>Po 50% na osobę</span>
+            <strong>{formatMoney(share)}</strong>
+          </div>
+        </div>
+
+        <div className="cost-person-summary" style={{ marginTop: '8px' }}>
+          <div>
+            <span>Łukasz faktycznie otrzymał</span>
+            <strong>{formatMoney(currentLukaszPaid)}</strong>
+          </div>
+          <div>
+            <span>Paweł faktycznie otrzymał</span>
+            <strong>{formatMoney(currentPawelPaid)}</strong>
+          </div>
+        </div>
+
+        <div style={{
+          marginTop: '12px',
+          padding: '13px',
+          borderRadius: '14px',
+          background: totalSettlementBalance > 0.01
+            ? '#fff4e5'
+            : totalSettlementBalance < -0.01
+              ? '#eaf5ff'
+              : '#e7f8ee',
+        }}>
+          <span style={{ display: 'block', color: '#66758f', fontSize: '12px' }}>
+            Saldo po uwzględnieniu poprzednich miesięcy
+          </span>
+          <strong style={{ display: 'block', marginTop: '4px', color: '#24345c' }}>
+            {settlementDirection}
+          </strong>
+          <strong style={{ display: 'block', marginTop: '3px', fontSize: '19px' }}>
+            {formatMoney(Math.abs(totalSettlementBalance))}
+          </strong>
+          {Math.abs(previousCarryoverBalance) > 0.01 && (
+            <span style={{ display: 'block', marginTop: '4px', color: '#66758f', fontSize: '12px' }}>
+              Przeniesione z poprzednich miesięcy: {formatMoney(Math.abs(previousCarryoverBalance))}
+            </span>
+          )}
+        </div>
+
+        {!selectedSettlement?.closed && (
+          <>
+            <div style={{
+              marginTop: '14px',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '10px',
+            }}>
+              <label>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Wypłata dla Łukasza
+                </span>
+                <input
+                  className="rate-input"
+                  type="text"
+                  inputMode="decimal"
+                  value={settlementForm.lukaszPaid}
+                  onChange={(e) => setSettlementForm({ ...settlementForm, lukaszPaid: e.target.value })}
+                  placeholder="0"
+                  disabled={settlementSaving}
+                />
+              </label>
+              <label>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Wypłata dla Pawła
+                </span>
+                <input
+                  className="rate-input"
+                  type="text"
+                  inputMode="decimal"
+                  value={settlementForm.pawelPaid}
+                  onChange={(e) => setSettlementForm({ ...settlementForm, pawelPaid: e.target.value })}
+                  placeholder="0"
+                  disabled={settlementSaving}
+                />
+              </label>
+              <label style={{ gridColumn: '1 / -1' }}>
+                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
+                  Notatka
+                </span>
+                <input
+                  className="rate-input"
+                  type="text"
+                  value={settlementForm.note}
+                  onChange={(e) => setSettlementForm({ ...settlementForm, note: e.target.value })}
+                  placeholder="np. wypłacone gotówką"
+                  disabled={settlementSaving}
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+              <button
+                type="button"
+                className="save-button"
+                onClick={() => saveCurrentSettlement(false)}
+                disabled={settlementSaving}
+              >
+                Zapisz rozliczenie
+              </button>
+              <button
+                type="button"
+                className="save-button"
+                onClick={() => saveCurrentSettlement(true)}
+                disabled={settlementSaving}
+              >
+                Zamknij miesiąc
+              </button>
+            </div>
+          </>
+        )}
+
+        <div style={{
+          marginTop: '16px',
+          paddingTop: '14px',
+          borderTop: '1px solid #e5ebf0',
+        }}>
+          <strong style={{ display: 'block', color: '#24345c', marginBottom: '8px' }}>
+            Oddanie pieniędzy między wspólnikami
+          </strong>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '10px',
+          }}>
+            <label>
+              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Od</span>
+              <select
+                className="rate-input"
+                value={transferForm.fromPerson}
+                onChange={(e) => setTransferForm({ ...transferForm, fromPerson: e.target.value })}
+                disabled={settlementSaving}
+              >
+                <option>Łukasz</option>
+                <option>Paweł</option>
+              </select>
+            </label>
+            <label>
+              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Do</span>
+              <select
+                className="rate-input"
+                value={transferForm.toPerson}
+                onChange={(e) => setTransferForm({ ...transferForm, toPerson: e.target.value })}
+                disabled={settlementSaving}
+              >
+                <option>Łukasz</option>
+                <option>Paweł</option>
+              </select>
+            </label>
+            <label>
+              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Kwota</span>
+              <input
+                className="rate-input"
+                type="text"
+                inputMode="decimal"
+                value={transferForm.amount}
+                onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })}
+                placeholder="0"
+                disabled={settlementSaving}
+              />
+            </label>
+            <label>
+              <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>Opis</span>
+              <input
+                className="rate-input"
+                type="text"
+                value={transferForm.note}
+                onChange={(e) => setTransferForm({ ...transferForm, note: e.target.value })}
+                placeholder="np. przelew"
+                disabled={settlementSaving}
+              />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            className="save-button"
+            onClick={addPartnerTransfer}
+            disabled={settlementSaving}
+            style={{ marginTop: '10px' }}
+          >
+            + Zapisz przekazanie
+          </button>
+
+          {partnerTransfers.filter((item) => item.settlementId === selectedSettlement?.id).length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              {partnerTransfers
+                .filter((item) => item.settlementId === selectedSettlement?.id)
+                .map((item) => (
+                  <div key={item.id} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    padding: '9px 0',
+                    borderTop: '1px solid #eef2f5',
+                  }}>
+                    <span style={{ fontSize: '13px', color: '#66758f' }}>
+                      {item.fromPerson} → {item.toPerson}
+                    </span>
+                    <strong>{formatMoney(item.amount)}</strong>
+                    <button
+                      type="button"
+                      className="document-remove"
+                      onClick={async () => {
+                        try {
+                          await deletePartnerTransfer(item.id)
+                          setPartnerTransfers((current) => current.filter((row) => row.id !== item.id))
+                        } catch (error) {
+                          console.error(error)
+                          showCustomAlert('Nie udało się usunąć przekazania.')
+                        }
+                      }}
+                      style={{ padding: '6px 8px', fontSize: '11px' }}
+                    >
+                      Usuń
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
 

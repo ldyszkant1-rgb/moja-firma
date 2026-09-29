@@ -7629,3 +7629,107 @@ section {
     width: 100%;
   }
 }
+
+
+/* =====================================================
+   FIX — FORMULARZE ROBOTY NA iPHONE
+   Poprawia czytelność tekstu oraz układ stawek.
+   ===================================================== */
+
+/* Nazwa i lokalizacja roboty — tekst zawsze ciemny */
+.note-form .job-edit-input,
+.job-edit-input {
+  background: #ffffff !important;
+  color: #101b45 !important;
+  -webkit-text-fill-color: #101b45 !important;
+  caret-color: #0787e8 !important;
+  opacity: 1 !important;
+}
+
+.note-form .job-edit-input::placeholder,
+.job-edit-input::placeholder {
+  color: #7a8799 !important;
+  -webkit-text-fill-color: #7a8799 !important;
+  opacity: 1 !important;
+}
+
+/* Edycja stawek — zawsze jedna kolumna */
+.finance-row.finance-row-editing {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 15px 0 !important;
+}
+
+.finance-row.finance-row-editing > div {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.finance-row.finance-row-editing > .rate-input {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+.finance-row.finance-row-editing > div > strong {
+  display: block !important;
+  margin: 0 !important;
+  color: var(--blue-dark) !important;
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+}
+
+.finance-row.finance-row-editing > div > small {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #7a8799 !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+/* Pola ilości w edycji — bez wychodzenia poza kartę */
+.detail-quantities .quantity-box {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.detail-quantities .quantity-box input {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Na telefonie zachowujemy ten sam układ */
+@media (max-width: 760px) {
+  .note-form .job-edit-input,
+  .job-edit-input {
+    min-height: 52px !important;
+    font-size: 17px !important;
+  }
+
+  .finance-row.finance-row-editing {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    padding: 14px 0 !important;
+  }
+
+  .finance-row.finance-row-editing > .rate-input {
+    min-height: 54px !important;
+    font-size: 23px !important;
+    text-align: center !important;
+  }
+}

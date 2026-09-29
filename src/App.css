@@ -6678,3 +6678,252 @@ input.rate-input {
     font-size: 23px;
   }
 }
+
+
+/* =====================================================
+   START — DASHBOARD FINANSOWY
+   ===================================================== */
+
+.start-finance-dashboard {
+  margin-bottom: 18px;
+}
+
+.start-dashboard-month {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eef6fc;
+  color: #5e718b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.start-finance-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.start-finance-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e1e9f0;
+  border-radius: 19px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.start-finance-card-main {
+  background: linear-gradient(135deg, #f4faff 0%, #ffffff 78%);
+  border-color: #d7eaf7;
+}
+
+.start-finance-card-label {
+  display: block;
+  color: #718096;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.start-finance-card > strong {
+  display: block;
+  margin-top: 7px;
+  color: #12234f;
+  font-size: 25px;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+}
+
+.start-finance-card-main > strong {
+  font-size: 28px;
+}
+
+.start-finance-card-note {
+  display: block;
+  margin-top: 5px;
+  color: #7a8799;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.start-finance-share-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.start-finance-share-row > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #eaf5ff;
+}
+
+.start-finance-share-row span {
+  display: block;
+  color: #66758f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.start-finance-share-row strong {
+  display: block;
+  margin-top: 2px;
+  color: #164d7d;
+  font-size: 14px;
+}
+
+.start-finance-number {
+  font-size: 23px !important;
+}
+
+.start-finance-mini-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 13px;
+  padding-top: 10px;
+  border-top: 1px solid #edf1f5;
+}
+
+.start-finance-mini-row span {
+  color: #718096;
+  font-size: 11px;
+}
+
+.start-finance-mini-row strong {
+  color: #24345c;
+  font-size: 13px;
+}
+
+.start-finance-mini-row strong.is-danger {
+  color: #d04444;
+}
+
+.start-finance-ok {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e7f8ee;
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.start-finance-balance-direction {
+  display: block;
+  margin-top: 7px;
+  color: #b77908;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.start-dashboard-alert {
+  min-height: 48px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #f0d6d6;
+  border-radius: 14px;
+  background: #fff8f8;
+}
+
+.start-dashboard-alert > span {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e85b5b;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.start-dashboard-alert strong,
+.start-dashboard-alert small {
+  display: block;
+}
+
+.start-dashboard-alert strong {
+  color: #a94444;
+  font-size: 12px;
+}
+
+.start-dashboard-alert small {
+  margin-top: 2px;
+  color: #8a6a6a;
+  font-size: 11px;
+}
+
+@media (max-width: 1050px) {
+  .start-finance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .start-finance-card-main {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .start-finance-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .start-finance-card,
+  .start-finance-card-main {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .start-finance-card-main {
+    grid-column: 1 / -1;
+  }
+
+  .start-finance-card-main > strong {
+    font-size: 26px;
+  }
+
+  .start-finance-card > strong {
+    font-size: 21px;
+  }
+
+  .start-finance-number {
+    font-size: 20px !important;
+  }
+
+  .start-dashboard-month {
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .start-finance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .start-finance-card-main {
+    grid-column: auto;
+  }
+
+  .start-finance-share-row {
+    gap: 7px;
+  }
+
+  .start-finance-share-row > div {
+    padding: 8px;
+  }
+}

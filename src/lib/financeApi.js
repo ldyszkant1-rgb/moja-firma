@@ -131,19 +131,13 @@ function mapAppFinanceToSupabase(
     null
 
   if (sourceDate) {
+    const value = String(sourceDate).trim()
 
-    const value =
-      String(sourceDate)
-
-    if (
-      value.length >= 7
-    ) {
-
-      month =
-        `${value.slice(0, 7)}-01`
-
+    if (/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+      month = value
+    } else if (/^\\d{4}-\\d{2}$/.test(value)) {
+      month = value + '-01'
     }
-
   }
 
   return {

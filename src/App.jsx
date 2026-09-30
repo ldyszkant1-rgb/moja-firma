@@ -3190,113 +3190,97 @@ function JobCard({
   const stageStyle = getJobStageStyle(stage)
   const tasks = Array.isArray(job.notes) ? job.notes : []
   const pendingTasks = tasks.filter((task) => !task.done)
-  const visibleTasks = tasks.slice(0, 3)
   const completedTaskCount = tasks.filter((task) => task.done).length
+  const visibleTasks = tasks.filter((task) => !task.done).slice(0, 3)
+  const completedTasks = tasks.filter((task) => task.done)
+  const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
+  const totalValue = calculateTotal(job)
+  const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
 
   return (
-    <div className="job-card job-card-with-tasks">
-      <div className="job-card-main" onClick={onClick}>
-        <div className="job-header">
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              minWidth: 0,
-              flex: 1,
-            }}
-          >
+    <article className="job-card job-card-with-tasks">
+      <button type="button" className="job-card-main" onClick={onClick}>
+        <div className="job-card-topline">
+          <div className="job-card-identity">
             {job.mainPhoto?.url ? (
               <img
+                className="job-card-photo"
                 src={job.mainPhoto.url}
                 alt={job.mainPhoto.name || job.name}
                 title="Zdjęcie główne"
-                style={{
-                  width: '58px',
-                  height: '58px',
-                  objectFit: 'cover',
-                  borderRadius: '12px',
-                  flexShrink: 0,
-                  border: '1px solid #dfe7ee',
-                }}
                 onClick={(e) => {
                   e.stopPropagation()
                   window.open(job.mainPhoto.url, '_blank')
                 }}
               />
             ) : (
-              <div
-                style={{
-                  width: '58px',
-                  height: '58px',
-                  borderRadius: '12px',
-                  flexShrink: 0,
-                  border: '1px dashed #cbd7e2',
-                  background: '#f5f8fb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  color: '#8190a5',
-                }}
-                title="Brak zdjęcia głównego"
-              >
-                📷
-              </div>
+              <span className="job-card-photo job-card-photo-empty" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="8.5" cy="9.5" r="1.5" />
+                  <path d="m5 17 4.5-4.5 3.2 3.2 2.2-2.2L19 17" />
+                </svg>
+              </span>
             )}
 
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <h3>{job.name}</h3>
-              <span>{job.location}</span>
-            </div>
+            <span className="job-card-identity-text">
+              <strong>{job.name}</strong>
+              <span>{job.location || 'Brak lokalizacji'}</span>
+            </span>
           </div>
 
           <span
             className={stage === 'Zakończone' ? 'status completed' : 'status'}
-            style={{
-              ...stageStyle,
-              padding: '7px 12px',
-              borderRadius: '999px',
-              fontSize: '11px',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-            }}
+            style={stageStyle}
           >
-            {stage === 'Zakończone' ? '✓ ZAKOŃCZONA' : `● ${stage.toUpperCase()}`}
+            <span aria-hidden="true">{stage === 'Zakończone' ? '✓' : '●'}</span>
+            {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage.toUpperCase()}
           </span>
         </div>
 
-        <div className="progress-section">
-          <div className="progress-label">
-            <span>Postęp</span>
-            <strong>{job.progress}%</strong>
+        <div className="job-card-progress">
+          <div className="job-card-progress-label">
+            <span>Postęp realizacji</span>
+            <strong>{progress}%</strong>
           </div>
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: `${Math.max(
-                  0,
-                  Math.min(100, Number(job.progress) || 0)
-                )}%`,
-              }}
-            />
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
         </div>
 
-        <div className="quantities">
-          <div><span>MB</span><strong>{job.quantities?.mb || 0}</strong></div>
-          <div><span>m²</span><strong>{job.quantities?.m2 || 0}</strong></div>
-          <div><span>kg</span><strong>{job.quantities?.kg || 0}</strong></div>
+        <div className="job-card-metrics">
+          <div>
+            <span>MB</span>
+            <strong>{job.quantities?.mb || 0}</strong>
+          </div>
+          <div>
+            <span>m²</span>
+            <strong>{job.quantities?.m2 || 0}</strong>
+          </div>
+          <div>
+            <span>kg</span>
+            <strong>{job.quantities?.kg || 0}</strong>
+          </div>
+          <div className="job-card-value">
+            <span>Wartość</span>
+            <strong>{formatMoney(totalValue)}</strong>
+          </div>
         </div>
-      </div>
+      </button>
 
-      <div className="job-card-tasks">
+      <section className="job-card-tasks" aria-label="Zadania">
         <div className="job-card-tasks-header">
           <div>
             <span className="job-card-tasks-label">ZADANIA</span>
-            <strong>Do zrobienia na tej robocie</strong>
+            <strong>
+              {pendingTasks.length > 0
+                ? `${pendingTasks.length} ${pendingTasks.length === 1 ? 'zadanie do wykonania' : 'zadań do wykonania'}`
+                : tasks.length > 0
+                  ? 'Wszystkie zadania wykonane'
+                  : 'Brak zadań'}
+            </strong>
           </div>
+
           {tasks.length > 0 && (
             <span className="job-card-task-count">
               {completedTaskCount}/{tasks.length}
@@ -3304,63 +3288,62 @@ function JobCard({
           )}
         </div>
 
-        {tasks.length === 0 && (
+        {tasks.length === 0 ? (
           <button
             type="button"
             className="job-card-add-task-hint"
             onClick={onClick}
           >
-            + Dodaj zadanie w robocie
+            + Dodaj zadanie
           </button>
+        ) : (
+          <>
+            {visibleTasks.map((task) => (
+              <div className="job-task-row" key={task.id}>
+                <button
+                  type="button"
+                  className="job-task-checkbox"
+                  aria-label="Oznacz jako wykonane"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleTask?.(job, task.id)
+                  }}
+                />
+                <button
+                  type="button"
+                  className="job-task-text"
+                  onClick={onClick}
+                >
+                  <strong>{task.text}</strong>
+                  {task.date && <span>{formatDate(task.date)}</span>}
+                </button>
+              </div>
+            ))}
+
+            {extraCompletedTasks > 0 && (
+              <div className="job-card-completed-summary">
+                + {extraCompletedTasks} wykonanych
+              </div>
+            )}
+
+            {(tasks.length > visibleTasks.length || pendingTasks.length === 0) && (
+              <button
+                type="button"
+                className="job-card-more-tasks"
+                onClick={onClick}
+              >
+                {pendingTasks.length === 0 ? 'Zobacz wszystkie zadania →' : 'Pokaż wszystkie zadania →'}
+              </button>
+            )}
+          </>
         )}
+      </section>
 
-        {visibleTasks.map((task) => (
-          <div
-            className={task.done ? 'job-task-row done' : 'job-task-row'}
-            key={task.id}
-          >
-            <button
-              type="button"
-              className={task.done ? 'job-task-checkbox checked' : 'job-task-checkbox'}
-              aria-label={task.done ? 'Oznacz jako niewykonane' : 'Oznacz jako wykonane'}
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggleTask?.(job, task.id)
-              }}
-            >
-              {task.done ? '✓' : ''}
-            </button>
-            <button
-              type="button"
-              className="job-task-text"
-              onClick={onClick}
-            >
-              <strong>{task.text}</strong>
-              {task.date && <span>{formatDate(task.date)}</span>}
-            </button>
-          </div>
-        ))}
-
-        {tasks.length > 3 && (
-          <button
-            type="button"
-            className="job-card-more-tasks"
-            onClick={onClick}
-          >
-            Pokaż wszystkie zadania →
-          </button>
-        )}
-
-        {tasks.length > 0 && pendingTasks.length === 0 && (
-          <div className="job-card-all-done">✓ Wszystkie zadania wykonane</div>
-        )}
-      </div>
-
-      <div className="job-footer">
-        <span>Wartość</span>
-        <strong>{formatMoney(calculateTotal(job))}</strong>
-      </div>
-    </div>
+      <button type="button" className="job-card-open-link" onClick={onClick}>
+        <span>Otwórz szczegóły roboty</span>
+        <span aria-hidden="true">→</span>
+      </button>
+    </article>
   )
 }
 

@@ -6003,7 +6003,7 @@ input.rate-input {
 }
 
 /* -----------------------------------------------------
-   ZADANIA W KARTACH ROBÓT
+   ROBOTY PRO — KARTY ROBÓT
    ----------------------------------------------------- */
 
 .job-card-with-tasks {
@@ -6013,8 +6013,155 @@ input.rate-input {
 }
 
 .job-card-main {
-  padding: 14px 20px 0;
+  width: 100%;
+  display: block;
+  padding: 17px 20px 16px;
+  border: 0;
+  border-bottom: 1px solid #edf2f6;
+  background: #fff;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
+}
+
+.job-card-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.job-card-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.job-card-photo {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid #dfe7ee;
+  background: #f5f8fb;
+  color: #8190a5;
+  overflow: hidden;
+}
+
+.job-card-photo-empty {
+  border-style: dashed;
+}
+
+.job-card-identity-text {
+  min-width: 0;
+  display: block;
+}
+
+.job-card-identity-text strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--blue-dark);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.job-card-identity-text span {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #657491;
+  font-size: 14px;
+}
+
+.job-card-topline .status {
+  margin: 0;
+  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .35px;
+  white-space: nowrap;
+}
+
+.job-card-progress {
+  margin-top: 16px;
+}
+
+.job-card-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.job-card-progress-label span {
+  color: #657491;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.job-card-progress-label strong {
+  color: var(--blue-dark);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.job-card-metrics {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, 1.5fr);
+  gap: 8px;
+}
+
+.job-card-metrics > div {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #e7eef3;
+  border-radius: 12px;
+  background: #f7fafc;
+}
+
+.job-card-metrics > div > span {
+  display: block;
+  color: #75839a;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+
+.job-card-metrics > div > strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--blue-dark);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.job-card-metrics .job-card-value {
+  background: #f0f7fd;
+  border-color: #d8eaf8;
+}
+
+.job-card-metrics .job-card-value strong {
+  color: var(--blue);
+  font-size: 18px;
 }
 
 .job-card-tasks {
@@ -6048,18 +6195,21 @@ input.rate-input {
 
 .job-card-tasks-header strong {
   color: var(--blue-dark);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .job-card-task-count {
   flex: 0 0 auto;
-  color: #65738c;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e8f4fc;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .job-task-row {
-  min-height: 46px;
+  min-height: 45px;
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr);
   align-items: center;
@@ -6091,15 +6241,20 @@ input.rate-input {
   font-size: 11px;
 }
 
-.job-task-row.done .job-task-text strong {
-  color: #7b8799;
-  text-decoration: line-through;
+.job-task-checkbox {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 2px solid #b9c8d5;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--green);
 }
 
 .job-card-add-task-hint,
 .job-card-more-tasks {
   width: 100%;
-  min-height: 39px;
+  min-height: 38px;
   padding: 8px 5px;
   border: 0;
   background: transparent;
@@ -6109,17 +6264,134 @@ input.rate-input {
   font-weight: 800;
 }
 
-.job-card-all-done {
-  padding: 7px 0 5px;
+.job-card-completed-summary {
+  padding: 7px 0 2px;
   color: var(--green);
   text-align: center;
   font-size: 12px;
   font-weight: 800;
 }
 
-.job-card-with-tasks .job-footer {
-  margin: 14px 20px 0;
-  padding: 14px 0 16px;
+.job-card-open-link {
+  width: calc(100% - 40px);
+  margin: 12px 20px 16px;
+  padding: 10px 2px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-top: 1px solid #edf2f6;
+  background: transparent;
+  color: var(--blue);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.job-card-open-link span:last-child {
+  font-size: 18px;
+}
+
+@media (max-width: 760px) {
+  .job-card-main {
+    padding: 14px 13px 14px;
+  }
+
+  .job-card-topline {
+    gap: 9px;
+  }
+
+  .job-card-photo {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+    border-radius: 13px;
+  }
+
+  .job-card-identity-text strong {
+    font-size: 17px;
+  }
+
+  .job-card-identity-text span {
+    font-size: 13px;
+  }
+
+  .job-card-topline .status {
+    padding: 6px 8px;
+    font-size: 9px;
+  }
+
+  .job-card-progress {
+    margin-top: 13px;
+  }
+
+  .job-card-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .job-card-metrics .job-card-value {
+    grid-column: 1 / -1;
+  }
+
+  .job-card-metrics > div {
+    padding: 9px 10px;
+  }
+
+  .job-card-metrics .job-card-value strong {
+    font-size: 17px;
+  }
+
+  .job-card-tasks {
+    margin: 12px 13px 0;
+    padding: 12px 11px 7px;
+    border-radius: 15px;
+  }
+
+  .job-card-open-link {
+    width: calc(100% - 26px);
+    margin: 11px 13px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .job-card-topline {
+    align-items: center;
+  }
+
+  .job-card-topline .status {
+    max-width: 112px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .job-card-metrics {
+    gap: 6px;
+  }
+
+  .job-card-metrics > div {
+    padding: 8px 9px;
+  }
+
+  .job-card-metrics > div > strong {
+    font-size: 14px;
+  }
+
+  .job-card-metrics .job-card-value strong {
+    font-size: 17px;
+  }
+
+  .job-card-tasks {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+
+  .job-card-open-link {
+    width: calc(100% - 20px);
+    margin-left: 10px;
+    margin-right: 10px;
+  }
 }
 
 /* -----------------------------------------------------

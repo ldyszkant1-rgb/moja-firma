@@ -259,6 +259,21 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                     const paidForJob = jobPayments
                       .filter((payment) => payment.jobId === job.id)
                       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+                    const invoiceValue = Number(job.invoiceAmount || 0) || jobValue
+                    const remainingForJob = Math.max(0, invoiceValue - paidForJob)
+                    const dueDate = job.paymentDueDate ? new Date(job.paymentDueDate) : null
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const dueDay = dueDate ? new Date(dueDate) : null
+                    if (dueDay) dueDay.setHours(0, 0, 0, 0)
+                    const isOverdue = remainingForJob > 0 && dueDay && dueDay < today
+                    const paymentLabel = remainingForJob <= 0
+                      ? 'Opłacona'
+                      : isOverdue
+                        ? `Zaległość • termin ${dueDay.toLocaleDateString('pl-PL')}`
+                        : dueDay
+                          ? `Do zapłaty • termin ${dueDay.toLocaleDateString('pl-PL')}`
+                          : `Do zapłaty: ${remainingForJob.toLocaleString('pl-PL')} zł`
                     return (
                       <button type="button" className="client-detail-job-row" key={job.id} onClick={() => onOpenJob(job)}>
                         <div>
@@ -266,8 +281,8 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                           <span>{job.location || 'Brak lokalizacji'}</span>
                         </div>
                         <div className="client-detail-job-value">
-                          <strong>{Number(job.invoiceAmount || jobValue).toLocaleString('pl-PL')} zł</strong>
-                          <span>{paidForJob > 0 ? `Wpłaty: ${paidForJob.toLocaleString('pl-PL')} zł` : 'Brak wpłat'}</span>
+                          <strong>{invoiceValue.toLocaleString('pl-PL')} zł</strong>
+                          <span className={remainingForJob <= 0 ? 'client-payment-paid' : isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>{paymentLabel}</span>
                         </div>
                         <span className="client-detail-job-arrow">→</span>
                       </button>

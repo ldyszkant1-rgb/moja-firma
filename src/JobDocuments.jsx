@@ -414,11 +414,32 @@ export default function JobDocuments({ job, clients, company }) {
     setDraft((current) => ({ ...current, [field]: value }))
   }
 
+  const printPreviewPortal = printPreview ? createPortal(
+    <>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_PREVIEW_CSS }} />
+      <div id="aeroinstal-print-preview">
+        <div className="print-toolbar no-print">
+          <button type="button" onClick={() => setPrintPreview(null)}>
+            ← Wróć do edycji
+          </button>
+          <button type="button" className="primary" onClick={() => window.print()}>
+            🖨️ Drukuj ponownie
+          </button>
+        </div>
+        <div className="print-sheet">
+          <div dangerouslySetInnerHTML={{ __html: printPreview.html }} />
+        </div>
+      </div>
+    </>,
+    document.body
+  ) : null
+
   if (editingType && draft) {
     const isContract = editingType === 'contract'
 
     return (
-      <div className="detail-card">
+      <>
+        <div className="detail-card">
         <div style={{ marginBottom: '14px' }}>
           <button
             type="button"
@@ -541,28 +562,10 @@ export default function JobDocuments({ job, clients, company }) {
           </div>
         )}
       </div>
+        {printPreviewPortal}
+      </>
     )
   }
-
-  const printPreviewPortal = printPreview ? createPortal(
-    <>
-      <style dangerouslySetInnerHTML={{ __html: PRINT_PREVIEW_CSS }} />
-      <div id="aeroinstal-print-preview">
-        <div className="print-toolbar no-print">
-          <button type="button" onClick={() => setPrintPreview(null)}>
-            ← Wróć do edycji
-          </button>
-          <button type="button" className="primary" onClick={() => window.print()}>
-            🖨️ Drukuj ponownie
-          </button>
-        </div>
-        <div className="print-sheet">
-          <div dangerouslySetInnerHTML={{ __html: printPreview.html }} />
-        </div>
-      </div>
-    </>,
-    document.body
-  ) : null
 
   return (
     <>

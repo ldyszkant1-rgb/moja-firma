@@ -72,9 +72,21 @@ export async function getOffers() {
 }
 
 export async function createOffer(offer) {
+  let offerNumber = offer.offerNumber || ''
+  if (!offerNumber) {
+    const year = new Date().getFullYear()
+    const { count, error: countError } = await supabase
+      .from('offers')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', `${year}-01-01T00:00:00.000Z`)
+      .lt('created_at', `${year + 1}-01-01T00:00:00.000Z`)
+    if (countError) throw countError
+    offerNumber = `OF-${year}-${String((count || 0) + 1).padStart(3, '0')}`
+  }
+
   const { data, error } = await supabase
     .from('offers')
-    .insert(payload(offer))
+    .insert(payload({ ...offer, offerNumber }))
     .select()
     .single()
 

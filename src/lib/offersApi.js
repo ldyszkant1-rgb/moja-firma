@@ -12,6 +12,7 @@ function mapRow(row) {
     id: row.id,
     organizationId: row.organization_id,
     clientId: row.client_id || null,
+    documentType: row.document_type || 'Oferta dla klienta',
     offerNumber: row.offer_number || '',
     name: row.name || '',
     location: row.location || '',
@@ -41,6 +42,7 @@ function payload(offer) {
   return {
     organization_id: offer.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
     client_id: offer.clientId || null,
+    document_type: offer.documentType || 'Oferta dla klienta',
     offer_number: offer.offerNumber || null,
     name: String(offer.name || '').trim(),
     location: String(offer.location || '').trim() || null,

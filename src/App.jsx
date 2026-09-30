@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
@@ -563,6 +563,38 @@ async function claimDeviceInSupabase(deviceId, userName) {
 /* =====================================================
    APP
    ===================================================== */
+
+class JobsErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Błąd zakładki Roboty:', error, info)
+  }
+
+  render() {
+    if (this.state.error) {
+      const message = this.state.error?.message || String(this.state.error)
+      return (
+        <div className="sub-page" style={{ padding: '24px 16px 140px' }}>
+          <div className="detail-card" style={{ border: '1px solid #f0caca', background: '#fff8f8' }}>
+            <div className="small-label" style={{ color: '#c43d3d' }}>BŁĄD ZAKŁADKI ROBOTY</div>
+            <h2 style={{ marginTop: '8px', color: '#12234f' }}>Aplikacja napotkała błąd</h2>
+            <p style={{ color: '#657491', lineHeight: 1.5 }}>Zamiast białego ekranu pokazuję teraz dokładny komunikat.</p>
+            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#ffffff', border: '1px solid #eadede', borderRadius: '12px', padding: '12px', color: '#8b2525', fontSize: '12px' }}>{message}</pre>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function App() {
 
@@ -2375,7 +2407,8 @@ function App() {
 
         {activePage === 'jobs' && (
 
-          <JobsPage
+          <JobsErrorBoundary>
+            <JobsPage
 
             jobs={
               jobs
@@ -2404,6 +2437,7 @@ function App() {
             }
 
           />
+          </JobsErrorBoundary>
 
         )}
 

@@ -10016,3 +10016,40 @@ section {
     font-size: 14px;
   }
 }
+
+
+/* OFERTY */
+.offer-total-box {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #eaf5ff, #f7fbff);
+  border: 1px solid #d9eafa;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.offer-total-box span {
+  color: #64748b;
+  font-weight: 700;
+}
+.offer-total-box strong {
+  color: #12234f;
+  font-size: 24px;
+}
+.bottom-navigation {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+@media (max-width: 560px) {
+  .bottom-navigation {
+    gap: 2px;
+  }
+  .bottom-navigation .nav-item {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .bottom-navigation .nav-item small {
+    font-size: 10px;
+  }
+}

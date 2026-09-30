@@ -4,6 +4,7 @@ import { getAllJobPayments } from './lib/jobPaymentsApi'
 
 const EMPTY_CLIENT = {
   name: '',
+  shortName: '',
   nip: '',
   address: '',
   contactName: '',
@@ -19,8 +20,12 @@ function ClientForm({ value, onChange, onCancel, onSave, saving }) {
     <div className="client-form">
       <div className="client-form-grid">
         <label>
-          <span>Nazwa firmy *</span>
-          <input value={value.name} onChange={(e) => set('name', e.target.value)} placeholder="np. Stocznia XYZ" />
+          <span>Pełna nazwa firmy *</span>
+          <input value={value.name} onChange={(e) => set('name', e.target.value)} placeholder="Pełna nazwa prawna firmy" />
+        </label>
+        <label>
+          <span>Nazwa skrócona</span>
+          <input value={value.shortName} onChange={(e) => set('shortName', e.target.value)} placeholder="np. Cool air" />
         </label>
         <label>
           <span>NIP</span>
@@ -82,7 +87,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
     const needle = search.trim().toLowerCase()
     if (!needle) return clients
     return clients.filter((client) =>
-      [client.name, client.nip, client.contactName, client.phone, client.email, client.address]
+      [client.name, client.shortName, client.nip, client.contactName, client.phone, client.email, client.address]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(needle))
     )
@@ -99,6 +104,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
     setShowEditor(true)
     setForm({
       name: client.name || '',
+      shortName: client.shortName || client.name || '',
       nip: client.nip || '',
       address: client.address || '',
       contactName: client.contactName || '',
@@ -208,7 +214,10 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
             <div className="client-detail-avatar">👤</div>
             <div>
               <div className="small-label">KARTOTEKA KLIENTA</div>
-              <h2>{selectedClient.name}</h2>
+              <h2>{selectedClient.shortName || selectedClient.name}</h2>
+              {selectedClient.shortName && selectedClient.name && selectedClient.shortName !== selectedClient.name && (
+                <div style={{ marginTop: '4px', color: '#7a8798', fontSize: '12px' }}>Pełna nazwa: {selectedClient.name}</div>
+              )}
               {selectedClient.nip && <span>NIP {selectedClient.nip}</span>}
             </div>
           </div>
@@ -313,7 +322,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                 <div className="client-card-top">
                   <div className="client-avatar">👤</div>
                   <div className="client-card-title">
-                    <h2>{client.name}</h2>
+                    <h2>{client.shortName || client.name}</h2>
                     <span>{client.nip ? `NIP ${client.nip}` : 'Brak NIP'}</span>
                   </div>
                   <button type="button" className="client-menu-button" onClick={(event) => { event.stopPropagation(); openEdit(client) }} aria-label="Edytuj klienta">✎</button>

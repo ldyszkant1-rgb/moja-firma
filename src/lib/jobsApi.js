@@ -92,6 +92,8 @@ function mapSupabaseJobToAppJob(job) {
 
     location: job.location || '',
 
+    clientId: job.client_id || null,
+
     status: normalizeJobStatus(
       job.status,
       job.completed
@@ -172,6 +174,9 @@ function mapAppJobToSupabaseJob(job) {
 
     location:
       job.location || '',
+
+    client_id:
+      job.clientId || null,
 
     status:
       normalizeJobStatus(

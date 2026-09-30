@@ -8389,3 +8389,208 @@ section {
     font-size: 21px;
   }
 }
+
+
+/* =========================================================
+   NOWA ROBOTA — FINALNY UKŁAD STAWEK
+   ========================================================= */
+
+.new-job-rate-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 9px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 15px 0 !important;
+  border-bottom: 1px solid #e5edf3 !important;
+}
+
+.new-job-rate-row > .new-job-rate-heading {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.new-job-rate-row > .new-job-rate-heading::before {
+  display: none !important;
+}
+
+.new-job-rate-heading > strong {
+  color: var(--blue-dark) !important;
+  font-size: 20px !important;
+  font-weight: 850 !important;
+}
+
+.new-job-rate-heading > small {
+  margin: 0 !important;
+  color: #8391a5 !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+
+.new-job-rate-row > .new-job-rate-input-wrap {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.new-job-rate-input-wrap .rate-input {
+  width: 100% !important;
+  min-height: 54px !important;
+  box-sizing: border-box !important;
+  padding: 9px 88px 9px 16px !important;
+  border: 1px solid #d5e1e9 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  color: #101010 !important;
+  -webkit-text-fill-color: #101010 !important;
+  box-shadow: inset 0 1px 2px rgba(30, 70, 105, .025) !important;
+  font-size: 23px !important;
+  font-weight: 750 !important;
+  text-align: left !important;
+}
+
+.new-job-rate-input-wrap .rate-input:focus {
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, .12) !important;
+  outline: none !important;
+}
+
+.new-job-rate-unit {
+  right: 15px !important;
+  color: #728199 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.new-job-rate-row > .new-job-rate-total {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 1px 2px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.new-job-rate-total span {
+  color: #78879b !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.new-job-rate-total strong {
+  color: var(--blue-dark) !important;
+  font-size: 18px !important;
+  font-weight: 850 !important;
+}
+
+.new-job-rate-row:last-of-type {
+  border-bottom: 0 !important;
+}
+
+.new-job-rate-row + .new-job-rate-row {
+  margin-top: 0 !important;
+}
+
+.new-job-rate-row + .job-footer {
+  margin-top: 7px !important;
+}
+
+.new-job-rate-row ~ .job-footer {
+  border-top: 0 !important;
+}
+
+.new-job-rate-row ~ .job-footer::before {
+  background: #dfe8ef !important;
+}
+
+.new-job-rate-row ~ .job-footer span {
+  color: #667890 !important;
+  font-size: 14px !important;
+  font-weight: 750 !important;
+}
+
+.new-job-rate-row ~ .job-footer strong {
+  padding: 9px 13px !important;
+  border-radius: 13px !important;
+  background: #eaf5ff !important;
+  color: var(--blue) !important;
+  font-size: 22px !important;
+  font-weight: 850 !important;
+}
+
+@media (max-width: 600px) {
+  .new-job-rate-row {
+    padding: 14px 0 !important;
+    gap: 8px !important;
+  }
+
+  .new-job-rate-heading > strong {
+    font-size: 19px !important;
+  }
+
+  .new-job-rate-heading > small {
+    font-size: 12px !important;
+  }
+
+  .new-job-rate-input-wrap .rate-input {
+    min-height: 52px !important;
+    padding-left: 14px !important;
+    padding-right: 78px !important;
+    font-size: 22px !important;
+  }
+
+  .new-job-rate-unit {
+    right: 13px !important;
+    font-size: 13px !important;
+  }
+
+  .new-job-rate-total strong {
+    font-size: 17px !important;
+  }
+
+  .new-job-rate-row ~ .job-footer {
+    padding-top: 14px !important;
+  }
+
+  .new-job-rate-row ~ .job-footer strong {
+    padding: 8px 11px !important;
+    font-size: 21px !important;
+  }
+}
+
+/* =========================================================
+   LOGO — zachowanie proporcji na telefonie
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .app-logo {
+    width: 230px !important;
+    height: auto !important;
+    max-width: 68% !important;
+    max-height: none !important;
+    object-fit: contain !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-logo {
+    width: 220px !important;
+    height: auto !important;
+    max-width: 68% !important;
+    max-height: none !important;
+    object-fit: contain !important;
+  }
+}

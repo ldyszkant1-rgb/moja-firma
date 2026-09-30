@@ -4,6 +4,7 @@ function mapClient(row) {
   return {
     id: row.id,
     name: row.name || '',
+    shortName: row.short_name || row.name || '',
     nip: row.nip || '',
     address: row.address || '',
     contactName: row.contact_name || '',
@@ -19,6 +20,7 @@ function mapClient(row) {
 function mapClientPayload(client) {
   return {
     name: String(client?.name || '').trim(),
+    short_name: String(client?.shortName || '').trim() || String(client?.name || '').trim() || null,
     nip: String(client?.nip || '').trim() || null,
     address: String(client?.address || '').trim() || null,
     contact_name: String(client?.contactName || '').trim() || null,

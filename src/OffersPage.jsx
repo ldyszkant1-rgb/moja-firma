@@ -8,6 +8,7 @@ function emptyOffer(settings) {
     name: '',
     location: '',
     clientId: null,
+    documentType: 'Oferta dla klienta',
     status: 'Nowa',
     validUntil: '',
     quantities: { mb: '', m2: '', kg: '' },
@@ -103,7 +104,7 @@ function printOffer(offer, client) {
             </div>
           </div>
 
-          <h1>Oferta / wycena</h1>
+          <h1>${escapeHtml(offer.documentType || 'Oferta dla klienta')}</h1>
 
           <div class="grid">
             <div class="box">
@@ -140,8 +141,12 @@ function printOffer(offer, client) {
           ${scope ? `<h2>Zakres prac</h2><div class="text">${scope}</div>` : ''}
           ${notes ? `<h2>Uwagi</h2><div class="text">${notes}</div>` : ''}
 
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:45px;margin-top:55px;">
+            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? 'Zleceniodawca' : 'Aeroinstal'}<br><span class="muted">podpis i data</span></div>
+            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? 'Aeroinstal – Wykonawca' : 'Klient / Zleceniodawca'}<br><span class="muted">podpis i data</span></div>
+          </div>
           <div class="footer">
-            Oferta została przygotowana przez Aeroinstal. Dokument wygenerowany z aplikacji Moja Firma.
+            Dokument wygenerowany z aplikacji Moja Firma.
           </div>
         </main>
         <script>
@@ -228,6 +233,10 @@ export default function OffersPage({
         <div className="detail-card">
           <h2>Podstawowe informacje</h2>
           <div className="note-form new-job-basic-form">
+            <select className="job-new-input" value={editing.documentType || 'Oferta dla klienta'} onChange={(e) => change('documentType', e.target.value)}>
+              <option>Oferta dla klienta</option>
+              <option>Zlecenie od klienta</option>
+            </select>
             <input className="job-new-input" placeholder="Nazwa oferty / roboty" value={editing.name || ''} onChange={(e) => change('name', e.target.value)} />
             <input className="job-new-input" placeholder="Lokalizacja / statek" value={editing.location || ''} onChange={(e) => change('location', e.target.value)} />
             <select className="job-new-input" value={editing.clientId || ''} onChange={(e) => change('clientId', e.target.value || null)}>

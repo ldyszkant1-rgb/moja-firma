@@ -8756,3 +8756,24 @@ section {
     font-size: 15px !important;
   }
 }
+
+
+/* =========================================================
+   NOWA ROBOTA — MOBILE: NIE OBCINAJ INFORMACJI O ILOŚCI
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .new-job-rate-row > .new-job-rate-heading {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  .new-job-rate-heading > small {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: 100% !important;
+    line-height: 1.15 !important;
+    overflow-wrap: normal !important;
+  }
+}

@@ -9885,3 +9885,22 @@ section {
 .client-detail-stat-receivable strong {
   color: #b4770b;
 }
+
+
+.client-payment-paid,
+.client-payment-due,
+.client-payment-overdue {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+.client-payment-paid { color: #218739; }
+.client-payment-due { color: #b4770b; }
+.client-payment-overdue { color: #c0392b; }
+
+@media (max-width: 600px) {
+  .client-detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

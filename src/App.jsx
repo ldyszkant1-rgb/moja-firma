@@ -8152,12 +8152,15 @@ function FinancePage({
         .filter((payment) => payment.jobId === job.id)
         .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
       const remaining = Math.max(0, invoiceValue - paid)
+      // Należność pokazujemy dopiero, gdy robota ma ustawiony termin płatności.
+      // W obecnej logice Aeroinstal oznacza to, że faktura została wystawiona.
       const dueDate = job.paymentDueDate || null
-      const isOverdue = remaining > 0 && dueDate && dueDate < getTodayString()
+      const invoiceIssued = Boolean(dueDate)
+      const isOverdue = invoiceIssued && remaining > 0 && dueDate < getTodayString()
       const client = clients.find((item) => String(item.id) === String(job.clientId))
-      return { job, invoiceValue, paid, remaining, dueDate, isOverdue, clientName: client?.name || 'Bez przypisanego klienta' }
+      return { job, invoiceValue, paid, remaining, dueDate, invoiceIssued, isOverdue, clientName: client?.name || 'Bez przypisanego klienta' }
     })
-    .filter((item) => item.remaining > 0.01)
+    .filter((item) => item.invoiceIssued && item.remaining > 0.01)
     .sort((a, b) => {
       if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1
       if (!a.dueDate) return 1
@@ -8408,9 +8411,7 @@ function FinancePage({
             {receivables.map((item) => {
               const dueLabel = item.isOverdue
                 ? 'Zaległość • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
-                : item.dueDate
-                  ? 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
-                  : 'Brak terminu'
+                : 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
               return (
                 <button type="button" className="receivable-row" key={item.job.id} onClick={() => onOpenJob?.(item.job)}>
                   <div className="receivable-main">

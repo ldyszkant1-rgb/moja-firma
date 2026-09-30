@@ -9496,3 +9496,35 @@ section {
     font-size: 16px;
   }
 }
+
+
+.job-card-client-name {
+  display: block;
+  margin-top: 3px;
+  color: #168fe5;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.job-client-detail {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 7px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eaf5ff;
+  color: #087fce;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+@media (max-width: 600px) {
+  .job-card-client-name {
+    font-size: 9px;
+  }
+
+  .job-client-detail {
+    font-size: 10px;
+  }
+}

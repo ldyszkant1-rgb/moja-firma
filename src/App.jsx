@@ -4126,7 +4126,7 @@ function NewJobPage({
 
         <div className="finance-row new-job-rate-row">
 
-          <div>
+          <div className="new-job-rate-heading">
 
             <strong>
               MB
@@ -4139,33 +4139,44 @@ function NewJobPage({
           </div>
 
 
-          <input
+          <div className="new-job-rate-input-wrap">
 
-            className="rate-input"
+            <input
+              className="rate-input"
+              type="text"
+              inputMode="decimal"
+              value={newJob.rates.mb}
+              onChange={(e) =>
+                changeRate(
+                  'mb',
+                  e.target.value
+                )
+              }
+            />
 
-            type="text"
+            <span className="new-job-rate-unit">
+              zł / MB
+            </span>
 
-            inputMode="decimal"
+          </div>
 
-            value={
-              newJob.rates.mb
-            }
 
-            onChange={(e) =>
-              changeRate(
-                'mb',
-                e.target.value
-              )
-            }
-
-          />
+          <div className="new-job-rate-total">
+            <span>Wartość</span>
+            <strong>
+              {formatMoney(
+                (Number(newJob.quantities.mb) || 0) *
+                (Number(newJob.rates.mb) || 0)
+              )}
+            </strong>
+          </div>
 
         </div>
 
 
         <div className="finance-row new-job-rate-row">
 
-          <div>
+          <div className="new-job-rate-heading">
 
             <strong>
               m²
@@ -4178,33 +4189,44 @@ function NewJobPage({
           </div>
 
 
-          <input
+          <div className="new-job-rate-input-wrap">
 
-            className="rate-input"
+            <input
+              className="rate-input"
+              type="text"
+              inputMode="decimal"
+              value={newJob.rates.m2}
+              onChange={(e) =>
+                changeRate(
+                  'm2',
+                  e.target.value
+                )
+              }
+            />
 
-            type="text"
+            <span className="new-job-rate-unit">
+              zł / m²
+            </span>
 
-            inputMode="decimal"
+          </div>
 
-            value={
-              newJob.rates.m2
-            }
 
-            onChange={(e) =>
-              changeRate(
-                'm2',
-                e.target.value
-              )
-            }
-
-          />
+          <div className="new-job-rate-total">
+            <span>Wartość</span>
+            <strong>
+              {formatMoney(
+                (Number(newJob.quantities.m2) || 0) *
+                (Number(newJob.rates.m2) || 0)
+              )}
+            </strong>
+          </div>
 
         </div>
 
 
         <div className="finance-row new-job-rate-row">
 
-          <div>
+          <div className="new-job-rate-heading">
 
             <strong>
               kg
@@ -4217,26 +4239,37 @@ function NewJobPage({
           </div>
 
 
-          <input
+          <div className="new-job-rate-input-wrap">
 
-            className="rate-input"
+            <input
+              className="rate-input"
+              type="text"
+              inputMode="decimal"
+              value={newJob.rates.kg}
+              onChange={(e) =>
+                changeRate(
+                  'kg',
+                  e.target.value
+                )
+              }
+            />
 
-            type="text"
+            <span className="new-job-rate-unit">
+              zł / kg
+            </span>
 
-            inputMode="decimal"
+          </div>
 
-            value={
-              newJob.rates.kg
-            }
 
-            onChange={(e) =>
-              changeRate(
-                'kg',
-                e.target.value
-              )
-            }
-
-          />
+          <div className="new-job-rate-total">
+            <span>Wartość</span>
+            <strong>
+              {formatMoney(
+                (Number(newJob.quantities.kg) || 0) *
+                (Number(newJob.rates.kg) || 0)
+              )}
+            </strong>
+          </div>
 
         </div>
 

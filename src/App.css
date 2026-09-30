@@ -8807,3 +8807,189 @@ section {
     letter-spacing: -0.25px !important;
   }
 }
+
+
+/* =========================================================
+   NOWA ROBOTA — FINALNY REDESIGN TABELI STAWEK
+   ========================================================= */
+
+.new-job-rate-row {
+  display: grid !important;
+  grid-template-columns: 110px minmax(180px, 1fr) 128px !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-height: 78px !important;
+  margin: 0 !important;
+  padding: 11px 0 !important;
+  border-bottom: 1px solid #e7eef4 !important;
+  background: transparent !important;
+}
+
+.new-job-rate-row > .new-job-rate-heading {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 0 0 12px !important;
+  min-width: 0 !important;
+}
+
+.new-job-rate-heading::before {
+  display: none !important;
+}
+
+.new-job-rate-heading > strong {
+  color: #10204d !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.3px !important;
+}
+
+.new-job-rate-heading > small {
+  margin: 0 !important;
+  color: #8290a4 !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+.new-job-rate-row > .new-job-rate-input-wrap {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.new-job-rate-input-wrap .rate-input {
+  width: 100% !important;
+  min-height: 52px !important;
+  box-sizing: border-box !important;
+  padding: 9px 78px 9px 16px !important;
+  border: 1px solid #d8e3eb !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  color: #101010 !important;
+  -webkit-text-fill-color: #101010 !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  box-shadow: 0 2px 7px rgba(30,70,105,.035) !important;
+}
+
+.new-job-rate-input-wrap .rate-input:focus {
+  border-color: #0787e8 !important;
+  box-shadow: 0 0 0 3px rgba(7,135,232,.11) !important;
+}
+
+.new-job-rate-unit {
+  right: 15px !important;
+  color: #738198 !important;
+  font-size: 13px !important;
+  font-weight: 750 !important;
+}
+
+.new-job-rate-row > .new-job-rate-total {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  padding: 8px 10px !important;
+  border-radius: 14px !important;
+  background: #f4f8fb !important;
+  min-width: 0 !important;
+}
+
+.new-job-rate-total span {
+  color: #8491a4 !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  font-weight: 750 !important;
+}
+
+.new-job-rate-total strong {
+  color: #10204d !important;
+  font-size: 20px !important;
+  line-height: 1.1 !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+.new-job-rate-row:last-of-type {
+  border-bottom: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .new-job-rate-row {
+    grid-template-columns: 74px minmax(0, 1fr) 88px !important;
+    gap: 9px !important;
+    min-height: 72px !important;
+    padding: 9px 0 !important;
+  }
+
+  .new-job-rate-row > .new-job-rate-heading {
+    padding-left: 4px !important;
+    gap: 5px !important;
+  }
+
+  .new-job-rate-heading > strong {
+    font-size: 19px !important;
+  }
+
+  .new-job-rate-heading > small {
+    font-size: 10px !important;
+    font-weight: 750 !important;
+  }
+
+  .new-job-rate-input-wrap .rate-input {
+    min-height: 48px !important;
+    padding: 8px 62px 8px 13px !important;
+    border-radius: 13px !important;
+    font-size: 20px !important;
+  }
+
+  .new-job-rate-unit {
+    right: 11px !important;
+    font-size: 11px !important;
+  }
+
+  .new-job-rate-row > .new-job-rate-total {
+    padding: 7px 7px !important;
+    border-radius: 12px !important;
+  }
+
+  .new-job-rate-total span {
+    font-size: 9px !important;
+  }
+
+  .new-job-rate-total strong {
+    font-size: 17px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .new-job-rate-row {
+    grid-template-columns: 68px minmax(0, 1fr) 82px !important;
+    gap: 7px !important;
+  }
+
+  .new-job-rate-heading > strong {
+    font-size: 18px !important;
+  }
+
+  .new-job-rate-input-wrap .rate-input {
+    font-size: 19px !important;
+  }
+
+  .new-job-rate-total strong {
+    font-size: 16px !important;
+  }
+}

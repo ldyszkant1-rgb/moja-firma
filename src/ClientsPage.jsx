@@ -63,6 +63,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
   const [editingClient, setEditingClient] = useState(null)
   const [form, setForm] = useState(EMPTY_CLIENT)
   const [saving, setSaving] = useState(false)
+  const [showEditor, setShowEditor] = useState(false)
 
   const visibleClients = useMemo(() => {
     const needle = search.trim().toLowerCase()
@@ -77,10 +78,12 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
   const openNew = () => {
     setEditingClient(null)
     setForm(EMPTY_CLIENT)
+    setShowEditor(true)
   }
 
   const openEdit = (client) => {
     setEditingClient(client)
+    setShowEditor(true)
     setForm({
       name: client.name || '',
       nip: client.nip || '',
@@ -107,6 +110,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
       }
       setEditingClient(null)
       setForm(EMPTY_CLIENT)
+      setShowEditor(false)
       await onRefresh()
     } catch (error) {
       console.error('Nie udało się zapisać klienta:', error)
@@ -151,7 +155,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
         </div>
       </div>
 
-      {(editingClient || form.name || form.nip || form.contactName || form.phone || form.email || form.address || form.notes) && (
+      {showEditor && (
         <section className="detail-card client-editor-card">
           <div className="client-editor-heading">
             <div>
@@ -162,7 +166,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
           <ClientForm
             value={form}
             onChange={setForm}
-            onCancel={() => { setEditingClient(null); setForm(EMPTY_CLIENT) }}
+            onCancel={() => { setEditingClient(null); setForm(EMPTY_CLIENT); setShowEditor(false) }}
             onSave={save}
             saving={saving}
           />

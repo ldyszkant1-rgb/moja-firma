@@ -8233,3 +8233,159 @@ section {
     font-size: 17px !important;
   }
 }
+
+
+/* =========================================================
+   ROBOTA — STAWKI I WARTOŚĆ PRO
+   ========================================================= */
+
+.detail-card:has(> h2) .finance-row {
+  min-height: 82px;
+  margin: 0;
+  padding: 12px 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.detail-card:has(> h2) .finance-row > div {
+  position: relative;
+  min-width: 0;
+  padding-left: 14px;
+}
+
+.detail-card:has(> h2) .finance-row > div::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 999px;
+  background: #d9eaf7;
+}
+
+.detail-card:has(> h2) .finance-row > div > strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--blue-dark);
+}
+
+.detail-card:has(> h2) .finance-row small {
+  margin-top: 5px;
+  color: #8795a8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.detail-card:has(> h2) .finance-row > strong {
+  min-width: 118px;
+  padding: 10px 13px;
+  border-radius: 13px;
+  background: #f5f9fc;
+  color: var(--blue-dark);
+  font-size: 21px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.detail-card:has(> h2) .finance-row-editing {
+  min-height: 0;
+  padding: 14px 0 !important;
+  background: transparent;
+}
+
+.detail-card:has(> h2) .finance-row-editing > div {
+  padding-left: 14px;
+}
+
+.detail-card:has(> h2) .finance-row-editing .rate-input {
+  min-width: 118px !important;
+  width: 118px !important;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 13px;
+  font-size: 20px;
+}
+
+.detail-card:has(> h2) .job-footer {
+  margin-top: 12px;
+  padding: 17px 0 2px;
+  border-top: 0;
+  position: relative;
+}
+
+.detail-card:has(> h2) .job-footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: #dfe8ef;
+}
+
+.detail-card:has(> h2) .job-footer span {
+  color: #6f7f96;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.detail-card:has(> h2) .job-footer strong {
+  margin: 0;
+  padding: 9px 14px;
+  border-radius: 13px;
+  background: #eaf5ff;
+  color: var(--blue);
+  font-size: 24px;
+  font-weight: 850;
+}
+
+@media (max-width: 600px) {
+  .detail-card:has(> h2) .finance-row {
+    min-height: 76px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .detail-card:has(> h2) .finance-row > div {
+    padding-left: 12px;
+  }
+
+  .detail-card:has(> h2) .finance-row > div > strong {
+    font-size: 17px;
+  }
+
+  .detail-card:has(> h2) .finance-row small {
+    font-size: 13px;
+  }
+
+  .detail-card:has(> h2) .finance-row > strong {
+    min-width: 104px;
+    padding: 9px 10px;
+    font-size: 18px;
+  }
+
+  .detail-card:has(> h2) .finance-row-editing {
+    grid-template-columns: 1fr !important;
+    gap: 9px !important;
+  }
+
+  .detail-card:has(> h2) .finance-row-editing .rate-input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .detail-card:has(> h2) .job-footer {
+    padding-top: 15px;
+  }
+
+  .detail-card:has(> h2) .job-footer span {
+    font-size: 14px;
+  }
+
+  .detail-card:has(> h2) .job-footer strong {
+    padding: 8px 11px;
+    font-size: 21px;
+  }
+}

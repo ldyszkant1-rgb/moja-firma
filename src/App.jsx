@@ -3184,6 +3184,7 @@ function JobCard({
   job,
   onClick,
   onToggleTask,
+  jobPayments = [],
 }) {
 
   const stage = normalizeJobStage(job)
@@ -3195,6 +3196,19 @@ function JobCard({
   const completedTasks = tasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
+  const invoiceAmount = Number(job.invoiceAmount || 0) || totalValue
+  const paidAmount = jobPayments
+    .filter((payment) => payment.jobId === job.id)
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const remainingAmount = Math.max(0, invoiceAmount - paidAmount)
+  const paymentStatus =
+    invoiceAmount <= 0
+      ? 'none'
+      : paidAmount <= 0
+        ? 'unpaid'
+        : paidAmount + 0.009 < invoiceAmount
+          ? 'partial'
+          : 'paid'
   const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
 
   return (
@@ -3266,6 +3280,38 @@ function JobCard({
             <strong>{formatMoney(totalValue)}</strong>
           </div>
         </div>
+
+        {paymentStatus !== 'none' && (
+          <div className={`job-card-payment job-card-payment-${paymentStatus}`}>
+            <div className="job-card-payment-main">
+              <span className="job-card-payment-icon" aria-hidden="true">
+                {paymentStatus === 'paid' ? '✓' : paymentStatus === 'partial' ? '◔' : '○'}
+              </span>
+              <div>
+                <strong>
+                  {paymentStatus === 'paid'
+                    ? 'Opłacona'
+                    : paymentStatus === 'partial'
+                      ? 'Częściowo opłacona'
+                      : 'Nieopłacona'}
+                </strong>
+                <span>
+                  {paymentStatus === 'paid'
+                    ? `${formatMoney(paidAmount)} z ${formatMoney(invoiceAmount)}`
+                    : paymentStatus === 'partial'
+                      ? `${formatMoney(paidAmount)} z ${formatMoney(invoiceAmount)}`
+                      : `Do zapłaty ${formatMoney(invoiceAmount)}`}
+                </span>
+              </div>
+            </div>
+
+            {paymentStatus === 'partial' && (
+              <strong className="job-card-payment-remaining">
+                Pozostało {formatMoney(remainingAmount)}
+              </strong>
+            )}
+          </div>
+        )}
 
       </button>
 
@@ -3362,6 +3408,66 @@ function JobsPage({
   onRestoreJob,
   onPermanentDeleteJob,
 }) {
+
+  const [jobPayments, setJobPayments] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadJobPayments = async () => {
+      try {
+        const payments = await getAllJobPayments()
+        if (!cancelled) {
+          setJobPayments(payments)
+        }
+      } catch (error) {
+        console.error('Nie udało się wczytać płatności robót:', error)
+      }
+    }
+
+    loadJobPayments()
+
+    const channel = supabase
+      .channel('aeroinstal-jobs-payment-status')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'job_payments' },
+        (payload) => {
+          if (payload.eventType === 'DELETE' && payload.old?.id) {
+            setJobPayments((current) =>
+              current.filter((payment) => payment.id !== payload.old.id)
+            )
+            return
+          }
+
+          if (payload.new?.id) {
+            const row = payload.new
+            const incoming = {
+              id: row.id,
+              jobId: row.job_id,
+              amount: Number(row.amount || 0),
+              paidAt: row.paid_at || null,
+              note: row.note || '',
+              createdAt: row.created_at || null,
+            }
+
+            setJobPayments((current) =>
+              current.some((payment) => payment.id === incoming.id)
+                ? current.map((payment) =>
+                    payment.id === incoming.id ? incoming : payment
+                  )
+                : [...current, incoming]
+            )
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   const [filter, setFilter] =
     useState('all')
@@ -3783,6 +3889,7 @@ function JobsPage({
               job={job}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
+              jobPayments={jobPayments}
             />
           )
         )}

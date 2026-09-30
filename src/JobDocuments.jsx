@@ -128,19 +128,19 @@ function openPrintWindow(title, html) {
             color: #17243d;
             background: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-            font-size: 11.5pt;
+            font-size: 10pt;
             line-height: 1.48;
           }
           .document { max-width: 180mm; margin: 0 auto; }
           .topbar { height: 7px; background: #168fe5; border-radius: 0 0 4px 4px; margin-bottom: 20px; }
           .brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 25px; padding-bottom: 15px; border-bottom: 1px solid #dbe5ee; }
-          .brand-name { color: #12234f; font-size: 20pt; font-weight: 850; letter-spacing: .2px; }
-          .brand-sub { margin-top: 4px; color: #64748b; font-size: 8.5pt; }
+          .brand-name { color: #12234f; font-size: 16pt; font-weight: 850; letter-spacing: .2px; }
+          .brand-sub { margin-top: 4px; color: #64748b; font-size: 8pt; }
           .brand-data { text-align: right; color: #64748b; font-size: 8.5pt; line-height: 1.55; }
           .title-block { text-align: center; margin: 28px 0 23px; }
           .eyebrow { color: #168fe5; font-size: 8pt; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-          h1 { margin: 5px 0 4px; color: #12234f; font-size: 22pt; line-height: 1.15; }
-          .subtitle { color: #718096; font-size: 9.5pt; }
+          h1 { margin: 5px 0 4px; color: #12234f; font-size: 18pt; line-height: 1.15; }
+          .subtitle { color: #718096; font-size: 8.5pt; }
           .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
           .meta-box { padding: 10px 12px; border: 1px solid #dce5ec; border-radius: 8px; background: #f8fbfd; }
           .meta-label { display: block; color: #7a889b; font-size: 7.5pt; font-weight: 750; text-transform: uppercase; letter-spacing: .5px; }
@@ -151,7 +151,7 @@ function openPrintWindow(title, html) {
           .party-name { color: #12234f; font-weight: 800; margin-bottom: 3px; }
           .party-line { color: #526174; font-size: 9pt; }
           .party-extra { margin-top: 7px; color: #168fe5; font-size: 8pt; font-weight: 700; }
-          h2 { margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 1px solid #dce5ec; color: #12234f; font-size: 12.5pt; }
+          h2 { margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 1px solid #dce5ec; color: #12234f; font-size: 11pt; }
           p { margin: 6px 0 9px; }
           .clause { margin: 0 0 10px; }
           .clause-number { font-weight: 800; color: #168fe5; margin-right: 5px; }
@@ -163,7 +163,7 @@ function openPrintWindow(title, html) {
           .strong { font-weight: 750; }
           .total { display: flex; justify-content: flex-end; align-items: baseline; gap: 14px; margin: 9px 0 16px; padding: 11px 13px; background: #f2f8fd; border: 1px solid #d8eaf7; border-radius: 8px; }
           .total span { color: #64748b; font-size: 9pt; font-weight: 700; }
-          .total strong { color: #12234f; font-size: 15pt; }
+          .total strong { color: #12234f; font-size: 12.5pt; }
           .scope { min-height: 48px; padding: 10px 12px; border: 1px solid #e0e7ee; border-radius: 7px; background: #fbfcfd; white-space: pre-wrap; }
           .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 42px; page-break-inside: avoid; }
           .signature { min-height: 88px; padding-top: 42px; border-top: 1px solid #334155; text-align: center; color: #526174; font-size: 8.5pt; }

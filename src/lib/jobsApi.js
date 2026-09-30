@@ -793,33 +793,37 @@ export async function deleteSupabaseJobNote(
     )
   }
 
-  const {
-    data,
-    error,
-  } =
-    await supabase.rpc(
-      'delete_job_note',
-      {
-        p_job_id:
-          jobId,
+  const { data: currentJob, error: fetchError } =
+    await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single()
 
-        p_note_id:
-          String(noteId),
-      }
-    )
+  if (fetchError) {
+    console.error('Błąd pobierania roboty przed usunięciem notatki:', fetchError)
+    throw fetchError
+  }
+
+  const currentNotes = Array.isArray(currentJob.notes) ? currentJob.notes : []
+  const nextNotes = currentNotes.filter(
+    (item) => String(item?.id) !== String(noteId)
+  )
+
+  const { data, error } =
+    await supabase
+      .from('jobs')
+      .update({ notes: nextNotes })
+      .eq('id', jobId)
+      .select()
+      .single()
 
   if (error) {
-    console.error(
-      'Błąd usuwania notatki:',
-      error
-    )
-
+    console.error('Błąd usuwania notatki:', error)
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return mapSupabaseJobToAppJob(data)
 }
 
 

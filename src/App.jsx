@@ -9150,9 +9150,10 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteOffers, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
+      const [remoteJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
         getJobs(),
         getOffers(),
+        getInvoices(),
         getFinance(),
         getAllJobPayments(),
         getPartnerSettlements(),
@@ -9161,11 +9162,12 @@ function SettingsPage({
 
       const backup = {
         app: 'Aeroinstal',
-        backupVersion: 3,
+        backupVersion: 4,
         createdAt: new Date().toISOString(),
         settings,
         jobs: Array.isArray(remoteJobs) ? remoteJobs : [],
         offers: Array.isArray(remoteOffers) ? remoteOffers : [],
+        invoices: Array.isArray(remoteInvoices) ? remoteInvoices : [],
         finance: Array.isArray(remoteFinance) ? remoteFinance : [],
         generalReminders: Array.isArray(generalReminders) ? generalReminders : [],
         jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
@@ -9211,7 +9213,7 @@ function SettingsPage({
       if (
         !backup ||
         backup.app !== 'Aeroinstal' ||
-        ![1, 2, 3].includes(backup.backupVersion) ||
+        ![1, 2, 3, 4].includes(backup.backupVersion) ||
         !Array.isArray(backup.jobs) ||
         !Array.isArray(backup.finance) ||
         !backup.settings
@@ -9294,6 +9296,40 @@ function SettingsPage({
           .upsert(offerRows, { onConflict: 'id' })
 
         if (offerError) throw offerError
+      }
+
+      const invoiceRows = (backup.invoices || []).map((item) => ({
+        id: item.id,
+        organization_id: item.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        job_id: item.jobId || null,
+        client_id: item.clientId || null,
+        invoice_number: item.invoiceNumber || '',
+        issue_date: item.issueDate || getTodayString(),
+        sale_date: item.saleDate || null,
+        due_date: item.dueDate || null,
+        status: item.status || 'Do wystawienia',
+        payment_method: item.paymentMethod || 'Przelew',
+        currency: item.currency || 'PLN',
+        net_amount: Number(item.netAmount || 0),
+        vat_amount: Number(item.vatAmount || 0),
+        gross_amount: Number(item.grossAmount || 0),
+        paid_amount: Number(item.paidAmount || 0),
+        items: Array.isArray(item.items) ? item.items : [],
+        notes: item.notes || null,
+        ksef_status: item.ksefStatus || null,
+        ksef_number: item.ksefNumber || null,
+        ksef_id: item.ksefId || null,
+        ksef_sent_at: item.ksefSentAt || null,
+        ksef_error: item.ksefError || null,
+        created_at: item.createdAt || undefined,
+        updated_at: item.updatedAt || undefined,
+      }))
+
+      if (invoiceRows.length > 0) {
+        const { error: invoiceError } = await supabase
+          .from('invoices')
+          .upsert(invoiceRows, { onConflict: 'id' })
+        if (invoiceError) throw invoiceError
       }
 
       const financeRows = backup.finance.map((item) => ({

@@ -3452,124 +3452,7 @@ function JobCard({
   const visibleTasks = tasks.filter((task) => !task.done).slice(0, 3)
   const completedTasks = tasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
-  const totalValue = calculateTotal(job)
-  const invoiceAmount = Number(job.invoiceAmount || 0) || totalValue
-  const paidAmount = (Array.isArray(jobPayments) ? jobPayments : [])
-    .filter((payment) => payment?.jobId === job.id)
-    .reduce((sum, payment) => sum + Number(payment?.amount || 0), 0)
-  const remainingAmount = Math.max(0, invoiceAmount - paidAmount)
-  const paymentStatus =
-    invoiceAmount <= 0
-      ? 'none'
-      : paidAmount <= 0
-        ? 'unpaid'
-        : paidAmount + 0.009 < invoiceAmount
-          ? 'partial'
-          : 'paid'
-  const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
 
-  return (
-    <article className="job-card job-card-with-tasks">
-      <button type="button" className="job-card-main" onClick={onClick}>
-        <div className="job-card-topline">
-          <div className="job-card-identity">
-            {job.mainPhoto?.url ? (
-              <img
-                className="job-card-photo"
-                src={job.mainPhoto.url}
-                alt={job.mainPhoto.name || job.name}
-                title="Zdjęcie główne"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.open(job.mainPhoto.url, '_blank')
-                }}
-              />
-            ) : (
-              <span className="job-card-photo job-card-photo-empty" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="3" y="5" width="18" height="14" rx="2" />
-                  <circle cx="8.5" cy="9.5" r="1.5" />
-                  <path d="m5 17 4.5-4.5 3.2 3.2 2.2-2.2L19 17" />
-                </svg>
-              </span>
-            )}
-
-            <span className="job-card-identity-text">
-              <strong>{job.name}</strong>
-              <span>{job.location || 'Brak lokalizacji'}</span>
-              {clientName && <small className="job-card-client-name">👤 {clientName}</small>}
-            </span>
-          </div>
-
-          <span
-            className={stage === 'Zakończone' ? 'status completed' : 'status'}
-            style={stageStyle}
-          >
-            <span aria-hidden="true">{stage === 'Zakończone' ? '✓' : '●'}</span>
-            {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage.toUpperCase()}
-          </span>
-        </div>
-
-        <div className="job-card-progress">
-          <div className="job-card-progress-label">
-            <span>Postęp realizacji</span>
-            <strong>{progress}%</strong>
-          </div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-
-        <div className="job-card-metrics">
-          <div>
-            <span>MB</span>
-            <strong>{job.quantities?.mb || 0}</strong>
-          </div>
-          <div>
-            <span>m²</span>
-            <strong>{job.quantities?.m2 || 0}</strong>
-          </div>
-          <div>
-            <span>kg</span>
-            <strong>{job.quantities?.kg || 0}</strong>
-          </div>
-          <div className="job-card-value">
-            <span>Wartość</span>
-            <strong>{formatMoney(totalValue)}</strong>
-          </div>
-        </div>
-
-        {paymentStatus !== 'none' && (
-          <div className={`job-card-payment job-card-payment-${paymentStatus}`}>
-            <div className="job-card-payment-main">
-              <span className="job-card-payment-icon" aria-hidden="true">
-                {paymentStatus === 'paid' ? '✓' : paymentStatus === 'partial' ? '◔' : '○'}
-              </span>
-              <div>
-                <strong>
-                  {paymentStatus === 'paid'
-                    ? 'Opłacona'
-                    : paymentStatus === 'partial'
-                      ? 'Częściowo opłacona'
-                      : 'Nieopłacona'}
-                </strong>
-                <span>
-                  {paymentStatus === 'paid'
-                    ? `${formatMoney(paidAmount)} z ${formatMoney(invoiceAmount)}`
-                    : paymentStatus === 'partial'
-                      ? `${formatMoney(paidAmount)} z ${formatMoney(invoiceAmount)}`
-                      : `Do zapłaty ${formatMoney(invoiceAmount)}`}
-                </span>
-              </div>
-            </div>
-
-            {paymentStatus === 'partial' && (
-              <strong className="job-card-payment-remaining">
-                Pozostało {formatMoney(remainingAmount)}
-              </strong>
-            )}
-          </div>
-        )}
 
       </button>
 
@@ -4940,17 +4823,6 @@ function JobDetails({
 
   const saveChanges = async () => {
     const stageBeforeSave = normalizeJobStage(editedJob)
-    if (stageBeforeSave === 'Zakończone') {
-      const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
-      const paidAmount = calculatePaidAmount(paymentHistory)
-      const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
-
-      if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
-        showCustomAlert('Nie można zakończyć roboty. Faktura nie jest jeszcze w pełni opłacona.')
-        return
-      }
-    }
-
     if (!editedJob.name.trim()) {
 
       showCustomAlert(
@@ -5031,25 +4903,6 @@ function JobDetails({
       completedAt:
         normalizeJobStage(editedJob) === 'Zakończone'
           ? (editedJob.completedAt || getTodayString())
-          : null,
-
-      invoiceNumber:
-        String(editedJob.invoiceNumber || '').trim(),
-
-      invoiceDate:
-        editedJob.invoiceDate || null,
-
-      invoiceAmount:
-        editedJob.invoiceAmount === '' || editedJob.invoiceAmount == null
-          ? null
-          : parseDecimal(editedJob.invoiceAmount),
-
-      paymentDueDate:
-        editedJob.paymentDueDate || null,
-
-      paidAt:
-        normalizeJobStage(editedJob) === 'Zakończone'
-          ? (editedJob.paidAt || getTodayString())
           : null,
 
     }
@@ -6207,19 +6060,6 @@ function JobDetails({
               value={normalizeJobStage(editedJob)}
               onChange={(e) => {
                 const value = e.target.value
-                if (value === 'Zakończone') {
-                  const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
-                  const paidAmount = calculatePaidAmount(paymentHistory)
-                  const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
-
-                  if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
-                    showCustomAlert(
-                      `Najpierw rozlicz całą fakturę. Pozostało do zapłaty: ${formatMoney(Math.max(0, invoiceAmount - paidAmount))}.`
-                    )
-                    return
-                  }
-                }
-
                 setEditedJob({
                   ...editedJob,
                   status: value,
@@ -6252,210 +6092,6 @@ function JobDetails({
           </div>
         )}
 
-        {(normalizeJobStage(editedJob) === 'Faktura wystawiona' || normalizeJobStage(editedJob) === 'Zakończone') && (
-          <div className="invoice-info-grid">
-            <label>
-              <span>Numer faktury</span>
-              <input
-                type="text"
-                value={editedJob.invoiceNumber || ''}
-                disabled={!editing}
-                placeholder="np. FV/09/2026"
-                onChange={(e) => setEditedJob({ ...editedJob, invoiceNumber: e.target.value })}
-              />
-            </label>
-            <label>
-              <span>Data faktury</span>
-              <input
-                type="date"
-                value={editedJob.invoiceDate || ''}
-                disabled={!editing}
-                onChange={(e) => setEditedJob({ ...editedJob, invoiceDate: e.target.value })}
-              />
-            </label>
-            <label>
-              <span>Kwota faktury</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={editedJob.invoiceAmount ?? ''}
-                disabled={!editing}
-                placeholder={String(calculateTotal(editedJob))}
-                onChange={(e) => setEditedJob({ ...editedJob, invoiceAmount: e.target.value })}
-              />
-            </label>
-            <label>
-              <span>Termin płatności</span>
-              <input
-                type="date"
-                value={editedJob.paymentDueDate || ''}
-                disabled={!editing}
-                onChange={(e) => setEditedJob({ ...editedJob, paymentDueDate: e.target.value })}
-              />
-            </label>
-          </div>
-        )}
-
-        {normalizeJobStage(editedJob) === 'Zakończone' && editedJob.paidAt && (
-          <div className="job-paid-info">
-            ✓ Płatność otrzymana {formatDate(editedJob.paidAt)}
-          </div>
-        )}
-      </div>
-
-
-
-      {(normalizeJobStage(editedJob) === 'Faktura wystawiona' || normalizeJobStage(editedJob) === 'Zakończone') && (
-        <div className="detail-card" style={{ marginTop: '14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
-            <div>
-              <div className="small-label">PŁATNOŚCI FAKTURY</div>
-              <h2 style={{ marginBottom: '4px' }}>Historia wpłat</h2>
-              <span style={{ color: '#6b7280', fontSize: '13px' }}>
-                {invoicePaymentStatus}
-              </span>
-            </div>
-            <strong style={{
-              fontSize: '18px',
-              color: invoicePaymentStatus === 'Opłacona' ? '#159447' : '#24345c',
-              whiteSpace: 'nowrap',
-            }}>
-              {formatMoney(paidAmountForPayment)}
-            </strong>
-          </div>
-
-          <div style={{
-            height: '9px',
-            background: '#edf2f6',
-            borderRadius: '999px',
-            overflow: 'hidden',
-            marginBottom: '10px',
-          }}>
-            <div style={{
-              height: '100%',
-              width: `${invoiceAmountForPayment > 0 ? Math.min(100, (paidAmountForPayment / invoiceAmountForPayment) * 100) : 0}%`,
-              background: invoicePaymentStatus === 'Opłacona' ? '#16a34a' : '#0787e8',
-              borderRadius: '999px',
-            }} />
-          </div>
-
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: '10px',
-            fontSize: '13px',
-            color: '#66758f',
-            marginBottom: '14px',
-          }}>
-            <span>Faktura: {formatMoney(invoiceAmountForPayment)}</span>
-            <strong style={{ color: '#24345c' }}>
-              Pozostało: {formatMoney(remainingInvoiceAmount)}
-            </strong>
-          </div>
-
-          {paymentHistory.length > 0 ? (
-            <div style={{ borderTop: '1px solid #e5ebf0' }}>
-              {paymentHistory.map((payment) => (
-                <div key={payment.id} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto auto',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '11px 0',
-                  borderBottom: '1px solid #eef2f5',
-                }}>
-                  <div style={{ minWidth: 0 }}>
-                    <strong style={{ display: 'block', color: '#24345c', fontSize: '14px' }}>
-                      {formatDate(payment.paidAt)}
-                    </strong>
-                    {payment.note && (
-                      <span style={{ display: 'block', marginTop: '2px', color: '#7a8799', fontSize: '12px' }}>
-                        {payment.note}
-                      </span>
-                    )}
-                  </div>
-                  <strong style={{ color: '#159447', whiteSpace: 'nowrap' }}>
-                    + {formatMoney(payment.amount)}
-                  </strong>
-                  <button
-                    type="button"
-                    className="document-remove"
-                    onClick={() => removeInvoicePayment(payment)}
-                    disabled={paymentLoading}
-                    style={{ padding: '7px 9px', fontSize: '12px' }}
-                  >
-                    Usuń
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ padding: '10px 0 14px', color: '#7a8799', fontSize: '13px' }}>
-              Brak zapisanych wpłat.
-            </div>
-          )}
-
-          {invoicePaymentStatus !== 'Opłacona' && (
-            <div style={{
-              marginTop: '12px',
-              paddingTop: '14px',
-              borderTop: '1px solid #e5ebf0',
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-              gap: '10px',
-            }}>
-              <label>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Kwota wpłaty
-                </span>
-                <input
-                  className="rate-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={paymentForm.amount}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                  placeholder={String(remainingInvoiceAmount)}
-                  disabled={paymentLoading}
-                />
-              </label>
-              <label>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Data wpłaty
-                </span>
-                <input
-                  className="rate-input"
-                  type="date"
-                  value={paymentForm.paidAt}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, paidAt: e.target.value })}
-                  disabled={paymentLoading}
-                />
-              </label>
-              <label style={{ gridColumn: '1 / -1' }}>
-                <span style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 700, color: '#66758f' }}>
-                  Opis (opcjonalnie)
-                </span>
-                <input
-                  className="rate-input"
-                  type="text"
-                  value={paymentForm.note}
-                  onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
-                  placeholder="np. przelew częściowy"
-                  disabled={paymentLoading}
-                />
-              </label>
-              <button
-                type="button"
-                className="save-button"
-                onClick={addInvoicePayment}
-                disabled={paymentLoading}
-                style={{ gridColumn: '1 / -1' }}
-              >
-                {paymentLoading ? 'Zapisywanie…' : '+ Dodaj wpłatę'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ZDJĘCIE GŁÓWNE */}
 
@@ -7622,7 +7258,7 @@ function JobDetails({
           {nextStage === 'W toku' && '▶ Rozpocznij realizację'}
           {nextStage === 'Odbiór' && '✓ Przejdź do odbioru'}
           {nextStage === 'Faktura wystawiona' && '▣ Oznacz: faktura wystawiona'}
-          {nextStage === 'Zakończone' && '✓ Oznacz jako zapłacone'}
+          {nextStage === 'Zakończone' && '✓ Zakończ robotę'}
         </button>
       )}
 

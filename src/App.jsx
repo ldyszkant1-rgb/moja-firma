@@ -9592,8 +9592,9 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
+      const [remoteJobs, remoteOffers, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
         getJobs(),
+        getOffers(),
         getFinance(),
         getAllJobPayments(),
         getPartnerSettlements(),
@@ -9602,10 +9603,11 @@ function SettingsPage({
 
       const backup = {
         app: 'Aeroinstal',
-        backupVersion: 2,
+        backupVersion: 3,
         createdAt: new Date().toISOString(),
         settings,
         jobs: Array.isArray(remoteJobs) ? remoteJobs : [],
+        offers: Array.isArray(remoteOffers) ? remoteOffers : [],
         finance: Array.isArray(remoteFinance) ? remoteFinance : [],
         generalReminders: Array.isArray(generalReminders) ? generalReminders : [],
         jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
@@ -9651,7 +9653,7 @@ function SettingsPage({
       if (
         !backup ||
         backup.app !== 'Aeroinstal' ||
-        ![1, 2].includes(backup.backupVersion) ||
+        ![1, 2, 3].includes(backup.backupVersion) ||
         !Array.isArray(backup.jobs) ||
         !Array.isArray(backup.finance) ||
         !backup.settings
@@ -9702,6 +9704,38 @@ function SettingsPage({
         if (jobsError) {
           throw jobsError
         }
+      }
+
+      const offerRows = (backup.offers || []).map((offer) => ({
+        id: offer.id,
+        organization_id: offer.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        client_id: offer.clientId || null,
+        offer_number: offer.offerNumber || null,
+        name: offer.name || '',
+        location: offer.location || null,
+        status: offer.status || 'Nowa',
+        valid_until: offer.validUntil || null,
+        quantity_mb: Number(offer.quantities?.mb || 0),
+        quantity_m2: Number(offer.quantities?.m2 || 0),
+        quantity_kg: Number(offer.quantities?.kg || 0),
+        rate_mb: Number(offer.rates?.mb || 0),
+        rate_m2: Number(offer.rates?.m2 || 0),
+        rate_kg: Number(offer.rates?.kg || 0),
+        scope: offer.scope || null,
+        notes: offer.notes || null,
+        total: Number(offer.total || 0),
+        source_job_id: offer.sourceJobId || null,
+        converted_job_id: offer.convertedJobId || null,
+        created_at: offer.createdAt || undefined,
+        updated_at: offer.updatedAt || undefined,
+      }))
+
+      if (offerRows.length > 0) {
+        const { error: offerError } = await supabase
+          .from('offers')
+          .upsert(offerRows, { onConflict: 'id' })
+
+        if (offerError) throw offerError
       }
 
       const financeRows = backup.finance.map((item) => ({

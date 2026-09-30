@@ -121,59 +121,64 @@ function openPrintWindow(title, html) {
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>${escapeHtml(title)}</title>
         <style>
-          @page { size: A4; margin: 15mm 14mm 16mm; }
+          @page { size: A4; margin: 8mm 10mm 9mm; }
           * { box-sizing: border-box; }
+          html, body { background: #fff !important; }
           body {
             margin: 0;
             color: #17243d;
-            background: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-            font-size: 10pt;
-            line-height: 1.48;
+            background: #fff !important;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.25;
           }
-          .document { max-width: 180mm; margin: 0 auto; }
-          .topbar { height: 7px; background: #168fe5; border-radius: 0 0 4px 4px; margin-bottom: 20px; }
-          .brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 25px; padding-bottom: 15px; border-bottom: 1px solid #dbe5ee; }
-          .brand-name { color: #12234f; font-size: 16pt; font-weight: 850; letter-spacing: .2px; }
-          .brand-sub { margin-top: 4px; color: #64748b; font-size: 8pt; }
-          .brand-data { text-align: right; color: #64748b; font-size: 8.5pt; line-height: 1.55; }
-          .title-block { text-align: center; margin: 28px 0 23px; }
-          .eyebrow { color: #168fe5; font-size: 8pt; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-          h1 { margin: 5px 0 4px; color: #12234f; font-size: 18pt; line-height: 1.15; }
-          .subtitle { color: #718096; font-size: 8.5pt; }
-          .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-          .meta-box { padding: 10px 12px; border: 1px solid #dce5ec; border-radius: 8px; background: #f8fbfd; }
-          .meta-label { display: block; color: #7a889b; font-size: 7.5pt; font-weight: 750; text-transform: uppercase; letter-spacing: .5px; }
-          .meta-value { display: block; margin-top: 3px; color: #17243d; font-weight: 750; }
-          .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
-          .party { min-height: 105px; padding: 13px 14px; border: 1px solid #dce5ec; border-radius: 9px; }
-          .party-label { color: #168fe5; font-size: 7.5pt; font-weight: 850; letter-spacing: .8px; text-transform: uppercase; margin-bottom: 7px; }
-          .party-name { color: #12234f; font-weight: 800; margin-bottom: 3px; }
-          .party-line { color: #526174; font-size: 9pt; }
-          .party-extra { margin-top: 7px; color: #168fe5; font-size: 8pt; font-weight: 700; }
-          h2 { margin: 22px 0 8px; padding-bottom: 5px; border-bottom: 1px solid #dce5ec; color: #12234f; font-size: 11pt; }
-          p { margin: 6px 0 9px; }
-          .clause { margin: 0 0 10px; }
-          .clause-number { font-weight: 800; color: #168fe5; margin-right: 5px; }
-          table { width: 100%; border-collapse: collapse; margin: 10px 0 8px; }
-          th { padding: 8px 7px; background: #12234f; color: #fff; font-size: 8.5pt; text-align: left; }
-          td { padding: 8px 7px; border-bottom: 1px solid #e4eaf0; font-size: 9pt; }
+          .document { width: 100%; max-width: 190mm; margin: 0 auto; background: #fff; }
+          .topbar { display: none; }
+          .brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 7px; border-bottom: 1px solid #bfc8d2; }
+          .brand-name { color: #12234f; font-size: 13pt; font-weight: 800; letter-spacing: .1px; }
+          .brand-sub { margin-top: 2px; color: #5f6b7a; font-size: 6.8pt; }
+          .brand-data { text-align: right; color: #5f6b7a; font-size: 7pt; line-height: 1.3; }
+          .title-block { text-align: center; margin: 8px 0 8px; }
+          .eyebrow { color: #4d5b6b; font-size: 6.5pt; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+          h1 { margin: 2px 0 2px; color: #12234f; font-size: 14pt; line-height: 1.05; }
+          .subtitle { color: #5f6b7a; font-size: 7pt; }
+          .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; margin-bottom: 7px; }
+          .meta-box { padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; }
+          .meta-label { display: block; color: #697586; font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: .35px; }
+          .meta-value { display: block; margin-top: 1px; color: #17243d; font-weight: 700; font-size: 8pt; }
+          .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 7px 0; }
+          .party { min-height: 0; padding: 7px 8px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; }
+          .party-label { color: #4d5b6b; font-size: 6pt; font-weight: 800; letter-spacing: .55px; text-transform: uppercase; margin-bottom: 3px; }
+          .party-name { color: #12234f; font-weight: 750; margin-bottom: 1px; font-size: 8.3pt; }
+          .party-line { color: #526174; font-size: 7.2pt; line-height: 1.2; }
+          .party-extra { margin-top: 3px; color: #526174; font-size: 6.8pt; font-weight: 700; }
+          h2 { margin: 7px 0 3px; padding-bottom: 2px; border-bottom: 1px solid #cbd4de; color: #12234f; font-size: 8.8pt; }
+          p { margin: 3px 0 5px; }
+          .clause { margin: 0 0 4px; }
+          .clause-number { font-weight: 800; color: #4d5b6b; margin-right: 3px; }
+          table { width: 100%; border-collapse: collapse; margin: 4px 0 4px; }
+          th { padding: 4px 5px; background: #fff !important; color: #17243d; border-top: 1px solid #9da9b6; border-bottom: 1px solid #9da9b6; font-size: 7pt; text-align: left; }
+          td { padding: 4px 5px; border-bottom: 1px solid #d8dee5; font-size: 7.4pt; }
           .center { text-align: center; }
           .right { text-align: right; }
           .strong { font-weight: 750; }
-          .total { display: flex; justify-content: flex-end; align-items: baseline; gap: 14px; margin: 9px 0 16px; padding: 11px 13px; background: #f2f8fd; border: 1px solid #d8eaf7; border-radius: 8px; }
-          .total span { color: #64748b; font-size: 9pt; font-weight: 700; }
-          .total strong { color: #12234f; font-size: 12.5pt; }
-          .scope { min-height: 48px; padding: 10px 12px; border: 1px solid #e0e7ee; border-radius: 7px; background: #fbfcfd; white-space: pre-wrap; }
-          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 42px; page-break-inside: avoid; }
-          .signature { min-height: 88px; padding-top: 42px; border-top: 1px solid #334155; text-align: center; color: #526174; font-size: 8.5pt; }
-          .signature strong { display: block; color: #17243d; margin-bottom: 3px; }
-          .signature small { color: #8a97a8; }
-          .checkbox-line { margin: 8px 0; }
-          .checkbox { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; border: 1px solid #8a97a8; }
-          .remarks { min-height: 68px; padding: 10px 12px; border: 1px solid #dce5ec; border-radius: 7px; background: #fff; white-space: pre-wrap; }
-          .footer { margin-top: 30px; padding-top: 8px; border-top: 1px solid #e1e7ed; color: #8a97a8; font-size: 7.5pt; text-align: center; }
-          @media print { .no-print { display: none !important; } }
+          .total { display: flex; justify-content: flex-end; align-items: baseline; gap: 10px; margin: 4px 0 6px; padding: 5px 7px; background: #fff !important; border: 1px solid #cbd4de; border-radius: 4px; }
+          .total span { color: #526174; font-size: 7pt; font-weight: 700; }
+          .total strong { color: #12234f; font-size: 9.5pt; }
+          .scope { min-height: 28px; padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; white-space: pre-wrap; font-size: 7.5pt; }
+          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 14px; page-break-inside: avoid; }
+          .signature { min-height: 48px; padding-top: 22px; border-top: 1px solid #334155; text-align: center; color: #526174; font-size: 7pt; }
+          .signature strong { display: block; color: #17243d; margin-bottom: 1px; }
+          .signature small { color: #6f7c8c; }
+          .checkbox-line { margin: 4px 0; font-size: 7.5pt; }
+          .checkbox { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px; border: 1px solid #7b8794; }
+          .remarks { min-height: 38px; padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; white-space: pre-wrap; font-size: 7.5pt; }
+          .footer { margin-top: 9px; padding-top: 4px; border-top: 1px solid #d8dee5; color: #7a8695; font-size: 6pt; text-align: center; }
+          @media print {
+            html, body { background: #fff !important; }
+            .document { background: #fff !important; }
+            .no-print { display: none !important; }
+          }
         </style>
       </head>
       <body>

@@ -838,6 +838,7 @@ function App() {
       const incoming = {
         id: payload.new.id,
         name: payload.new.name || '',
+        shortName: payload.new.short_name || payload.new.name || '',
         nip: payload.new.nip || '',
         address: payload.new.address || '',
         contactName: payload.new.contact_name || '',
@@ -4109,7 +4110,7 @@ function JobsPage({
             <JobCard
               key={job.id}
               job={job}
-              clientName={(clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.name || ''}
+              clientName={(clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.shortName || (clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.name || ''}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
               jobPayments={jobPayments}
@@ -4337,7 +4338,7 @@ function NewJobPage({
           >
             <option value="">Klient — opcjonalnie</option>
             {(clients || []).map((client) => (
-              <option key={client.id} value={client.id}>{client.name}</option>
+              <option key={client.id} value={client.id}>{client.shortName || client.name}</option>
             ))}
           </select>
 
@@ -6119,7 +6120,7 @@ function JobDetails({
 
           {editedJob.clientId && (
             <div className="job-client-detail">
-              👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
+              👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.shortName || (clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
             </div>
           )}
 
@@ -8287,7 +8288,7 @@ function FinancePage({
       const invoiceIssued = Boolean(dueDate)
       const isOverdue = invoiceIssued && remaining > 0 && dueDate < getTodayString()
       const client = clients.find((item) => String(item.id) === String(job.clientId))
-      return { job, invoiceValue, paid, remaining, dueDate, invoiceIssued, isOverdue, clientName: client?.name || 'Bez przypisanego klienta' }
+      return { job, invoiceValue, paid, remaining, dueDate, invoiceIssued, isOverdue, clientName: client?.shortName || client?.name || 'Bez przypisanego klienta' }
     })
     .filter((item) => item.invoiceIssued && item.remaining > 0.01)
     .sort((a, b) => {

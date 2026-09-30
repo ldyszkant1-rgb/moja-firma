@@ -35,6 +35,124 @@ function statusStyle(status) {
   return { background: '#e9f5ff', color: '#087fce' }
 }
 
+function printOffer(offer, client) {
+  if (typeof window === 'undefined') return
+
+  const popup = window.open('', '_blank', 'width=900,height=1100')
+  if (!popup) {
+    alert('Przeglądarka zablokowała okno wydruku. Zezwól na wyskakujące okna dla aplikacji.')
+    return
+  }
+
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+
+  const rows = [
+    ['MB', offer.quantities?.mb, offer.rates?.mb],
+    ['m²', offer.quantities?.m2, offer.rates?.m2],
+    ['kg', offer.quantities?.kg, offer.rates?.kg],
+  ].filter(([, quantity, rate]) => Number(quantity || 0) || Number(rate || 0))
+
+  const scope = escapeHtml(offer.scope || '').replace(/\\n/g, '<br>')
+  const notes = escapeHtml(offer.notes || '').replace(/\\n/g, '<br>')
+
+  popup.document.write(`
+    <!doctype html>
+    <html lang="pl">
+      <head>
+        <meta charset="utf-8">
+        <title>${escapeHtml(offer.offerNumber || 'Oferta')} - Aeroinstal</title>
+        <style>
+          * { box-sizing: border-box; }
+          body { margin: 0; font-family: Arial, sans-serif; color: #1f2937; background: #fff; }
+          .page { max-width: 800px; margin: 0 auto; padding: 48px 52px; }
+          .header { display: flex; justify-content: space-between; gap: 30px; border-bottom: 3px solid #0786e6; padding-bottom: 22px; }
+          .brand { font-size: 30px; font-weight: 800; color: #0786e6; }
+          .muted { color: #64748b; }
+          h1 { margin: 28px 0 6px; font-size: 28px; }
+          h2 { margin: 28px 0 10px; font-size: 17px; }
+          .meta { text-align: right; }
+          .box { background: #f5f8fb; border-radius: 10px; padding: 16px; margin-top: 18px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th, td { border-bottom: 1px solid #dce5ec; padding: 10px 8px; text-align: left; }
+          th { font-size: 12px; color: #64748b; text-transform: uppercase; }
+          td:last-child, th:last-child { text-align: right; }
+          .total { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #1f2937; padding-top: 16px; font-size: 22px; font-weight: 800; }
+          .text { line-height: 1.6; white-space: normal; }
+          .footer { margin-top: 60px; padding-top: 18px; border-top: 1px solid #dce5ec; font-size: 12px; color: #64748b; }
+          @media print { .page { padding: 25mm 18mm; } }
+        </style>
+      </head>
+      <body>
+        <main class="page">
+          <div class="header">
+            <div>
+              <div class="brand">AEROINSTAL</div>
+              <div class="muted">Wentylacja • Montaż • Serwis</div>
+            </div>
+            <div class="meta">
+              <strong>${escapeHtml(offer.offerNumber || 'Oferta')}</strong><br>
+              <span class="muted">Data: ${escapeHtml(new Date().toLocaleDateString('pl-PL'))}</span>
+              ${offer.validUntil ? `<br><span class="muted">Ważna do: ${escapeHtml(offer.validUntil)}</span>` : ''}
+            </div>
+          </div>
+
+          <h1>Oferta / wycena</h1>
+
+          <div class="grid">
+            <div class="box">
+              <strong>Klient</strong><br>
+              ${escapeHtml(client?.name || 'Brak danych klienta')}
+              ${client?.nip ? `<br>NIP: ${escapeHtml(client.nip)}` : ''}
+              ${client?.address ? `<br>${escapeHtml(client.address)}` : ''}
+              ${client?.contactName ? `<br>Kontakt: ${escapeHtml(client.contactName)}` : ''}
+            </div>
+            <div class="box">
+              <strong>Przedmiot oferty</strong><br>
+              ${escapeHtml(offer.name)}<br>
+              <span class="muted">${escapeHtml(offer.location || 'Brak lokalizacji')}</span>
+            </div>
+          </div>
+
+          <h2>Zakres prac i wycena</h2>
+          <table>
+            <thead><tr><th>Pozycja</th><th>Ilość</th><th>Stawka</th><th>Wartość</th></tr></thead>
+            <tbody>
+              ${rows.length ? rows.map(([unit, quantity, rate]) => `
+                <tr>
+                  <td>${unit}</td>
+                  <td>${escapeHtml(quantity)}</td>
+                  <td>${escapeHtml(rate)} zł</td>
+                  <td>${money(Number(quantity || 0) * Number(rate || 0))}</td>
+                </tr>
+              `).join('') : '<tr><td colspan="4">Wycena ryczałtowa / brak pozycji ilościowych</td></tr>'}
+            </tbody>
+          </table>
+
+          <div class="total"><span>Wartość oferty</span><span>${money(offer.total)}</span></div>
+
+          ${scope ? `<h2>Zakres prac</h2><div class="text">${scope}</div>` : ''}
+          ${notes ? `<h2>Uwagi</h2><div class="text">${notes}</div>` : ''}
+
+          <div class="footer">
+            Oferta została przygotowana przez Aeroinstal. Dokument wygenerowany z aplikacji Moja Firma.
+          </div>
+        </main>
+        <script>
+          window.addEventListener('load', () => setTimeout(() => window.print(), 250))
+        </script>
+      </body>
+    </html>
+  `)
+  popup.document.close()
+}
+
 export default function OffersPage({
   offers,
   clients,
@@ -252,6 +370,13 @@ export default function OffersPage({
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 16px 16px' }}>
                 <button type="button" className="edit-button" onClick={() => setEditing(offer)}>Edytuj</button>
+                <button
+                  type="button"
+                  className="edit-button"
+                  onClick={() => printOffer(offer, (clients || []).find((client) => String(client.id) === String(offer.clientId)))}
+                >
+                  📄 PDF / Drukuj
+                </button>
                 {offer.status === 'Zaakceptowana' && !offer.convertedJobId && (
                   <button type="button" className="save-button" onClick={() => onConvertToJob(offer)}>Utwórz robotę</button>
                 )}

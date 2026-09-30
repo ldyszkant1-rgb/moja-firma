@@ -7879,6 +7879,29 @@ section {
   gap: 3px !important;
 }
 
+/* Każdy element stawki ma własny, jawnie określony wiersz.
+   Zapobiega nadpisaniu przez starsze reguły .finance-row > div. */
+.new-job-rate-row {
+  grid-template-rows: auto auto auto !important;
+  min-height: 0 !important;
+  gap: 10px !important;
+}
+
+.new-job-rate-row > .new-job-rate-heading {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+.new-job-rate-row > .new-job-rate-input-wrap {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+}
+
+.new-job-rate-row > .new-job-rate-total {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+}
+
 .new-job-rate-input-wrap {
   position: relative !important;
   width: 100% !important;

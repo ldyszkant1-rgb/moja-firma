@@ -235,6 +235,8 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
               .filter((payment) => payment.jobId === job.id)
               .reduce((jobSum, payment) => jobSum + Number(payment.amount || 0), 0), 0)
 
+            const receivable = Math.max(0, invoiced - paid)
+
             return (
               <>
                 <div className="client-detail-stats">
@@ -242,6 +244,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                   <div><span>Wartość robót</span><strong>{totalValue.toLocaleString('pl-PL')} zł</strong></div>
                   <div><span>Faktury</span><strong>{invoiced.toLocaleString('pl-PL')} zł</strong></div>
                   <div><span>Zapłacono</span><strong>{paid.toLocaleString('pl-PL')} zł</strong></div>
+                  <div className="client-detail-stat-receivable"><span>Do zapłaty</span><strong>{receivable.toLocaleString('pl-PL')} zł</strong></div>
                 </div>
 
                 <div className="client-detail-jobs">

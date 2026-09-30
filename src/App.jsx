@@ -8519,7 +8519,7 @@ function FinancePage({
 
       <div className="page-heading">
         <div>
-          <div className="small-label">{company.shortName || 'Aeroinstal'}</div>
+          <div className="small-label">{settings?.company?.shortName || 'Aeroinstal'}</div>
           <h1>Finanse</h1>
         </div>
       </div>

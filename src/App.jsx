@@ -2200,10 +2200,6 @@ function App() {
               jobs
             }
 
-            allJobPayments={
-              allJobPayments
-            }
-
             onOpenJob={
               setSelectedJob
             }

@@ -1954,7 +1954,7 @@ function App() {
       name: offer.name || '',
       location: offer.location || 'Brak lokalizacji',
       clientId: offer.clientId || null,
-      status: 'Planowane',
+      status: 'W toku',
       progress: 0,
       completed: false,
       completedAt: null,
@@ -2030,7 +2030,7 @@ function App() {
       clientId:
         newJob.clientId || null,
 
-      status: 'Planowane',
+      status: 'W toku',
 
       progress: 0,
 
@@ -2506,7 +2506,6 @@ function StartPage({
 }) {
 
   const activeJobs = jobs.filter((job) => normalizeJobStage(job) === 'W toku')
-  const plannedJobs = jobs.filter((job) => normalizeJobStage(job) === 'Planowane')
   const completedJobs = jobs.filter((job) => normalizeJobStage(job) === 'Zakończone')
 
   const averageProgress =
@@ -2666,47 +2665,6 @@ function StartPage({
               style={{ alignSelf: 'center', padding: '8px 0' }}
             >
               Pokaż wszystkie w toku ({activeJobs.length})
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section>
-        <div className="section-title">
-          <h2>Planowane</h2>
-          <button className="section-link" onClick={() => onJobs('planned')}>
-            Wszystkie
-          </button>
-        </div>
-
-        <div className="jobs">
-          {plannedJobs.length === 0 && (
-            <div className="detail-card">Brak planowanych robót.</div>
-          )}
-
-          {[...plannedJobs]
-            .sort((a, b) => {
-              const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0
-              const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0
-              return bDate - aDate
-            })
-            .slice(0, 5)
-            .map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onClick={() => onOpenJob(job)}
-                onToggleTask={onToggleJobTask}
-              />
-            ))}
-
-          {plannedJobs.length > 5 && (
-            <button
-              className="section-link"
-              onClick={() => onJobs('planned')}
-              style={{ alignSelf: 'center', padding: '8px 0' }}
-            >
-              Pokaż wszystkie planowane ({plannedJobs.length})
             </button>
           )}
         </div>
@@ -3356,7 +3314,6 @@ function DashboardCard({
 
 
 const JOB_STAGES = [
-  'Planowane',
   'W toku',
   'Odbiór',
   'Faktura wystawiona',
@@ -3368,7 +3325,7 @@ function normalizeJobStage(job) {
 
   const raw = String(job?.status || '').trim().toLowerCase()
 
-  if (raw === 'planowane' || raw === 'planned') return 'Planowane'
+  if (raw === 'planowane' || raw === 'planned') return 'W toku'
   if (raw === 'odbiór' || raw === 'odbior' || raw === 'oczekuje na odbiór') return 'Odbiór'
   if (raw === 'faktura' || raw === 'faktura wystawiona' || raw === 'invoice') return 'Faktura wystawiona'
   if (raw === 'zakończone' || raw === 'zakonczone' || raw === 'completed') return 'Zakończone'
@@ -3377,8 +3334,6 @@ function normalizeJobStage(job) {
 
 function getJobStageStyle(stage) {
   switch (stage) {
-    case 'Planowane':
-      return { background: '#f1f4f8', color: '#64748b' }
     case 'Odbiór':
       return { background: '#fff5df', color: '#b77908' }
     case 'Faktura wystawiona':
@@ -3728,7 +3683,6 @@ function JobsPage({
 
         const stage = normalizeJobStage(job)
 
-        if (filter === 'planned') return stage === 'Planowane'
         if (filter === 'active') return stage === 'W toku'
         if (filter === 'receipt') return stage === 'Odbiór'
         if (filter === 'invoice') return stage === 'Faktura wystawiona'
@@ -3739,8 +3693,6 @@ function JobsPage({
       }
     )
 
-
-  const plannedCount = jobs.filter((job) => normalizeJobStage(job) === 'Planowane').length
   const activeCount = jobs.filter((job) => normalizeJobStage(job) === 'W toku').length
   const receiptCount = jobs.filter((job) => normalizeJobStage(job) === 'Odbiór').length
   const invoiceCount = jobs.filter((job) => normalizeJobStage(job) === 'Faktura wystawiona').length
@@ -3992,7 +3944,7 @@ function JobsPage({
         className="job-filters"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
           gap: '8px',
           marginBottom: '10px',
           width: '100%',
@@ -4014,14 +3966,6 @@ function JobsPage({
           onClick={() => setFilter('active')}
         >
           W toku
-        </button>
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'planned')}
-          onClick={() => setFilter('planned')}
-        >
-          Planowane
         </button>
 
         <button
@@ -4055,7 +3999,7 @@ function JobsPage({
         className="job-summary"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
           gap: '8px',
           marginBottom: '16px',
           width: '100%',
@@ -5058,9 +5002,7 @@ function JobDetails({
     setEditedJob(updatedJob)
   }
 
-  const nextStage = normalizeJobStage(editedJob) === 'Planowane'
-    ? 'W toku'
-    : normalizeJobStage(editedJob) === 'W toku'
+  const nextStage = normalizeJobStage(editedJob) === 'W toku'
       ? 'Odbiór'
       : normalizeJobStage(editedJob) === 'Odbiór'
         ? 'Faktura wystawiona'
@@ -7574,7 +7516,7 @@ function JobDetails({
         </button>
       )}
 
-      {!editing && normalizeJobStage(editedJob) !== 'Planowane' && (
+      {!editing && (
         <div className="job-stage-actions">
           <span>Aktualny etap: <strong>{normalizeJobStage(editedJob)}</strong></span>
           <button

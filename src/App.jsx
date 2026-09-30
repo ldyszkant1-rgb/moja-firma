@@ -3452,6 +3452,79 @@ function JobCard({
   const visibleTasks = tasks.filter((task) => !task.done).slice(0, 3)
   const completedTasks = tasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
+  const totalValue = calculateTotal(job)
+
+
+  return (
+    <article className="job-card job-card-with-tasks">
+      <button type="button" className="job-card-main" onClick={onClick}>
+        <div className="job-card-topline">
+          <div className="job-card-identity">
+            {job.mainPhoto?.url ? (
+              <img
+                className="job-card-photo"
+                src={job.mainPhoto.url}
+                alt={job.mainPhoto.name || job.name}
+                title="Zdjęcie główne"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.open(job.mainPhoto.url, '_blank')
+                }}
+              />
+            ) : (
+              <span className="job-card-photo job-card-photo-empty" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="8.5" cy="9.5" r="1.5" />
+                  <path d="m5 17 4.5-4.5 3.2 3.2 2.2-2.2L19 17" />
+                </svg>
+              </span>
+            )}
+
+            <span className="job-card-identity-text">
+              <strong>{job.name}</strong>
+              <span>{job.location || 'Brak lokalizacji'}</span>
+              {clientName && <small className="job-card-client-name">👤 {clientName}</small>}
+            </span>
+          </div>
+
+          <span
+            className={stage === 'Zakończone' ? 'status completed' : 'status'}
+            style={stageStyle}
+          >
+            <span aria-hidden="true">{stage === 'Zakończone' ? '✓' : '●'}</span>
+            {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage.toUpperCase()}
+          </span>
+        </div>
+
+        <div className="job-card-progress">
+          <div className="job-card-progress-label">
+            <span>Postęp realizacji</span>
+            <strong>{progress}%</strong>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div className="job-card-metrics">
+          <div>
+            <span>MB</span>
+            <strong>{job.quantities?.mb || 0}</strong>
+          </div>
+          <div>
+            <span>m²</span>
+            <strong>{job.quantities?.m2 || 0}</strong>
+          </div>
+          <div>
+            <span>kg</span>
+            <strong>{job.quantities?.kg || 0}</strong>
+          </div>
+          <div className="job-card-value">
+            <span>Wartość</span>
+            <strong>{formatMoney(totalValue)}</strong>
+          </div>
+        </div>
 
 
       </button>

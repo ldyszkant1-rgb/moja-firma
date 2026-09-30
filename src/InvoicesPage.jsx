@@ -1,4 +1,4 @@
-import React,{useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useState} from 'react'
 import {createInvoice,updateInvoice,deleteInvoice,generateInvoiceNumber} from './lib/invoicesApi'
 const money=v=>Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł'
 const today=()=>new Date().toISOString().slice(0,10)
@@ -8,10 +8,13 @@ const items=j=>{if(!j)return[];const q=j.quantities||{},r=j.rates||{};return[['P
 const amounts=it=>{const net=(it||[]).reduce((s,x)=>s+Number(x.quantity||0)*Number(x.netUnit||0),0);const vat=(it||[]).reduce((s,x)=>s+Number(x.quantity||0)*Number(x.netUnit||0)*Number(x.vatRate||0)/100,0);return{net,vat,gross:net+vat}}
 const input={width:'100%',boxSizing:'border-box',padding:'11px 12px',border:'1px solid #d7e2eb',borderRadius:'11px',background:'#fff',color:'#17243d',fontSize:'14px'}
 const label={display:'block',marginBottom:'6px',color:'#64748b',fontSize:'11px',fontWeight:800,textTransform:'uppercase'}
-export default function InvoicesPage({invoices=[],jobs=[],clients=[],onAlert,onConfirm}){
+export default function InvoicesPage({invoices=[],jobs=[],clients=[],prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
  const [edit,setEdit]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients]),jm=useMemo(()=>new Map(jobs.map(j=>[String(j.id),j])),[jobs])
  const open=async job=>{const n=await generateInvoiceNumber();const t=job?total(job):0;setEdit({jobId:job?.id||'',clientId:job?.clientId||'',invoiceNumber:n,issueDate:today(),saleDate:today(),dueDate:addDays(today(),14),status:'Do wystawienia',paymentMethod:'Przelew',items:items(job),netAmount:t,vatAmount:t*.23,grossAmount:t*1.23,paidAmount:0,notes:''})}
+ useEffect(()=>{if(!prefillJobId||edit)return;const j=jm.get(String(prefillJobId));if(!j)return;open(j);onPrefillConsumed?.()},[prefillJobId,jm,edit])
+ useEffect(()=>{if(!openInvoiceId||edit)return;const inv=invoices.find(x=>String(x.id)===String(openInvoiceId));if(!inv)return;setEdit({...inv});onOpenConsumed?.()},[openInvoiceId,invoices,edit])
+
  const save=async()=>{if(!edit.clientId){onAlert?.('Wybierz klienta.');return}setSaving(true);try{const x=edit.id?await updateInvoice(edit):await createInvoice(edit);setEdit(null);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}));onAlert?.('Faktura została zapisana.')}catch(e){console.error(e);onAlert?.('Nie udało się zapisać faktury.')}finally{setSaving(false)}}
  const remove=async x=>{if(!(await onConfirm?.('Usunąć fakturę '+x.invoiceNumber+'?')))return;await deleteInvoice(x.id);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:{deletedId:x.id}}))}
  if(edit){const a=amounts(edit.items);return <div className="sub-page"><div className="page-heading"><div><div className="small-label">AEROINSTAL</div><h1>{edit.id?'Edytuj fakturę':'Nowa faktura'}</h1></div></div><div className="detail-card" style={{display:'grid',gap:'12px'}}>

@@ -4014,10 +4014,6 @@ function JobsPage({
           <span>w toku</span>
         </div>
         <div className="job-summary-item">
-          <strong>{plannedCount}</strong>
-          <span>planowanych</span>
-        </div>
-        <div className="job-summary-item">
           <strong>{receiptCount}</strong>
           <span>odbiór</span>
         </div>

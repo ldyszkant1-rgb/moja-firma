@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient, deleteClient, updateClient } from './lib/clientsApi'
+import { getAllJobPayments } from './lib/jobPaymentsApi'
 
 const EMPTY_CLIENT = {
   name: '',
@@ -58,12 +59,24 @@ function ClientForm({ value, onChange, onCancel, onSave, saving }) {
   )
 }
 
-export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfirm }) {
+export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfirm, onOpenJob }) {
   const [search, setSearch] = useState('')
   const [editingClient, setEditingClient] = useState(null)
   const [form, setForm] = useState(EMPTY_CLIENT)
   const [saving, setSaving] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [jobPayments, setJobPayments] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    getAllJobPayments()
+      .then((payments) => {
+        if (!cancelled) setJobPayments(Array.isArray(payments) ? payments : [])
+      })
+      .catch((error) => console.error('Nie udało się wczytać płatności klientów:', error))
+    return () => { cancelled = true }
+  }, [jobs])
 
   const visibleClients = useMemo(() => {
     const needle = search.trim().toLowerCase()
@@ -112,12 +125,18 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
       setForm(EMPTY_CLIENT)
       setShowEditor(false)
       await onRefresh()
+      setSelectedClient(null)
     } catch (error) {
       console.error('Nie udało się zapisać klienta:', error)
       onAlert(error?.message || 'Nie udało się zapisać klienta.')
     } finally {
       setSaving(false)
     }
+  }
+
+  const openClient = (client) => {
+    setSelectedClient(client)
+    setShowEditor(false)
   }
 
   const remove = async (client) => {
@@ -178,6 +197,86 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Szukaj klienta, NIP, telefonu..." />
       </div>
 
+      {selectedClient && (
+        <section className="detail-card client-detail-card">
+          <div className="client-detail-top">
+            <button type="button" className="client-back-button" onClick={() => setSelectedClient(null)}>← Klienci</button>
+            <button type="button" className="client-detail-edit" onClick={() => openEdit(selectedClient)}>Edytuj</button>
+          </div>
+
+          <div className="client-detail-identity">
+            <div className="client-detail-avatar">👤</div>
+            <div>
+              <div className="small-label">KARTOTEKA KLIENTA</div>
+              <h2>{selectedClient.name}</h2>
+              {selectedClient.nip && <span>NIP {selectedClient.nip}</span>}
+            </div>
+          </div>
+
+          <div className="client-detail-contact-grid">
+            {selectedClient.contactName && <div><span>Osoba kontaktowa</span><strong>{selectedClient.contactName}</strong></div>}
+            {selectedClient.phone && <div><span>Telefon</span><strong>{selectedClient.phone}</strong></div>}
+            {selectedClient.email && <div><span>E-mail</span><strong>{selectedClient.email}</strong></div>}
+            {selectedClient.address && <div><span>Adres</span><strong>{selectedClient.address}</strong></div>}
+          </div>
+
+          {selectedClient.notes && (
+            <div className="client-detail-notes"><span>Uwagi</span><p>{selectedClient.notes}</p></div>
+          )}
+
+          {(() => {
+            const clientJobs = jobs.filter((job) => String(job.clientId || '') === String(selectedClient.id))
+            const totalValue = clientJobs.reduce((sum, job) => sum +
+              (Number(job.quantities?.mb || 0) * Number(job.rates?.mb || 0)) +
+              (Number(job.quantities?.m2 || 0) * Number(job.rates?.m2 || 0)) +
+              (Number(job.quantities?.kg || 0) * Number(job.rates?.kg || 0)), 0)
+            const invoiced = clientJobs.reduce((sum, job) => sum + Number(job.invoiceAmount || 0), 0)
+            const paid = clientJobs.reduce((sum, job) => sum + jobPayments
+              .filter((payment) => payment.jobId === job.id)
+              .reduce((jobSum, payment) => jobSum + Number(payment.amount || 0), 0), 0)
+
+            return (
+              <>
+                <div className="client-detail-stats">
+                  <div><span>Roboty</span><strong>{clientJobs.length}</strong></div>
+                  <div><span>Wartość robót</span><strong>{totalValue.toLocaleString('pl-PL')} zł</strong></div>
+                  <div><span>Faktury</span><strong>{invoiced.toLocaleString('pl-PL')} zł</strong></div>
+                  <div><span>Zapłacono</span><strong>{paid.toLocaleString('pl-PL')} zł</strong></div>
+                </div>
+
+                <div className="client-detail-jobs">
+                  <div className="client-detail-section-title">Roboty klienta</div>
+                  {clientJobs.length === 0 ? (
+                    <div className="client-detail-empty">Brak przypisanych robót.</div>
+                  ) : clientJobs.map((job) => {
+                    const jobValue =
+                      (Number(job.quantities?.mb || 0) * Number(job.rates?.mb || 0)) +
+                      (Number(job.quantities?.m2 || 0) * Number(job.rates?.m2 || 0)) +
+                      (Number(job.quantities?.kg || 0) * Number(job.rates?.kg || 0))
+                    const paidForJob = jobPayments
+                      .filter((payment) => payment.jobId === job.id)
+                      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+                    return (
+                      <button type="button" className="client-detail-job-row" key={job.id} onClick={() => onOpenJob(job)}>
+                        <div>
+                          <strong>{job.name || 'Bez nazwy'}</strong>
+                          <span>{job.location || 'Brak lokalizacji'}</span>
+                        </div>
+                        <div className="client-detail-job-value">
+                          <strong>{Number(job.invoiceAmount || jobValue).toLocaleString('pl-PL')} zł</strong>
+                          <span>{paidForJob > 0 ? `Wpłaty: ${paidForJob.toLocaleString('pl-PL')} zł` : 'Brak wpłat'}</span>
+                        </div>
+                        <span className="client-detail-job-arrow">→</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )
+          })()}
+        </section>
+      )}
+
       <div className="clients-list">
         {visibleClients.length === 0 ? (
           <div className="detail-card clients-empty">
@@ -192,14 +291,14 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
           visibleClients.map((client) => {
             const clientJobs = jobs.filter((job) => String(job.clientId || '') === String(client.id))
             return (
-              <article className="client-card" key={client.id}>
+              <article className="client-card" key={client.id} onClick={() => openClient(client)}>
                 <div className="client-card-top">
                   <div className="client-avatar">👤</div>
                   <div className="client-card-title">
                     <h2>{client.name}</h2>
                     <span>{client.nip ? `NIP ${client.nip}` : 'Brak NIP'}</span>
                   </div>
-                  <button type="button" className="client-menu-button" onClick={() => openEdit(client)} aria-label="Edytuj klienta">✎</button>
+                  <button type="button" className="client-menu-button" onClick={(event) => { event.stopPropagation(); openEdit(client) }} aria-label="Edytuj klienta">✎</button>
                 </div>
 
                 <div className="client-card-info">
@@ -209,7 +308,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                   {client.address && <div><span>Adres</span><strong>{client.address}</strong></div>}
                 </div>
 
-                <div className="client-card-footer">
+                <div className="client-card-footer" onClick={(event) => event.stopPropagation()}>
                   <span>🔧 {clientJobs.length} {clientJobs.length === 1 ? 'robota' : clientJobs.length < 5 ? 'roboty' : 'robót'}</span>
                   <div>
                     <button type="button" onClick={() => openEdit(client)}>Edytuj</button>

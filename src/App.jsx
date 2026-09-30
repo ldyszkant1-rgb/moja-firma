@@ -2414,6 +2414,10 @@ function App() {
               jobs
             }
 
+            clients={
+              clients
+            }
+
             onOpenJob={
               setSelectedJob
             }
@@ -3393,7 +3397,7 @@ function JobCard({
 
   const stage = normalizeJobStage(job)
   const stageStyle = getJobStageStyle(stage)
-  const tasks = Array.isArray(job.notes) ? job.notes : []
+  const tasks = (Array.isArray(job.notes) ? job.notes : []).filter(Boolean)
   const pendingTasks = tasks.filter((task) => !task.done)
   const completedTaskCount = tasks.filter((task) => task.done).length
   const visibleTasks = tasks.filter((task) => !task.done).slice(0, 3)
@@ -3401,9 +3405,9 @@ function JobCard({
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
   const invoiceAmount = Number(job.invoiceAmount || 0) || totalValue
-  const paidAmount = jobPayments
-    .filter((payment) => payment.jobId === job.id)
-    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const paidAmount = (Array.isArray(jobPayments) ? jobPayments : [])
+    .filter((payment) => payment?.jobId === job.id)
+    .reduce((sum, payment) => sum + Number(payment?.amount || 0), 0)
   const remainingAmount = Math.max(0, invoiceAmount - paidAmount)
   const paymentStatus =
     invoiceAmount <= 0
@@ -3619,59 +3623,79 @@ function JobsPage({
 
   useEffect(() => {
     let cancelled = false
+    let channel = null
 
     const loadJobPayments = async () => {
       try {
         const payments = await getAllJobPayments()
         if (!cancelled) {
-          setJobPayments(payments)
+          setJobPayments(Array.isArray(payments) ? payments : [])
         }
       } catch (error) {
         console.error('Nie udało się wczytać płatności robót:', error)
+        if (!cancelled) setJobPayments([])
       }
     }
 
     loadJobPayments()
 
-    const channel = supabase
-      .channel('aeroinstal-jobs-payment-status')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'job_payments' },
-        (payload) => {
-          if (payload.eventType === 'DELETE' && payload.old?.id) {
-            setJobPayments((current) =>
-              current.filter((payment) => payment.id !== payload.old.id)
-            )
-            return
-          }
-
-          if (payload.new?.id) {
-            const row = payload.new
-            const incoming = {
-              id: row.id,
-              jobId: row.job_id,
-              amount: Number(row.amount || 0),
-              paidAt: row.paid_at || null,
-              note: row.note || '',
-              createdAt: row.created_at || null,
-            }
-
-            setJobPayments((current) =>
-              current.some((payment) => payment.id === incoming.id)
-                ? current.map((payment) =>
-                    payment.id === incoming.id ? incoming : payment
+    try {
+      channel = supabase
+        .channel('aeroinstal-jobs-payment-status')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'job_payments' },
+          (payload) => {
+            try {
+              if (payload.eventType === 'DELETE' && payload.old?.id) {
+                setJobPayments((current) =>
+                  (Array.isArray(current) ? current : []).filter(
+                    (payment) => payment?.id !== payload.old.id
                   )
-                : [...current, incoming]
-            )
+                )
+                return
+              }
+
+              if (payload.new?.id) {
+                const row = payload.new
+                const incoming = {
+                  id: row.id,
+                  jobId: row.job_id,
+                  amount: Number(row.amount || 0),
+                  paidAt: row.paid_at || null,
+                  note: row.note || '',
+                  createdAt: row.created_at || null,
+                }
+
+                setJobPayments((current) => {
+                  const safeCurrent = Array.isArray(current) ? current : []
+                  return safeCurrent.some((payment) => payment?.id === incoming.id)
+                    ? safeCurrent.map((payment) =>
+                        payment?.id === incoming.id ? incoming : payment
+                      )
+                    : [...safeCurrent, incoming]
+                })
+              }
+            } catch (error) {
+              console.error('Błąd aktualizacji płatności robót w czasie rzeczywistym:', error)
+            }
           }
-        }
-      )
-      .subscribe()
+        )
+        .subscribe((status, error) => {
+          if (status === 'CHANNEL_ERROR' || error) {
+            console.error('Kanał płatności robót zgłosił błąd:', status, error)
+          }
+        })
+    } catch (error) {
+      console.error('Nie udało się uruchomić synchronizacji płatności robót:', error)
+      channel = null
+    }
 
     return () => {
       cancelled = true
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [])
 

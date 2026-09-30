@@ -3785,7 +3785,6 @@ function JobsPage({
             <JobCard
               key={job.id}
               job={job}
-              jobPayments={allJobPayments}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
             />

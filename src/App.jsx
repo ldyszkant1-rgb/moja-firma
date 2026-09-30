@@ -2160,6 +2160,10 @@ function App() {
               jobs
             }
 
+            allJobPayments={
+              allJobPayments
+            }
+
             onOpenJob={
               setSelectedJob
             }
@@ -3184,6 +3188,7 @@ function JobCard({
   job,
   onClick,
   onToggleTask,
+  jobPayments = [],
 }) {
 
   const stage = normalizeJobStage(job)
@@ -3195,6 +3200,18 @@ function JobCard({
   const completedTasks = tasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
+  const invoiceAmount = Number(job.invoiceAmount || 0) || totalValue
+  const paidAmount = jobPayments
+    .filter((payment) => payment.jobId === job.id)
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const paymentStatus =
+    invoiceAmount <= 0
+      ? 'Brak faktury'
+      : paidAmount <= 0
+        ? 'Nieopłacona'
+        : paidAmount + 0.009 < invoiceAmount
+          ? 'Częściowo opłacona'
+          : 'Opłacona'
   const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
 
   return (
@@ -3265,6 +3282,16 @@ function JobCard({
             <span>Wartość</span>
             <strong>{formatMoney(totalValue)}</strong>
           </div>
+        </div>
+
+        <div className={`job-card-payment-status job-card-payment-status-${paymentStatus === 'Opłacona' ? 'paid' : paymentStatus === 'Częściowo opłacona' ? 'partial' : 'unpaid'}`}>
+          <span aria-hidden="true">{paymentStatus === 'Opłacona' ? '✓' : paymentStatus === 'Częściowo opłacona' ? '◐' : '○'}</span>
+          <span>{paymentStatus}</span>
+          {invoiceAmount > 0 && (
+            <strong>
+              {formatMoney(paidAmount)} / {formatMoney(invoiceAmount)}
+            </strong>
+          )}
         </div>
       </button>
 
@@ -3356,6 +3383,7 @@ function JobsPage({
   jobs,
   onOpenJob,
   onToggleJobTask,
+  allJobPayments = [],
   onAddJob,
   deletedJobs,
   onRestoreJob,
@@ -3780,6 +3808,7 @@ function JobsPage({
             <JobCard
               key={job.id}
               job={job}
+              jobPayments={allJobPayments}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
             />

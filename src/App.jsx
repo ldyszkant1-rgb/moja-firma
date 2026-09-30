@@ -2256,8 +2256,6 @@ function App() {
 
           clients={clients}
 
-          company={settings.company}
-
           onBack={() =>
             setSelectedJob(null)
           }
@@ -4584,7 +4582,6 @@ function NewJobPage({
 function JobDetails({
   job,
   clients,
-  company,
   onBack,
   onUpdate,
   onDelete,
@@ -6963,39 +6960,6 @@ function JobDetails({
 
         )}
 
-      </div>
-
-
-      {/* DOKUMENTY DO PODPISU */}
-
-      <div className="detail-card">
-        <h2>📄 Dokumenty</h2>
-        <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.5, marginBottom: '12px' }}>
-          Dokument możesz wydrukować na każdym etapie roboty — także po odbiorze.
-        </div>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <button
-            type="button"
-            className="document-button"
-            onClick={() => printJobDocument(editedJob, clients.find((client) => String(client.id) === String(editedJob.clientId)), company, 'contract')}
-          >
-            📄 Umowa / zlecenie
-          </button>
-          <button
-            type="button"
-            className="document-button"
-            onClick={() => printJobDocument(editedJob, clients.find((client) => String(client.id) === String(editedJob.clientId)), company, 'protocol')}
-          >
-            📋 Protokół odbioru robót
-          </button>
-          <button
-            type="button"
-            className="document-button"
-            onClick={() => printJobDocument(editedJob, clients.find((client) => String(client.id) === String(editedJob.clientId)), company, 'confirmation')}
-          >
-            ✓ Potwierdzenie wykonania robót
-          </button>
-        </div>
       </div>
 
 
@@ -10460,93 +10424,6 @@ function getTodayString() {
 
 }
 
-
-/* =====================================================
-   DOKUMENTY ROBOTY — WYDRUK
-   ===================================================== */
-
-function printJobDocument(job, client, company, type) {
-  const escapeHtml = (value) =>
-    String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-
-  const today = getTodayString()
-  const date = formatDate(today)
-  const clientName = client?.name || '—'
-  const titleMap = {
-    contract: 'UMOWA / ZLECENIE',
-    protocol: 'PROTOKÓŁ ODBIORU ROBÓT',
-    confirmation: 'POTWIERDZENIE WYKONANIA ROBÓT',
-  }
-  const title = titleMap[type] || 'DOKUMENT'
-  const total = calculateTotal(job)
-  const scope = job.notes
-    ?.filter((note) => note?.text)
-    .map((note) => note.text)
-    .join('\n') || ''
-
-  const quantityRows = [
-    ['mb', job.quantities?.mb, job.rates?.mb],
-    ['m²', job.quantities?.m2, job.rates?.m2],
-    ['kg', job.quantities?.kg, job.rates?.kg],
-  ]
-    .filter(([, quantity]) => Number(quantity || 0) > 0)
-    .map(([unit, quantity, rate]) =>
-      '<tr><td>' + escapeHtml(unit) + '</td><td>' +
-      escapeHtml(quantity) + '</td><td>' +
-      escapeHtml(rate || 0) + ' zł</td><td>' +
-      escapeHtml((Number(quantity || 0) * Number(rate || 0)).toLocaleString('pl-PL')) +
-      ' zł</td></tr>'
-    )
-    .join('')
-
-  const extraText = type === 'protocol'
-    ? 'Strony potwierdzają, że roboty objęte niniejszym protokołem zostały wykonane i przedstawione do odbioru.'
-    : type === 'confirmation'
-      ? 'Niniejszym potwierdza się wykonanie robót wskazanych w dokumencie zgodnie z ustalonym zakresem.'
-      : 'Strony potwierdzają uzgodnienie realizacji robót na warunkach określonych w niniejszym dokumencie.'
-
-  const html = '<!doctype html><html lang="pl"><head><meta charset="utf-8">' +
-    '<title>' + escapeHtml(title) + '</title><style>' +
-    'body{font-family:Arial,sans-serif;color:#17233f;margin:0;padding:40px;line-height:1.5}' +
-    '.head{display:flex;justify-content:space-between;border-bottom:3px solid #168fe5;padding-bottom:16px;margin-bottom:30px}' +
-    '.brand{font-size:22px;font-weight:800}.muted{color:#64748b}.title{text-align:center;font-size:24px;font-weight:800;margin:25px 0}' +
-    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}.box{border:1px solid #d8e1eb;border-radius:10px;padding:16px}' +
-    'table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #d8e1eb;padding:9px;text-align:left}th{background:#f4f7fa}' +
-    '.total{text-align:right;font-size:20px;font-weight:800;margin:20px 0}.text{white-space:pre-line;border:1px solid #d8e1eb;padding:15px;border-radius:10px}' +
-    '.signatures{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin-top:80px}.sig{text-align:center;padding-top:55px;border-top:1px solid #333}' +
-    '.footer{margin-top:60px;font-size:11px;color:#64748b;text-align:center}@media print{body{padding:15mm}}' +
-    '</style></head><body>' +
-    '<div class="head"><div class="brand">' + escapeHtml(company?.name || 'AEROINSTAL ŁUKASZ DYSZKANT') +
-    '</div><div class="muted">' + escapeHtml(company?.nip ? 'NIP: ' + company.nip : '') + '<br>' +
-    escapeHtml(company?.address || '') + '</div></div>' +
-    '<div class="title">' + escapeHtml(title) + '</div>' +
-    '<div class="grid"><div class="box"><strong>Klient</strong><br>' + escapeHtml(clientName) +
-    '<br>' + escapeHtml(client?.address || '') + '<br>' + escapeHtml(client?.nip ? 'NIP: ' + client.nip : '') +
-    '</div><div class="box"><strong>Robot</strong><br>' + escapeHtml(job.name || '—') +
-    '<br>' + escapeHtml(job.location || '—') + '<br>Data: ' + escapeHtml(date) + '</div></div>' +
-    '<p>' + escapeHtml(extraText) + '</p>' +
-    (quantityRows ? '<table><thead><tr><th>Jednostka</th><th>Ilość</th><th>Stawka</th><th>Wartość</th></tr></thead><tbody>' + quantityRows + '</tbody></table><div class="total">Łączna wartość: ' + escapeHtml(total.toLocaleString('pl-PL')) + ' zł</div>' : '') +
-    (scope ? '<h3>Zakres / uwagi</h3><div class="text">' + escapeHtml(scope) + '</div>' : '') +
-    '<div class="signatures"><div class="sig">' + escapeHtml(type === 'protocol' ? 'Klient / Zleceniodawca' : 'Klient / Zleceniodawca') +
-    '<br><span class="muted">podpis</span></div><div class="sig">' + escapeHtml(company?.name || 'AEROINSTAL ŁUKASZ DYSZKANT') +
-    '<br><span class="muted">podpis Wykonawcy</span></div></div>' +
-    '<div class="footer">Dokument wygenerowany w aplikacji Moja Firma – Aeroinstal</div>' +
-    '<script>window.onload=function(){window.focus();window.print()}</script></body></html>'
-
-  const printWindow = window.open('', '_blank', 'width=900,height=700')
-  if (!printWindow) {
-    showCustomAlert('Przeglądarka zablokowała nowe okno. Zezwól na wyskakujące okna, aby wydrukować dokument.')
-    return
-  }
-  printWindow.document.open()
-  printWindow.document.write(html)
-  printWindow.document.close()
-}
 
 /* =====================================================
    PIENIĄDZE

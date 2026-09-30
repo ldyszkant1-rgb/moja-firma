@@ -613,6 +613,8 @@ function App() {
   const [offers, setOffers] = useState([])
 
   const [invoices, setInvoices] = useState([])
+  const [invoiceJobToCreate, setInvoiceJobToCreate] = useState(null)
+  const [invoiceToOpen, setInvoiceToOpen] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -1989,6 +1991,22 @@ function App() {
 
 
 
+  const openInvoiceCreatorForJob = (job) => {
+    if (!job?.id) return
+    setSelectedJob(null)
+    setInvoiceToOpen(null)
+    setInvoiceJobToCreate(job.id)
+    setActivePage('invoices')
+  }
+
+  const openInvoiceFromJob = (invoice) => {
+    if (!invoice?.id) return
+    setSelectedJob(null)
+    setInvoiceJobToCreate(null)
+    setInvoiceToOpen(invoice.id)
+    setActivePage('invoices')
+  }
+
   const handleCreateOffer = async (draft) => {
     const saved = await createOffer({
       ...draft,
@@ -2060,7 +2078,7 @@ function App() {
 
       setJobs((current) => [savedJob, ...current])
       setOffers((current) => current.map((item) => String(item.id) === String(savedOffer.id) ? savedOffer : item))
-      showCustomAlert('Oferta została zamieniona na robotę. Robota trafiła do Planowanych.')
+      showCustomAlert('Oferta została zamieniona na robotę. Robota trafiła do realizacji.')
     } catch (error) {
       console.error('Nie udało się utworzyć roboty z oferty:', error)
       showCustomAlert('Nie udało się utworzyć roboty z oferty. Spróbuj ponownie.')
@@ -2324,6 +2342,9 @@ function App() {
           clients={clients}
 
           company={settings.company}
+          invoices={invoices}
+          onCreateInvoice={openInvoiceCreatorForJob}
+          onOpenInvoice={openInvoiceFromJob}
 
           onBack={() =>
             setSelectedJob(null)
@@ -2457,6 +2478,8 @@ function App() {
               clients
             }
 
+            invoices={invoices}
+
             onOpenJob={
               setSelectedJob
             }
@@ -2519,6 +2542,10 @@ function App() {
             invoices={invoices}
             jobs={jobs}
             clients={clients}
+            prefillJobId={invoiceJobToCreate}
+            openInvoiceId={invoiceToOpen}
+            onPrefillConsumed={() => setInvoiceJobToCreate(null)}
+            onOpenConsumed={() => setInvoiceToOpen(null)}
             onAlert={showCustomAlert}
             onConfirm={showCustomConfirm}
           />
@@ -3403,7 +3430,6 @@ function DashboardCard({
 const JOB_STAGES = [
   'W toku',
   'Odbiór',
-  'Faktura wystawiona',
   'Zakończone',
 ]
 
@@ -3414,7 +3440,7 @@ function normalizeJobStage(job) {
 
   if (raw === 'planowane' || raw === 'planned') return 'W toku'
   if (raw === 'odbiór' || raw === 'odbior' || raw === 'oczekuje na odbiór') return 'Odbiór'
-  if (raw === 'faktura' || raw === 'faktura wystawiona' || raw === 'invoice') return 'Faktura wystawiona'
+  if (raw === 'faktura' || raw === 'faktura wystawiona' || raw === 'invoice') return 'Zakończone'
   if (raw === 'zakończone' || raw === 'zakonczone' || raw === 'completed') return 'Zakończone'
   return 'W toku'
 }
@@ -3423,8 +3449,6 @@ function getJobStageStyle(stage) {
   switch (stage) {
     case 'Odbiór':
       return { background: '#fff5df', color: '#b77908' }
-    case 'Faktura wystawiona':
-      return { background: '#eeeaff', color: '#6d4bc3' }
     case 'Zakończone':
       return { background: '#dcf6e7', color: '#159447' }
     default:
@@ -3439,9 +3463,9 @@ function getJobStageStyle(stage) {
 function JobCard({
   job,
   clientName,
+  invoices = [],
   onClick,
   onToggleTask,
-  jobPayments = [],
 }) {
 
   const stage = normalizeJobStage(job)
@@ -3453,6 +3477,20 @@ function JobCard({
   const completedTasks = tasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
+  const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
+  const linkedInvoice = (invoices || []).find(
+    (invoice) => String(invoice.jobId) === String(job.id)
+  )
+  const invoicePaid = Number(linkedInvoice?.paidAmount || 0)
+  const invoiceGross = Number(linkedInvoice?.grossAmount || 0)
+  const invoiceRemaining = Math.max(0, invoiceGross - invoicePaid)
+  const invoiceStatusLabel = linkedInvoice
+    ? invoiceRemaining <= 0.01
+      ? 'Zapłacona'
+      : invoicePaid > 0
+        ? 'Częściowo zapłacona'
+        : linkedInvoice.status || 'Wystawiona'
+    : 'Brak faktury'
 
 
   return (
@@ -3523,6 +3561,17 @@ function JobCard({
           <div className="job-card-value">
             <span>Wartość</span>
             <strong>{formatMoney(totalValue)}</strong>
+          </div>
+        </div>
+
+        <div className="job-card-invoice-summary" style={{ marginTop: '10px', padding: '10px 12px', borderRadius: '12px', background: linkedInvoice ? '#f6f9fc' : '#fafafa', border: '1px solid #e5ebf1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <div style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#718096', textTransform: 'uppercase' }}>Faktura</span>
+            <strong style={{ display: 'block', marginTop: '2px', overflowWrap: 'anywhere' }}>{linkedInvoice?.invoiceNumber || 'Brak faktury'}</strong>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <strong style={{ display: 'block', fontSize: '13px', color: linkedInvoice && invoiceRemaining <= 0.01 ? '#159447' : '#24345c' }}>{linkedInvoice ? formatMoney(invoiceGross) : '—'}</strong>
+            <span style={{ display: 'block', fontSize: '11px', color: linkedInvoice && invoiceRemaining > 0.01 ? '#b77908' : '#718096', marginTop: '2px' }}>{invoiceStatusLabel}</span>
           </div>
         </div>
 
@@ -3616,6 +3665,7 @@ function JobCard({
 function JobsPage({
   jobs,
   clients,
+  invoices = [],
   onOpenJob,
   onToggleJobTask,
   onAddJob,
@@ -3623,86 +3673,6 @@ function JobsPage({
   onRestoreJob,
   onPermanentDeleteJob,
 }) {
-
-  const [jobPayments, setJobPayments] = useState([])
-
-  useEffect(() => {
-    let cancelled = false
-    let channel = null
-
-    const loadJobPayments = async () => {
-      try {
-        const payments = await getAllJobPayments()
-        if (!cancelled) {
-          setJobPayments(Array.isArray(payments) ? payments : [])
-        }
-      } catch (error) {
-        console.error('Nie udało się wczytać płatności robót:', error)
-        if (!cancelled) setJobPayments([])
-      }
-    }
-
-    loadJobPayments()
-
-    try {
-      channel = supabase
-        .channel('aeroinstal-jobs-payment-status')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'job_payments' },
-          (payload) => {
-            try {
-              if (payload.eventType === 'DELETE' && payload.old?.id) {
-                setJobPayments((current) =>
-                  (Array.isArray(current) ? current : []).filter(
-                    (payment) => payment?.id !== payload.old.id
-                  )
-                )
-                return
-              }
-
-              if (payload.new?.id) {
-                const row = payload.new
-                const incoming = {
-                  id: row.id,
-                  jobId: row.job_id,
-                  amount: Number(row.amount || 0),
-                  paidAt: row.paid_at || null,
-                  note: row.note || '',
-                  createdAt: row.created_at || null,
-                }
-
-                setJobPayments((current) => {
-                  const safeCurrent = Array.isArray(current) ? current : []
-                  return safeCurrent.some((payment) => payment?.id === incoming.id)
-                    ? safeCurrent.map((payment) =>
-                        payment?.id === incoming.id ? incoming : payment
-                      )
-                    : [...safeCurrent, incoming]
-                })
-              }
-            } catch (error) {
-              console.error('Błąd aktualizacji płatności robót w czasie rzeczywistym:', error)
-            }
-          }
-        )
-        .subscribe((status, error) => {
-          if (status === 'CHANNEL_ERROR' || error) {
-            console.error('Kanał płatności robót zgłosił błąd:', status, error)
-          }
-        })
-    } catch (error) {
-      console.error('Nie udało się uruchomić synchronizacji płatności robót:', error)
-      channel = null
-    }
-
-    return () => {
-      cancelled = true
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [])
 
   const [filter, setFilter] =
     useState('all')
@@ -3719,7 +3689,6 @@ function JobsPage({
         requestedTab === 'planned' ||
         requestedTab === 'active' ||
         requestedTab === 'receipt' ||
-        requestedTab === 'invoice' ||
         requestedTab === 'completed'
       ) {
         setFilter(requestedTab)
@@ -3748,7 +3717,6 @@ function JobsPage({
 
         if (filter === 'active') return stage === 'W toku'
         if (filter === 'receipt') return stage === 'Odbiór'
-        if (filter === 'invoice') return stage === 'Faktura wystawiona'
         if (filter === 'completed') return stage === 'Zakończone'
 
         return true
@@ -3758,7 +3726,6 @@ function JobsPage({
 
   const activeCount = jobs.filter((job) => normalizeJobStage(job) === 'W toku').length
   const receiptCount = jobs.filter((job) => normalizeJobStage(job) === 'Odbiór').length
-  const invoiceCount = jobs.filter((job) => normalizeJobStage(job) === 'Faktura wystawiona').length
   const completedCount = jobs.filter((job) => normalizeJobStage(job) === 'Zakończone').length
 
 
@@ -4007,7 +3974,7 @@ function JobsPage({
         className="job-filters"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
           gap: '8px',
           marginBottom: '10px',
           width: '100%',
@@ -4037,14 +4004,6 @@ function JobsPage({
           onClick={() => setFilter('receipt')}
         >
           Odbiór
-        </button>
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'invoice')}
-          onClick={() => setFilter('invoice')}
-        >
-          Faktura
         </button>
 
         <button
@@ -4081,10 +4040,6 @@ function JobsPage({
           <span>odbiór</span>
         </div>
         <div className="job-summary-item">
-          <strong>{invoiceCount}</strong>
-          <span>faktur</span>
-        </div>
-        <div className="job-summary-item">
           <strong>{completedCount}</strong>
           <span>zakończonych</span>
         </div>
@@ -4110,7 +4065,7 @@ function JobsPage({
               clientName={(clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.shortName || (clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.name || ''}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
-              jobPayments={jobPayments}
+              invoices={invoices}
             />
           )
         )}
@@ -4642,6 +4597,9 @@ function JobDetails({
   job,
   clients,
   company,
+  invoices = [],
+  onCreateInvoice,
+  onOpenInvoice,
   onBack,
   onUpdate,
   onDelete,
@@ -4704,198 +4662,11 @@ function JobDetails({
     )
 
   }, [job])
-  const [paymentHistory, setPaymentHistory] = useState([])
-  const [paymentForm, setPaymentForm] = useState({
-    amount: '',
-    paidAt: getTodayString(),
-    note: '',
-  })
-  const [paymentLoading, setPaymentLoading] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-
-    const loadPayments = async () => {
-      try {
-        const rows = await getJobPayments(job?.id)
-        if (!cancelled) setPaymentHistory(rows)
-      } catch (error) {
-        console.error('Nie udało się wczytać historii wpłat:', error)
-      }
-    }
-
-    loadPayments()
-
-    const unsubscribe = subscribeToJobPayments(job?.id, (payload) => {
-      if (!payload) return
-
-      if (payload.eventType === 'INSERT' && payload.new) {
-        const incoming = {
-          id: payload.new.id,
-          jobId: payload.new.job_id,
-          amount: Number(payload.new.amount || 0),
-          paidAt: payload.new.paid_at || null,
-          note: payload.new.note || '',
-          createdAt: payload.new.created_at || null,
-        }
-        setPaymentHistory((current) =>
-          current.some((item) => item.id === incoming.id)
-            ? current
-            : [...current, incoming].sort((a, b) =>
-                String(a.paidAt || '').localeCompare(String(b.paidAt || ''))
-              )
-        )
-      }
-
-      if (payload.eventType === 'UPDATE' && payload.new) {
-        const incoming = {
-          id: payload.new.id,
-          jobId: payload.new.job_id,
-          amount: Number(payload.new.amount || 0),
-          paidAt: payload.new.paid_at || null,
-          note: payload.new.note || '',
-          createdAt: payload.new.created_at || null,
-        }
-        setPaymentHistory((current) =>
-          current.map((item) => item.id === incoming.id ? incoming : item)
-        )
-      }
-
-      if (payload.eventType === 'DELETE' && payload.old?.id) {
-        setPaymentHistory((current) =>
-          current.filter((item) => item.id !== payload.old.id)
-        )
-      }
-    })
-
-    return () => {
-      cancelled = true
-      unsubscribe()
-    }
-  }, [job?.id])
-
-  const invoiceAmountForPayment =
-    Number(editedJob.invoiceAmount || 0) ||
-    calculateTotal(editedJob)
-
-  const paidAmountForPayment = calculatePaidAmount(paymentHistory)
-  const remainingInvoiceAmount = Math.max(
-    0,
-    invoiceAmountForPayment - paidAmountForPayment
-  )
-  const invoicePaymentStatus =
-    invoiceAmountForPayment <= 0
-      ? 'Brak kwoty faktury'
-      : paidAmountForPayment <= 0
-        ? 'Nieopłacona'
-        : paidAmountForPayment + 0.009 < invoiceAmountForPayment
-          ? 'Częściowo zapłacona'
-          : 'Opłacona'
-
-  const refreshJobAfterPayment = async (nextPayments) => {
-    const nextPaidAmount = calculatePaidAmount(nextPayments)
-    const invoiceAmount =
-      Number(editedJob.invoiceAmount || 0) ||
-      calculateTotal(editedJob)
-
-    if (invoiceAmount > 0 && nextPaidAmount + 0.009 >= invoiceAmount) {
-      const completedJob = {
-        ...editedJob,
-        status: 'Zakończone',
-        completed: true,
-        completedAt: editedJob.completedAt || getTodayString(),
-        paidAt:
-          nextPayments
-            .map((item) => item.paidAt)
-            .filter(Boolean)
-            .sort()
-            .at(-1) || getTodayString(),
-      }
-      setEditedJob(completedJob)
-      await onUpdate(completedJob)
-    } else if (normalizeJobStage(editedJob) === 'Zakończone') {
-      const openJob = {
-        ...editedJob,
-        status: 'Faktura wystawiona',
-        completed: false,
-        completedAt: null,
-        paidAt: null,
-      }
-      setEditedJob(openJob)
-      await onUpdate(openJob)
-    }
-  }
-
-  const addInvoicePayment = async () => {
-    const amount = parseDecimal(paymentForm.amount)
-
-    if (invoiceAmountForPayment <= 0) {
-      showCustomAlert('Najpierw wpisz kwotę faktury.')
-      return
-    }
-
-    if (!amount || amount <= 0) {
-      showCustomAlert('Podaj prawidłową kwotę wpłaty.')
-      return
-    }
-
-    if (amount > remainingInvoiceAmount + 0.009) {
-      showCustomAlert(
-        `Wpłata jest za duża. Do zapłaty zostało ${formatMoney(remainingInvoiceAmount)}.`
-      )
-      return
-    }
-
-    try {
-      setPaymentLoading(true)
-      const savedPayment = await createJobPayment({
-        jobId: editedJob.id,
-        amount,
-        paidAt: paymentForm.paidAt || getTodayString(),
-        note: paymentForm.note,
-      })
-
-      const nextPayments = [...paymentHistory, savedPayment]
-      setPaymentHistory(nextPayments)
-      setPaymentForm({
-        amount: '',
-        paidAt: getTodayString(),
-        note: '',
-      })
-      await refreshJobAfterPayment(nextPayments)
-    } catch (error) {
-      console.error('Nie udało się zapisać wpłaty:', error)
-      showCustomAlert('Nie udało się zapisać wpłaty.')
-    } finally {
-      setPaymentLoading(false)
-    }
-  }
-
-  const removeInvoicePayment = async (payment) => {
-    const confirmed = await showCustomConfirm(
-      `Usunąć wpłatę ${formatMoney(payment.amount)} z dnia ${formatDate(payment.paidAt)}?`
-    )
-    if (!confirmed) return
-
-    try {
-      setPaymentLoading(true)
-      await deleteJobPayment(payment.id)
-      const nextPayments = paymentHistory.filter((item) => item.id !== payment.id)
-      setPaymentHistory(nextPayments)
-      await refreshJobAfterPayment(nextPayments)
-    } catch (error) {
-      console.error('Nie udało się usunąć wpłaty:', error)
-      showCustomAlert('Nie udało się usunąć wpłaty.')
-    } finally {
-      setPaymentLoading(false)
-    }
-  }
-
-
-
-
+  const linkedInvoice = (invoices || []).find(
+    (invoice) => String(invoice.jobId) === String(job.id)
+  ) || null
   const saveChanges = async () => {
-    const stageBeforeSave = normalizeJobStage(editedJob)
     if (!editedJob.name.trim()) {
 
       showCustomAlert(
@@ -4999,28 +4770,12 @@ function JobDetails({
   const changeStage = async (nextStage) => {
     const today = getTodayString()
 
-    if (nextStage === 'Zakończone') {
-      const invoiceAmount = Number(editedJob.invoiceAmount || 0) || calculateTotal(editedJob)
-      const paidAmount = calculatePaidAmount(paymentHistory)
-      const hasLegacyPaidAt = Boolean(editedJob.paidAt) && paymentHistory.length === 0
-
-      if (invoiceAmount > 0 && paidAmount + 0.009 < invoiceAmount && !hasLegacyPaidAt) {
-        showCustomAlert(
-          `Najpierw rozlicz całą fakturę. Pozostało do zapłaty: ${formatMoney(Math.max(0, invoiceAmount - paidAmount))}.`
-        )
-        return
-      }
-    }
-
     const updatedJob = {
       ...editedJob,
       status: nextStage,
       completed: nextStage === 'Zakończone',
       completedAt: nextStage === 'Zakończone'
         ? (editedJob.completedAt || today)
-        : null,
-      paidAt: nextStage === 'Zakończone'
-        ? (editedJob.paidAt || today)
         : null,
     }
 
@@ -5035,10 +4790,8 @@ function JobDetails({
   const nextStage = normalizeJobStage(editedJob) === 'W toku'
       ? 'Odbiór'
       : normalizeJobStage(editedJob) === 'Odbiór'
-        ? 'Faktura wystawiona'
-        : normalizeJobStage(editedJob) === 'Faktura wystawiona'
-          ? 'Zakończone'
-          : null
+        ? 'Zakończone'
+        : null
 
   const updateQuantity = (
     field,
@@ -6140,9 +5893,6 @@ function JobDetails({
                   completedAt: value === 'Zakończone'
                     ? (editedJob.completedAt || getTodayString())
                     : null,
-                  paidAt: value === 'Zakończone'
-                    ? (editedJob.paidAt || getTodayString())
-                    : null,
                 })
               }}
             >
@@ -6166,7 +5916,53 @@ function JobDetails({
         )}
 
 
-      {/* ZDJĘCIE GŁÓWNE */}
+      <div className="detail-card" style={{ marginTop: '14px' }}>
+        <div className="detail-title">
+          <div>
+            <div className="small-label">FAKTURA</div>
+            <h2 style={{ marginBottom: '4px' }}>{linkedInvoice?.invoiceNumber || 'Brak faktury'}</h2>
+          </div>
+          {linkedInvoice && (
+            <span style={{ fontSize: '12px', fontWeight: 800, color: Number(linkedInvoice.paidAmount || 0) >= Number(linkedInvoice.grossAmount || 0) - 0.01 ? '#159447' : '#b77908' }}>
+              {Number(linkedInvoice.paidAmount || 0) >= Number(linkedInvoice.grossAmount || 0) - 0.01
+                ? 'Zapłacona'
+                : Number(linkedInvoice.paidAmount || 0) > 0
+                  ? 'Częściowo zapłacona'
+                  : linkedInvoice.status || 'Wystawiona'}
+            </span>
+          )}
+        </div>
+        {linkedInvoice ? (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Kwota</span>
+                <strong>{formatMoney(linkedInvoice.grossAmount)}</strong>
+              </div>
+              <div>
+                <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Termin</span>
+                <strong>{linkedInvoice.dueDate ? formatDate(linkedInvoice.dueDate) : '—'}</strong>
+              </div>
+            </div>
+            <button type="button" className="document-button" style={{ marginTop: '12px', width: '100%' }} onClick={() => onOpenInvoice?.(linkedInvoice)}>
+              🧾 Otwórz fakturę
+            </button>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: '8px 0 12px', color: '#68758a', lineHeight: 1.5 }}>
+              Obsługa faktury i płatności znajduje się w zakładce Faktury.
+            </p>
+            {(normalizeJobStage(editedJob) === 'Odbiór' || normalizeJobStage(editedJob) === 'Zakończone') && (
+              <button type="button" className="save-button" style={{ width: '100%' }} onClick={() => onCreateInvoice?.(editedJob)}>
+                ＋ Utwórz fakturę
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ZDJĘCIE GŁÓWNE */
 
       <div
         className="detail-card"
@@ -7330,7 +7126,6 @@ function JobDetails({
         >
           {nextStage === 'W toku' && '▶ Rozpocznij realizację'}
           {nextStage === 'Odbiór' && '✓ Przejdź do odbioru'}
-          {nextStage === 'Faktura wystawiona' && '▣ Oznacz: faktura wystawiona'}
           {nextStage === 'Zakończone' && '✓ Zakończ robotę'}
         </button>
       )}

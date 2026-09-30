@@ -2328,6 +2328,10 @@ function App() {
               settings
             }
 
+            clients={clients}
+
+            onOpenJob={setSelectedJob}
+
           />
 
         )}
@@ -7709,6 +7713,8 @@ function DocumentRow({
 function FinancePage({
   jobs,
   settings,
+  clients = [],
+  onOpenJob,
 }) {
 
   const categoryOptions =
@@ -8138,6 +8144,30 @@ function FinancePage({
         0
       )
 
+  const receivables = jobs
+    .map((job) => {
+      const jobValue = calculateTotal(job)
+      const invoiceValue = Number(job.invoiceAmount || 0) || jobValue
+      const paid = allJobPayments
+        .filter((payment) => payment.jobId === job.id)
+        .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+      const remaining = Math.max(0, invoiceValue - paid)
+      const dueDate = job.paymentDueDate || null
+      const isOverdue = remaining > 0 && dueDate && dueDate < getTodayString()
+      const client = clients.find((item) => String(item.id) === String(job.clientId))
+      return { job, invoiceValue, paid, remaining, dueDate, isOverdue, clientName: client?.name || 'Bez przypisanego klienta' }
+    })
+    .filter((item) => item.remaining > 0.01)
+    .sort((a, b) => {
+      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1
+      if (!a.dueDate) return 1
+      if (!b.dueDate) return -1
+      return a.dueDate.localeCompare(b.dueDate)
+    })
+
+  const totalReceivables = receivables.reduce((sum, item) => sum + item.remaining, 0)
+  const overdueReceivables = receivables.filter((item) => item.isOverdue).reduce((sum, item) => sum + item.remaining, 0)
+
   const splitAmount = revenue / 2
 
   const recordPartnerTransfer = async (amount) => {
@@ -8360,6 +8390,46 @@ function FinancePage({
           <h1>Finanse</h1>
         </div>
       </div>
+
+      <section className="detail-card receivables-card">
+        <div className="receivables-header">
+          <div>
+            <div className="small-label">NALEŻNOŚCI</div>
+            <h2>Do odzyskania</h2>
+          </div>
+          <div className="receivables-total">{formatMoney(totalReceivables)}</div>
+        </div>
+        <div className="receivables-summary">
+          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona robota' : 'nieopłacone roboty'}</span>
+          {overdueReceivables > 0 && <strong>🔴 Zaległe: {formatMoney(overdueReceivables)}</strong>}
+        </div>
+        {receivables.length > 0 ? (
+          <div className="receivables-list">
+            {receivables.map((item) => {
+              const dueLabel = item.isOverdue
+                ? 'Zaległość • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
+                : item.dueDate
+                  ? 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
+                  : 'Brak terminu'
+              return (
+                <button type="button" className="receivable-row" key={item.job.id} onClick={() => onOpenJob?.(item.job)}>
+                  <div className="receivable-main">
+                    <strong>{item.job.name || 'Bez nazwy'}</strong>
+                    <span>{item.clientName}</span>
+                  </div>
+                  <div className="receivable-amount">
+                    <strong>{formatMoney(item.remaining)}</strong>
+                    <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>{dueLabel}</span>
+                  </div>
+                  <span className="receivable-arrow">→</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="receivables-empty">🎉 Wszystkie należności są rozliczone.</div>
+        )}
+      </section>
 
       <div
         className="detail-card"

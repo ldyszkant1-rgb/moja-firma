@@ -8993,3 +8993,123 @@ section {
     font-size: 16px !important;
   }
 }
+
+
+/* =========================================================
+   ROBOTY — STATUS PŁATNOŚCI NA KARCIE
+   ========================================================= */
+
+.job-card-payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 14px;
+  padding: 11px 13px;
+  border: 1px solid #e3ebf1;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.job-card-payment-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.job-card-payment-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.job-card-payment-main strong {
+  display: block;
+  color: #18284f;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.job-card-payment-main span:not(.job-card-payment-icon) {
+  display: block;
+  margin-top: 3px;
+  color: #7a889c;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.job-card-payment-remaining {
+  flex: 0 0 auto;
+  color: #9a6810;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.job-card-payment-unpaid {
+  background: #fffaf0;
+  border-color: #f1dfb6;
+}
+
+.job-card-payment-unpaid .job-card-payment-icon {
+  background: #fff0c9;
+  color: #b4770b;
+}
+
+.job-card-payment-partial {
+  background: #fffaf1;
+  border-color: #eedfbf;
+}
+
+.job-card-payment-partial .job-card-payment-icon {
+  background: #ffefc7;
+  color: #ad7410;
+}
+
+.job-card-payment-paid {
+  background: #f0faf4;
+  border-color: #cfead9;
+}
+
+.job-card-payment-paid .job-card-payment-icon {
+  background: #d9f3e2;
+  color: #168b49;
+}
+
+.job-card-payment-paid .job-card-payment-main strong {
+  color: #167542;
+}
+
+@media (max-width: 600px) {
+  .job-card-payment {
+    margin: 0 12px 12px;
+    padding: 10px 11px;
+    border-radius: 13px;
+  }
+
+  .job-card-payment-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    border-radius: 9px;
+    font-size: 15px;
+  }
+
+  .job-card-payment-main strong {
+    font-size: 12px;
+  }
+
+  .job-card-payment-main span:not(.job-card-payment-icon) {
+    font-size: 10px;
+  }
+
+  .job-card-payment-remaining {
+    font-size: 10px;
+  }
+}

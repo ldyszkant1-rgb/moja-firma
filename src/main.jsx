@@ -5,9 +5,14 @@ import App from './App.jsx'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {\n      registration.update()\n    }).catch((error) => {
-      console.error('Nie udało się zarejestrować Service Workera:', error)
-    })
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        registration.update()
+      })
+      .catch((error) => {
+        console.error('Nie udało się zarejestrować Service Workera:', error)
+      })
   })
 }
 

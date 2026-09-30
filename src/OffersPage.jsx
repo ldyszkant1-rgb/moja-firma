@@ -174,7 +174,7 @@ export default function OffersPage({
   const [filter, setFilter] = useState('all')
 
   const clientName = (id) =>
-    (clients || []).find((client) => String(client.id) === String(id))?.name || ''
+    (clients || []).find((client) => String(client.id) === String(id))?.shortName || (clients || []).find((client) => String(client.id) === String(id))?.name || ''
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -241,7 +241,7 @@ export default function OffersPage({
             <input className="job-new-input" placeholder="Lokalizacja / statek" value={editing.location || ''} onChange={(e) => change('location', e.target.value)} />
             <select className="job-new-input" value={editing.clientId || ''} onChange={(e) => change('clientId', e.target.value || null)}>
               <option value="">Klient — opcjonalnie</option>
-              {(clients || []).map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+              {(clients || []).map((client) => <option key={client.id} value={client.id}>{client.shortName || client.name}</option>)}
             </select>
             <select className="job-new-input" value={editing.status || 'Nowa'} onChange={(e) => change('status', e.target.value)}>
               {STATUSES.map((status) => <option key={status}>{status}</option>)}

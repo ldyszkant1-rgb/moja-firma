@@ -3,6 +3,7 @@ import './App.css'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
+import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
@@ -45,6 +46,7 @@ import {
   subscribeToPartnerSettlements,
 } from './lib/partnerSettlementApi'
 import { supabase } from './lib/supabase'
+import { getInvoices, subscribeToInvoices } from './lib/invoicesApi'
 
 
 /* =====================================================
@@ -610,6 +612,8 @@ function App() {
 
   const [offers, setOffers] = useState([])
 
+  const [invoices, setInvoices] = useState([])
+
   useEffect(() => {
     let cancelled = false
     const loadOffers = async () => {
@@ -630,6 +634,33 @@ function App() {
       getOffers().then((fresh) => setOffers(fresh)).catch((error) => console.error('Nie udało się odświeżyć ofert:', error))
     })
     return () => { cancelled = true; unsubscribe() }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const loadInvoices = async () => {
+      try {
+        const remote = await getInvoices()
+        if (!cancelled) setInvoices(Array.isArray(remote) ? remote : [])
+      } catch (error) {
+        console.error('Nie udało się wczytać faktur:', error)
+      }
+    }
+    loadInvoices()
+    const unsubscribe = subscribeToInvoices((payload) => {
+      if (payload.eventType === 'DELETE' && payload.old?.id) {
+        setInvoices((current) => current.filter((item) => String(item.id) !== String(payload.old.id)))
+        return
+      }
+      loadInvoices()
+    })
+    const handleLocalChange = () => loadInvoices()
+    window.addEventListener('aeroinstal-invoices-changed', handleLocalChange)
+    return () => {
+      cancelled = true
+      unsubscribe()
+      window.removeEventListener('aeroinstal-invoices-changed', handleLocalChange)
+    }
   }, [])
 
   const loadClients = async () => {
@@ -2482,6 +2513,16 @@ function App() {
 
         )}
 
+
+        {activePage === 'invoices' && (
+          <InvoicesPage
+            invoices={invoices}
+            jobs={jobs}
+            clients={clients}
+            onAlert={showCustomAlert}
+            onConfirm={showCustomConfirm}
+          />
+        )}
 
         {activePage === 'finance' && (
 
@@ -10299,6 +10340,25 @@ function BottomNavigation({
 
 
             <NavButton
+
+        icon="🧾"
+
+        label="Faktury"
+
+        active={
+          activePage === 'invoices'
+        }
+
+        onClick={() =>
+          onChange(
+            'invoices'
+          )
+        }
+
+      />
+
+
+      <NavButton
 
         icon="▥"
 

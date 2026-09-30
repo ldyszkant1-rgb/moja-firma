@@ -8594,3 +8594,165 @@ section {
     object-fit: contain !important;
   }
 }
+
+
+/* =========================================================
+   NOWA ROBOTA — TABELA STAWEK, KOMPAKTOWY UKŁAD
+   Zastępuje wysokie, pionowe bloki prostą tabelą.
+   ========================================================= */
+
+.new-job-rate-row {
+  display: grid !important;
+  grid-template-columns: minmax(88px, 0.55fr) minmax(170px, 1.4fr) minmax(105px, 0.65fr) !important;
+  grid-template-rows: auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-height: 76px !important;
+  margin: 0 !important;
+  padding: 12px 0 !important;
+  border-bottom: 1px solid #e5edf3 !important;
+}
+
+.new-job-rate-row > .new-job-rate-heading {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 0 0 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+.new-job-rate-heading > strong {
+  font-size: 19px !important;
+  line-height: 1.1 !important;
+}
+
+.new-job-rate-heading > small {
+  margin: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+.new-job-rate-row > .new-job-rate-input-wrap {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.new-job-rate-input-wrap .rate-input {
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 8px 78px 8px 14px !important;
+  border-radius: 12px !important;
+  font-size: 20px !important;
+  text-align: left !important;
+}
+
+.new-job-rate-unit {
+  right: 13px !important;
+  font-size: 13px !important;
+}
+
+.new-job-rate-row > .new-job-rate-total {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+.new-job-rate-total span {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #78879b !important;
+}
+
+.new-job-rate-total strong {
+  font-size: 18px !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+.new-job-rate-row:first-of-type {
+  border-top: 1px solid #e5edf3 !important;
+}
+
+.new-job-rate-row:last-of-type {
+  border-bottom: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .new-job-rate-row {
+    grid-template-columns: 72px minmax(0, 1fr) 86px !important;
+    gap: 8px !important;
+    min-height: 68px !important;
+    padding: 9px 0 !important;
+  }
+
+  .new-job-rate-row > .new-job-rate-heading {
+    padding-left: 8px !important;
+  }
+
+  .new-job-rate-heading > strong {
+    font-size: 17px !important;
+  }
+
+  .new-job-rate-heading > small {
+    font-size: 10px !important;
+  }
+
+  .new-job-rate-input-wrap .rate-input {
+    min-height: 46px !important;
+    padding: 7px 65px 7px 11px !important;
+    font-size: 19px !important;
+  }
+
+  .new-job-rate-unit {
+    right: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .new-job-rate-total {
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 1px !important;
+  }
+
+  .new-job-rate-total span {
+    font-size: 10px !important;
+  }
+
+  .new-job-rate-total strong {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .new-job-rate-row {
+    grid-template-columns: 62px minmax(0, 1fr) 78px !important;
+    gap: 6px !important;
+  }
+
+  .new-job-rate-heading > strong {
+    font-size: 16px !important;
+  }
+
+  .new-job-rate-input-wrap .rate-input {
+    font-size: 18px !important;
+  }
+
+  .new-job-rate-total strong {
+    font-size: 15px !important;
+  }
+}

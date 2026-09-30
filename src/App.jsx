@@ -2310,6 +2310,7 @@ function App() {
             onRefresh={loadClients}
             onAlert={showCustomAlert}
             onConfirm={showCustomConfirm}
+            onOpenJob={setSelectedJob}
           />
 
         )}

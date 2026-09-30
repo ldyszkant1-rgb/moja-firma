@@ -9528,3 +9528,83 @@ section {
     font-size: 10px;
   }
 }
+
+
+/* =========================================================
+   KLIENCI — OCHRONA PRZED HORYZONTALNYM OVERFLOW NA TELEFONIE
+   Długie nazwy firm nie mogą rozszerzać karty poza ekran.
+   ========================================================= */
+
+.clients-page,
+.clients-list,
+.client-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-card {
+  overflow: hidden;
+}
+
+.client-card-top {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-card-title {
+  width: 0;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.client-card-title h2,
+.client-card-title span {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-card-info {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-card-info div,
+.client-card-info strong {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.client-card-footer {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-card-footer > div {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .clients-page,
+  .clients-list,
+  .client-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .client-card-title h2 {
+    font-size: 16px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

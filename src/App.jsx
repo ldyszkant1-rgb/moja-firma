@@ -753,12 +753,13 @@ function App() {
               m2: '220',
               kg: '',
             },
-            company: parsed.company || {
-              name: 'AEROINSTAL ŁUKASZ DYSZKANT',
-              nip: '5833105866',
-              regon: '385589939',
-              address: 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
-              email: 'Aeroinstal@wp.pl',
+            company: {
+              shortName: parsed.company?.shortName || 'Aeroinstal',
+              name: parsed.company?.name || 'AEROINSTAL ŁUKASZ DYSZKANT',
+              nip: parsed.company?.nip || '5833105866',
+              regon: parsed.company?.regon || '385589939',
+              address: parsed.company?.address || 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
+              email: parsed.company?.email || 'Aeroinstal@wp.pl',
             },
             categories: parsed.categories || [
               { name: 'ZUS', enabled: true },
@@ -783,6 +784,7 @@ function App() {
           kg: '',
         },
         company: {
+          shortName: 'Aeroinstal',
           name: 'AEROINSTAL ŁUKASZ DYSZKANT',
           nip: '5833105866',
           regon: '385589939',
@@ -2238,7 +2240,7 @@ function App() {
       <div className="device-setup-overlay">
         <div className="device-setup-card">
           <div className="device-setup-icon">📱</div>
-          <div className="small-label">AEROINSTAL</div>
+          <div className="small-label">{settings.company?.shortName || 'Aeroinstal'}</div>
           <h2>Sprawdzanie urządzenia</h2>
           <p>Sprawdzam, do którego użytkownika jest przypisany ten telefon.</p>
         </div>
@@ -2357,7 +2359,9 @@ function App() {
 
           className="app-logo"
 
-          alt="Aeroinstal"
+          alt={settings.company?.shortName || 'Aeroinstal'}
+
+          title={settings.company?.shortName || 'Aeroinstal'}
 
         />
 
@@ -8514,7 +8518,7 @@ function FinancePage({
 
       <div className="page-heading">
         <div>
-          <div className="small-label">MOJA FIRMA</div>
+          <div className="small-label">{company.shortName || 'Aeroinstal'}</div>
           <h1>Finanse</h1>
         </div>
       </div>
@@ -9518,12 +9522,13 @@ function SettingsPage({
     setEditingRates(false)
   }
 
-  const company = settings.company || {
-    name: 'AEROINSTAL ŁUKASZ DYSZKANT',
-    nip: '5833105866',
-    regon: '385589939',
-    address: 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
-    email: 'Aeroinstal@wp.pl',
+  const company = {
+    shortName: settings.company?.shortName || 'Aeroinstal',
+    name: settings.company?.name || 'AEROINSTAL ŁUKASZ DYSZKANT',
+    nip: settings.company?.nip || '5833105866',
+    regon: settings.company?.regon || '385589939',
+    address: settings.company?.address || 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
+    email: settings.company?.email || 'Aeroinstal@wp.pl',
   }
 
   const [showCompany, setShowCompany] = useState(false)
@@ -9544,6 +9549,7 @@ function SettingsPage({
     setSettings({
       ...settings,
       company: {
+        shortName: draftCompany.shortName?.trim() || draftCompany.name.trim(),
         name: draftCompany.name.trim(),
         nip: draftCompany.nip.trim(),
         regon: draftCompany.regon.trim(),
@@ -9922,7 +9928,8 @@ function SettingsPage({
                 }}
               >
                 {[
-                  ['name', 'Nazwa firmy'],
+                  ['shortName', 'Nazwa skrócona'],
+                  ['name', 'Pełna nazwa firmy'],
                   ['nip', 'NIP'],
                   ['regon', 'REGON'],
                   ['address', 'Adres'],
@@ -9980,7 +9987,8 @@ function SettingsPage({
                   marginTop: '14px',
                 }}
               >
-                <div><strong>{company.name}</strong></div>
+                <div><strong>{company.shortName || 'Aeroinstal'}</strong></div>
+                <div style={{ marginTop: '4px' }}>Pełna nazwa: {company.name || '—'}</div>
                 <div>NIP: {company.nip || '—'}</div>
                 <div>REGON: {company.regon || '—'}</div>
                 <div>{company.address || '—'}</div>

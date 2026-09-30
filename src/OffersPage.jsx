@@ -177,6 +177,25 @@ export default function OffersPage({
         <button type="button" className="edit-button" onClick={() => setEditing(emptyOffer(settings))}>+ Nowa oferta</button>
       </div>
 
+      <div className="offers-summary-grid">
+        {[
+          ['Wszystkie', offers.length],
+          ['Nowe', offers.filter((offer) => offer.status === 'Nowa').length],
+          ['Wysłane', offers.filter((offer) => offer.status === 'Wysłana').length],
+          ['Zaakceptowane', offers.filter((offer) => offer.status === 'Zaakceptowana').length],
+        ].map(([label, value]) => (
+          <button
+            type="button"
+            key={label}
+            className={filter === (label === 'Wszystkie' ? 'all' : label === 'Nowe' ? 'Nowa' : label === 'Wysłane' ? 'Wysłana' : 'Zaakceptowana') ? 'offer-summary-card active' : 'offer-summary-card'}
+            onClick={() => setFilter(label === 'Wszystkie' ? 'all' : label === 'Nowe' ? 'Nowa' : label === 'Wysłane' ? 'Wysłana' : 'Zaakceptowana')}
+          >
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </button>
+        ))}
+      </div>
+
       <div className="detail-card">
         <div style={{ display: 'grid', gap: 10 }}>
           <input className="job-new-input" placeholder="Szukaj oferty, klienta, lokalizacji..." value={query} onChange={(e) => setQuery(e.target.value)} />

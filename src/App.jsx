@@ -5962,6 +5962,22 @@ function JobDetails({
 
           />
 
+          <select
+            className="note-text-input job-edit-input"
+            value={editedJob.clientId || ''}
+            onChange={(e) =>
+              setEditedJob({
+                ...editedJob,
+                clientId: e.target.value || null,
+              })
+            }
+          >
+            <option value="">Klient — brak przypisania</option>
+            {(clients || []).map((client) => (
+              <option key={client.id} value={client.id}>{client.name}</option>
+            ))}
+          </select>
+
         </div>
 
       ) : (
@@ -5976,6 +5992,12 @@ function JobDetails({
           <div className="job-location">
             {editedJob.location}
           </div>
+
+          {editedJob.clientId && (
+            <div className="job-client-detail">
+              👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
+            </div>
+          )}
 
         </>
 

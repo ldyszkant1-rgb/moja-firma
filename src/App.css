@@ -9904,3 +9904,115 @@ section {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+.receivables-card {
+  margin-bottom: 14px;
+}
+.receivables-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.receivables-header h2 {
+  margin: 2px 0 0;
+}
+.receivables-total {
+  font-size: 22px;
+  font-weight: 800;
+  color: #b4770b;
+  white-space: nowrap;
+}
+.receivables-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 13px;
+}
+.receivables-summary strong {
+  color: #c0392b;
+}
+.receivables-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+.receivable-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5ebf2;
+  border-radius: 14px;
+  background: #f9fbfd;
+  text-align: left;
+  cursor: pointer;
+}
+.receivable-main,
+.receivable-amount {
+  min-width: 0;
+}
+.receivable-main strong,
+.receivable-main span,
+.receivable-amount strong,
+.receivable-amount span {
+  display: block;
+}
+.receivable-main strong {
+  color: #172b4d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.receivable-main span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.receivable-amount {
+  text-align: right;
+}
+.receivable-amount strong {
+  color: #172b4d;
+  white-space: nowrap;
+}
+.receivable-arrow {
+  color: #7890a8;
+  font-size: 20px;
+}
+.receivables-empty {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 13px;
+  background: #f1faf4;
+  color: #218739;
+  font-weight: 700;
+  text-align: center;
+}
+@media (max-width: 600px) {
+  .receivables-header {
+    align-items: flex-start;
+  }
+  .receivables-total {
+    font-size: 18px;
+  }
+  .receivables-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .receivable-row {
+    grid-template-columns: minmax(0, 1fr) auto 14px;
+    padding: 11px 10px;
+  }
+  .receivable-amount strong {
+    font-size: 14px;
+  }
+}

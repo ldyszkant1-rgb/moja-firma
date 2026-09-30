@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import logo from './assets/logo.png'
+import ClientsPage from './ClientsPage'
+import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
   updateSupabaseJob,
@@ -569,6 +571,17 @@ function App() {
   const [activePage, setActivePage] =
     useState('start')
 
+  const [clients, setClients] = useState([])
+
+  const loadClients = async () => {
+    try {
+      const remoteClients = await getClients()
+      setClients(Array.isArray(remoteClients) ? remoteClients : [])
+    } catch (error) {
+      console.error('Nie udało się wczytać klientów:', error)
+    }
+  }
+
 
   const [selectedJob, setSelectedJob] =
     useState(null)
@@ -738,6 +751,55 @@ function App() {
     }
 
   }, [settings])
+
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const remoteClients = await getClients()
+        if (!cancelled) setClients(Array.isArray(remoteClients) ? remoteClients : [])
+      } catch (error) {
+        console.error('Nie udało się wczytać klientów:', error)
+      }
+    }
+
+    load()
+
+    const unsubscribe = subscribeToClients((payload) => {
+      if (payload.eventType === 'DELETE' && payload.old?.id) {
+        setClients((current) => current.filter((client) => client.id !== payload.old.id))
+        return
+      }
+
+      if (!payload.new?.id) return
+      const incoming = {
+        id: payload.new.id,
+        name: payload.new.name || '',
+        nip: payload.new.nip || '',
+        address: payload.new.address || '',
+        contactName: payload.new.contact_name || '',
+        phone: payload.new.phone || '',
+        email: payload.new.email || '',
+        notes: payload.new.notes || '',
+        organizationId: payload.new.organization_id || null,
+        createdAt: payload.new.created_at || null,
+        updatedAt: payload.new.updated_at || null,
+      }
+
+      setClients((current) => {
+        const exists = current.some((client) => client.id === incoming.id)
+        if (exists) return current.map((client) => client.id === incoming.id ? incoming : client)
+        return [...current, incoming].sort((a, b) => a.name.localeCompare(b.name, 'pl'))
+      })
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [])
 
 
   /*
@@ -2222,6 +2284,19 @@ function App() {
               permanentlyDeleteJob
             }
 
+          />
+
+        )}
+
+
+        {activePage === 'clients' && (
+
+          <ClientsPage
+            clients={clients}
+            jobs={jobs}
+            onRefresh={loadClients}
+            onAlert={showCustomAlert}
+            onConfirm={showCustomConfirm}
           />
 
         )}
@@ -9894,6 +9969,25 @@ function BottomNavigation({
 
 
       <NavButton
+
+        icon="👥"
+
+        label="Klienci"
+
+        active={
+          activePage === 'clients'
+        }
+
+        onClick={() =>
+          onChange(
+            'clients'
+          )
+        }
+
+      />
+
+
+            <NavButton
 
         icon="▥"
 

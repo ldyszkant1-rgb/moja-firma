@@ -4117,7 +4117,7 @@ function NewJobPage({
             </strong>
 
             <small>
-              {newJob.quantities.mb || 0} × stawka
+              {newJob.quantities.mb || 0} MB
             </small>
 
           </div>
@@ -4167,7 +4167,7 @@ function NewJobPage({
             </strong>
 
             <small>
-              {newJob.quantities.m2 || 0} × stawka
+              {newJob.quantities.m2 || 0} m²
             </small>
 
           </div>
@@ -4217,7 +4217,7 @@ function NewJobPage({
             </strong>
 
             <small>
-              {newJob.quantities.kg || 0} × stawka
+              {newJob.quantities.kg || 0} kg
             </small>
 
           </div>

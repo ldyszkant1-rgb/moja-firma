@@ -5836,16 +5836,10 @@ function JobDetails({
   const removeNote = async (
     noteId
   ) => {
+    if (!noteId || !editedJob?.id) return
 
-    const confirmed =
-      await showCustomConfirm(
-        'Czy na pewno chcesz usunąć tę notatkę?'
-      )
-
-    if (!confirmed) {
-      return
-    }
-
+    // Usuwamy od razu — bez zależności od okna potwierdzenia,
+    // które na telefonie mogło blokować dalsze wykonanie.
     try {
       const savedJob =
         await deleteSupabaseJobNote(
@@ -5865,7 +5859,7 @@ function JobDetails({
       )
 
       showCustomAlert(
-        'Nie udało się usunąć notatki. Spróbuj ponownie.'
+        'Nie udało się usunąć zadania. Spróbuj ponownie.'
       )
     }
   }
@@ -7403,7 +7397,11 @@ function JobDetails({
                     <button
                       type="button"
                       className="note-action-button note-delete-button"
-                      onClick={() => removeNote(note.id)}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        removeNote(note.id)
+                      }}
                     >
                       🗑 Usuń
                     </button>

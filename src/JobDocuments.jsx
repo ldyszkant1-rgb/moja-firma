@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -105,7 +106,14 @@ function quantityRows(job) {
     .join('')
 }
 
-function openPrintWindow(title, html) {
+
+const PRINT_PREVIEW_CSS = "          @page { size: A4; margin: 8mm 10mm 9mm; }\n          * { box-sizing: border-box; }\n          html, body { background: #fff !important; }\n          body {\n            margin: 0;\n            color: #17243d;\n            background: #fff !important;\n            font-family: Arial, Helvetica, sans-serif;\n            font-size: 8.5pt;\n            line-height: 1.25;\n          }\n          .document { width: 100%; max-width: 190mm; margin: 0 auto; background: #fff; }\n          .topbar { display: none; }\n          .brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 7px; border-bottom: 1px solid #bfc8d2; }\n          .brand-name { color: #12234f; font-size: 13pt; font-weight: 800; letter-spacing: .1px; }\n          .brand-sub { margin-top: 2px; color: #5f6b7a; font-size: 6.8pt; }\n          .brand-data { text-align: right; color: #5f6b7a; font-size: 7pt; line-height: 1.3; }\n          .title-block { text-align: center; margin: 8px 0 8px; }\n          .eyebrow { color: #4d5b6b; font-size: 6.5pt; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }\n          h1 { margin: 2px 0 2px; color: #12234f; font-size: 14pt; line-height: 1.05; }\n          .subtitle { color: #5f6b7a; font-size: 7pt; }\n          .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; margin-bottom: 7px; }\n          .meta-box { padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; }\n          .meta-label { display: block; color: #697586; font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: .35px; }\n          .meta-value { display: block; margin-top: 1px; color: #17243d; font-weight: 700; font-size: 8pt; }\n          .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 7px 0; }\n          .party { min-height: 0; padding: 7px 8px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; }\n          .party-label { color: #4d5b6b; font-size: 6pt; font-weight: 800; letter-spacing: .55px; text-transform: uppercase; margin-bottom: 3px; }\n          .party-name { color: #12234f; font-weight: 750; margin-bottom: 1px; font-size: 8.3pt; }\n          .party-line { color: #526174; font-size: 7.2pt; line-height: 1.2; }\n          .party-extra { margin-top: 3px; color: #526174; font-size: 6.8pt; font-weight: 700; }\n          h2 { margin: 7px 0 3px; padding-bottom: 2px; border-bottom: 1px solid #cbd4de; color: #12234f; font-size: 8.8pt; }\n          p { margin: 3px 0 5px; }\n          .clause { margin: 0 0 4px; }\n          .clause-number { font-weight: 800; color: #4d5b6b; margin-right: 3px; }\n          table { width: 100%; border-collapse: collapse; margin: 4px 0 4px; }\n          th { padding: 4px 5px; background: #fff !important; color: #17243d; border-top: 1px solid #9da9b6; border-bottom: 1px solid #9da9b6; font-size: 7pt; text-align: left; }\n          td { padding: 4px 5px; border-bottom: 1px solid #d8dee5; font-size: 7.4pt; }\n          .center { text-align: center; }\n          .right { text-align: right; }\n          .strong { font-weight: 750; }\n          .total { display: flex; justify-content: flex-end; align-items: baseline; gap: 10px; margin: 4px 0 6px; padding: 5px 7px; background: #fff !important; border: 1px solid #cbd4de; border-radius: 4px; }\n          .total span { color: #526174; font-size: 7pt; font-weight: 700; }\n          .total strong { color: #12234f; font-size: 9.5pt; }\n          .scope { min-height: 28px; padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; white-space: pre-wrap; font-size: 7.5pt; }\n          .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 14px; page-break-inside: avoid; }\n          .signature { min-height: 48px; padding-top: 22px; border-top: 1px solid #334155; text-align: center; color: #526174; font-size: 7pt; }\n          .signature strong { display: block; color: #17243d; margin-bottom: 1px; }\n          .signature small { color: #6f7c8c; }\n          .checkbox-line { margin: 4px 0; font-size: 7.5pt; }\n          .checkbox { display: inline-block; width: 9px; height: 9px; margin-right: 4px; vertical-align: -1px; border: 1px solid #7b8794; }\n          .remarks { min-height: 38px; padding: 5px 7px; border: 1px solid #cbd4de; border-radius: 4px; background: #fff !important; white-space: pre-wrap; font-size: 7.5pt; }\n          .footer { margin-top: 9px; padding-top: 4px; border-top: 1px solid #d8dee5; color: #7a8695; font-size: 6pt; text-align: center; }\n          @media print {\n            html, body { background: #fff !important; }\n            .document { background: #fff !important; }\n            .no-print { display: none !important; }\n          }\n#aeroinstal-print-preview {\n  min-height: 100vh;\n  padding: 14px;\n  background: #eef2f6;\n  color: #17243d;\n  font-family: Arial, Helvetica, sans-serif;\n}\n#aeroinstal-print-preview .print-toolbar {\n  position: sticky;\n  top: 0;\n  z-index: 10;\n  display: flex;\n  justify-content: space-between;\n  gap: 10px;\n  max-width: 210mm;\n  margin: 0 auto 12px;\n  padding: 10px;\n  background: rgba(255,255,255,.96);\n  border: 1px solid #d7e2eb;\n  border-radius: 12px;\n  box-shadow: 0 4px 16px rgba(15,23,42,.08);\n}\n#aeroinstal-print-preview .print-toolbar button {\n  min-height: 42px;\n  padding: 9px 13px;\n  border-radius: 10px;\n  border: 1px solid #d7e2eb;\n  background: #fff;\n  color: #17243d;\n  font-weight: 800;\n  font-size: 13px;\n}\n#aeroinstal-print-preview .print-toolbar button.primary {\n  border: 0;\n  background: #168fe5;\n  color: #fff;\n}\n#aeroinstal-print-preview .print-sheet {\n  max-width: 210mm;\n  margin: 0 auto;\n  padding: 10mm;\n  background: #fff;\n  box-shadow: 0 5px 24px rgba(15,23,42,.10);\n}\n@media print {\n  body.aeroinstal-printing {\n    background: #fff !important;\n  }\n  body.aeroinstal-printing > * {\n    visibility: hidden !important;\n  }\n  body.aeroinstal-printing #aeroinstal-print-preview,\n  body.aeroinstal-printing #aeroinstal-print-preview * {\n    visibility: visible !important;\n  }\n  body.aeroinstal-printing #aeroinstal-print-preview {\n    position: absolute !important;\n    inset: 0 !important;\n    width: 100% !important;\n    min-height: auto !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    background: #fff !important;\n  }\n  body.aeroinstal-printing #aeroinstal-print-preview .print-toolbar {\n    display: none !important;\n  }\n  body.aeroinstal-printing #aeroinstal-print-preview .print-sheet {\n    max-width: none !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    box-shadow: none !important;\n  }\n}"
+
+function openPrintWindow(title, html, onPreview) {
+  if (onPreview) {
+    onPreview({ title, html })
+    return
+  }
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     window.alert('Nie udało się otworzyć dokumentu. Zezwól aplikacji na otwieranie okien i spróbuj ponownie.')
@@ -231,7 +239,7 @@ function renderJobMeta(job, dateLabel, dateValue, overrides = {}) {
   `
 }
 
-function printContract(job, client, company, draft) {
+function printContract(job, client, company, draft, onPreview) {
   const c = companyData(company)
   const cl = { ...clientData(client), name: draft.clientName, nip: draft.clientNip, address: draft.clientAddress }
   const total = Number(draft.amount || 0)
@@ -280,10 +288,10 @@ function printContract(job, client, company, draft) {
     <div class="footer">Dokument przygotowany w aplikacji Aeroinstal • ${date}</div>
   `
 
-  openPrintWindow('Umowa zlecenie • ' + (draft.name || 'Robota'), html)
+  openPrintWindow('Umowa zlecenie • ' + (draft.name || 'Robota'), html, onPreview)
 }
 
-function printAcceptance(job, client, company, draft) {
+function printAcceptance(job, client, company, draft, onPreview) {
   const c = companyData(company)
   const cl = { ...clientData(client), name: draft.clientName, nip: draft.clientNip, address: draft.clientAddress }
   const total = Number(draft.amount || 0)
@@ -319,7 +327,7 @@ function printAcceptance(job, client, company, draft) {
     <div class="footer">Dokument przygotowany w aplikacji Aeroinstal • ${formatDate(new Date())}</div>
   `
 
-  openPrintWindow('Protokół odbioru • ' + (draft.name || 'Robota'), html)
+  openPrintWindow('Protokół odbioru • ' + (draft.name || 'Robota'), html, onPreview)
 }
 
 function initialDraft(type, job, client) {
@@ -371,6 +379,26 @@ export default function JobDocuments({ job, clients, company }) {
   )
   const [editingType, setEditingType] = useState(null)
   const [draft, setDraft] = useState(null)
+  const [printPreview, setPrintPreview] = useState(null)
+
+  useEffect(() => {
+    if (!printPreview) return
+
+    document.body.classList.add('aeroinstal-printing')
+
+    const handleAfterPrint = () => {
+      document.body.classList.remove('aeroinstal-printing')
+    }
+
+    window.addEventListener('afterprint', handleAfterPrint)
+    const timer = window.setTimeout(() => window.print(), 180)
+
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('afterprint', handleAfterPrint)
+      document.body.classList.remove('aeroinstal-printing')
+    }
+  }, [printPreview])
 
   const openEditor = (type) => {
     setEditingType(type)
@@ -482,7 +510,7 @@ export default function JobDocuments({ job, clients, company }) {
             </button>
             <button
               type="button"
-              onClick={() => isContract ? printContract(job, client, company, draft) : printAcceptance(job, client, company, draft)}
+              onClick={() => isContract ? printContract(job, client, company, draft, setPrintPreview) : printAcceptance(job, client, company, draft, setPrintPreview)}
               style={{
                 minHeight: '50px',
                 border: 0,
@@ -516,7 +544,28 @@ export default function JobDocuments({ job, clients, company }) {
     )
   }
 
+  const printPreviewPortal = printPreview ? createPortal(
+    <>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_PREVIEW_CSS }} />
+      <div id="aeroinstal-print-preview">
+        <div className="print-toolbar no-print">
+          <button type="button" onClick={() => setPrintPreview(null)}>
+            ← Wróć do edycji
+          </button>
+          <button type="button" className="primary" onClick={() => window.print()}>
+            🖨️ Drukuj ponownie
+          </button>
+        </div>
+        <div className="print-sheet">
+          <div dangerouslySetInnerHTML={{ __html: printPreview.html }} />
+        </div>
+      </div>
+    </>,
+    document.body
+  ) : null
+
   return (
+    <>
     <div className="detail-card">
       <div style={{ marginBottom: '12px' }}>
         <div className="small-label">DOKUMENTY</div>
@@ -560,5 +609,7 @@ export default function JobDocuments({ job, clients, company }) {
         </div>
       )}
     </div>
+      {printPreviewPortal}
+    </>
   )
 }

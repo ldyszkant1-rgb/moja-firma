@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
+import OffersPage from './OffersPage'
+import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
@@ -572,6 +574,30 @@ function App() {
     useState('start')
 
   const [clients, setClients] = useState([])
+
+  const [offers, setOffers] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    const loadOffers = async () => {
+      try {
+        const remoteOffers = await getOffers()
+        if (!cancelled) setOffers(Array.isArray(remoteOffers) ? remoteOffers : [])
+      } catch (error) {
+        console.error('Nie udało się wczytać ofert:', error)
+      }
+    }
+    loadOffers()
+    const unsubscribe = subscribeToOffers((payload) => {
+      if (payload.eventType === 'DELETE' && payload.old?.id) {
+        setOffers((current) => current.filter((offer) => String(offer.id) !== String(payload.old.id)))
+        return
+      }
+      if (!payload.new?.id) return
+      getOffers().then((fresh) => setOffers(fresh)).catch((error) => console.error('Nie udało się odświeżyć ofert:', error))
+    })
+    return () => { cancelled = true; unsubscribe() }
+  }, [])
 
   const loadClients = async () => {
     try {
@@ -1895,6 +1921,86 @@ function App() {
   }
 
 
+
+  const handleCreateOffer = async (draft) => {
+    const saved = await createOffer({
+      ...draft,
+      total: (
+        (parseDecimal(draft.quantities?.mb) * parseDecimal(draft.rates?.mb)) +
+        (parseDecimal(draft.quantities?.m2) * parseDecimal(draft.rates?.m2)) +
+        (parseDecimal(draft.quantities?.kg) * parseDecimal(draft.rates?.kg))
+      ),
+    })
+    setOffers((current) => [saved, ...current.filter((offer) => String(offer.id) !== String(saved.id))])
+    return saved
+  }
+
+  const handleUpdateOffer = async (draft) => {
+    const saved = await updateOffer(draft)
+    setOffers((current) => current.map((offer) => String(offer.id) === String(saved.id) ? saved : offer))
+    return saved
+  }
+
+  const handleDeleteOffer = async (id) => {
+    await deleteOffer(id)
+    setOffers((current) => current.filter((offer) => String(offer.id) !== String(id)))
+  }
+
+  const handleConvertOfferToJob = async (offer) => {
+    if (!offer?.id || offer.convertedJobId) return
+
+    const job = {
+      id: Date.now(),
+      name: offer.name || '',
+      location: offer.location || 'Brak lokalizacji',
+      clientId: offer.clientId || null,
+      status: 'Planowane',
+      progress: 0,
+      completed: false,
+      completedAt: null,
+      invoiceNumber: '',
+      invoiceDate: null,
+      invoiceAmount: null,
+      paymentDueDate: null,
+      paidAt: null,
+      quantities: {
+        mb: Number(offer.quantities?.mb || 0),
+        m2: Number(offer.quantities?.m2 || 0),
+        kg: Number(offer.quantities?.kg || 0),
+      },
+      rates: {
+        mb: Number(offer.rates?.mb || 0),
+        m2: Number(offer.rates?.m2 || 0),
+        kg: Number(offer.rates?.kg || 0),
+      },
+      documents: { material: null, assembly: null },
+      notes: offer.scope || offer.notes ? [{
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        text: [offer.scope, offer.notes].filter(Boolean).join('\\n\\n'),
+        done: false,
+        createdAt: new Date().toISOString(),
+      }] : [],
+      photos: [],
+      mainPhoto: null,
+    }
+
+    try {
+      const savedJob = await createSupabaseJob(job)
+      const savedOffer = await updateOffer({
+        ...offer,
+        convertedJobId: savedJob.id,
+      })
+
+      setJobs((current) => [savedJob, ...current])
+      setOffers((current) => current.map((item) => String(item.id) === String(savedOffer.id) ? savedOffer : item))
+      showCustomAlert('Oferta została zamieniona na robotę. Robota trafiła do Planowanych.')
+    } catch (error) {
+      console.error('Nie udało się utworzyć roboty z oferty:', error)
+      showCustomAlert('Nie udało się utworzyć roboty z oferty. Spróbuj ponownie.')
+    }
+  }
+
+
   const createJob = async () => {
 
     if (
@@ -2299,6 +2405,21 @@ function App() {
 
           />
 
+        )}
+
+
+        {activePage === 'offers' && (
+          <OffersPage
+            offers={offers}
+            clients={clients}
+            settings={settings}
+            onCreate={handleCreateOffer}
+            onUpdate={handleUpdateOffer}
+            onDelete={handleDeleteOffer}
+            onConvertToJob={handleConvertOfferToJob}
+            onAlert={showCustomAlert}
+            onConfirm={showCustomConfirm}
+          />
         )}
 
 
@@ -10084,6 +10205,25 @@ function BottomNavigation({
         onClick={() =>
           onChange(
             'jobs'
+          )
+        }
+
+      />
+
+
+      <NavButton
+
+        icon="📄"
+
+        label="Oferty"
+
+        active={
+          activePage === 'offers'
+        }
+
+        onClick={() =>
+          onChange(
+            'offers'
           )
         }
 

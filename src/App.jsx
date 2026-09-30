@@ -9890,7 +9890,7 @@ function SettingsPage({
             <span>🏢 Firma</span>
             {!showCompany && (
               <div style={{ marginTop: '5px', fontSize: '13px', opacity: 0.7 }}>
-                {company.name}
+                {company.shortName || 'Aeroinstal'}
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aeroinstal-pwa-v9'
+const CACHE_NAME = 'aeroinstal-pwa-v10'
 
 self.addEventListener('install', () => {
   self.skipWaiting()

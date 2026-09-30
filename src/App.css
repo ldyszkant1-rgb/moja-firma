@@ -8777,3 +8777,33 @@ section {
     overflow-wrap: normal !important;
   }
 }
+
+
+/* =========================================================
+   NOWA ROBOTA — OSTATNIE DOPRACOWANIE TABELI NA iPHONE
+   Ilość × stawka pozostaje w jednym wierszu.
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .new-job-rate-row {
+    grid-template-columns: 82px minmax(0, 1fr) 86px !important;
+  }
+
+  .new-job-rate-heading > small {
+    white-space: nowrap !important;
+    font-size: 11px !important;
+    letter-spacing: -0.15px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .new-job-rate-row {
+    grid-template-columns: 72px minmax(0, 1fr) 78px !important;
+    gap: 5px !important;
+  }
+
+  .new-job-rate-heading > small {
+    font-size: 10px !important;
+    letter-spacing: -0.25px !important;
+  }
+}

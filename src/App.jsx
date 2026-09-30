@@ -3,6 +3,7 @@ import './App.css'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
+import JobDocuments from './JobDocuments'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -2287,6 +2288,8 @@ function App() {
           }
 
           clients={clients}
+
+          company={settings.company}
 
           onBack={() =>
             setSelectedJob(null)
@@ -4636,6 +4639,7 @@ function NewJobPage({
 function JobDetails({
   job,
   clients,
+  company,
   onBack,
   onUpdate,
   onDelete,
@@ -6885,6 +6889,12 @@ function JobDetails({
 
       </div>
 
+
+      <JobDocuments
+        job={editedJob}
+        clients={clients}
+        company={company}
+      />
 
       {/* DOKUMENTACJA */}
 

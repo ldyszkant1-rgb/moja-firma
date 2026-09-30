@@ -1582,6 +1582,8 @@ function App() {
 
       location: '',
 
+      clientId: null,
+
       quantities: {
         mb: '',
         m2: '',
@@ -1919,6 +1921,9 @@ function App() {
         newJob.location.trim() ||
         'Brak lokalizacji',
 
+      clientId:
+        newJob.clientId || null,
+
       status: 'Planowane',
 
       progress: 0,
@@ -2061,6 +2066,8 @@ function App() {
 
       location: '',
 
+      clientId: null,
+
       quantities: {
 
         mb: '',
@@ -2141,6 +2148,8 @@ function App() {
             selectedJob
           }
 
+          clients={clients}
+
           onBack={() =>
             setSelectedJob(null)
           }
@@ -2177,6 +2186,8 @@ function App() {
           settings={
             settings
           }
+
+          clients={clients}
 
           onBack={() =>
             setAddingJob(false)
@@ -2221,6 +2232,8 @@ function App() {
             jobs={
               jobs
             }
+
+            clients={clients}
 
             onOpenJob={
               setSelectedJob
@@ -3257,6 +3270,7 @@ function getJobStageStyle(stage) {
 
 function JobCard({
   job,
+  clientName,
   onClick,
   onToggleTask,
   jobPayments = [],
@@ -3315,6 +3329,7 @@ function JobCard({
             <span className="job-card-identity-text">
               <strong>{job.name}</strong>
               <span>{job.location || 'Brak lokalizacji'}</span>
+              {clientName && <small className="job-card-client-name">👤 {clientName}</small>}
             </span>
           </div>
 
@@ -3476,6 +3491,7 @@ function JobCard({
 
 function JobsPage({
   jobs,
+  clients,
   onOpenJob,
   onToggleJobTask,
   onAddJob,
@@ -3962,6 +3978,7 @@ function JobsPage({
             <JobCard
               key={job.id}
               job={job}
+              clientName={(clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.name || ''}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
               jobPayments={jobPayments}
@@ -3986,6 +4003,7 @@ function NewJobPage({
   newJob,
   setNewJob,
   settings,
+  clients,
   onBack,
   onCreate,
 }) {
@@ -4180,6 +4198,17 @@ function NewJobPage({
             }
 
           />
+
+          <select
+            className="job-new-input"
+            value={newJob.clientId || ''}
+            onChange={(e) => change('clientId', e.target.value || null)}
+          >
+            <option value="">Klient — opcjonalnie</option>
+            {(clients || []).map((client) => (
+              <option key={client.id} value={client.id}>{client.name}</option>
+            ))}
+          </select>
 
         </div>
 
@@ -4482,6 +4511,7 @@ function NewJobPage({
 
 function JobDetails({
   job,
+  clients,
   onBack,
   onUpdate,
   onDelete,

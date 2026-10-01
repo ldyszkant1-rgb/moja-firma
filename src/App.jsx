@@ -3481,8 +3481,10 @@ function JobCard({
     (invoice) => String(invoice.jobId) === String(job.id)
   )
   const invoicePaid = Number(linkedInvoice?.paidAmount || 0)
+  const invoiceVatSettled = Number(linkedInvoice?.vatSettledAmount || 0)
   const invoiceGross = Number(linkedInvoice?.grossAmount || 0)
-  const invoiceRemaining = Math.max(0, invoiceGross - invoicePaid)
+  const invoiceSettledTotal = invoicePaid + invoiceVatSettled
+  const invoiceRemaining = Math.max(0, invoiceGross - invoiceSettledTotal)
   const invoiceStatusLabel = linkedInvoice
     ? invoiceRemaining <= 0.01
       ? 'Zapłacona'
@@ -5922,10 +5924,10 @@ function JobDetails({
             <h2 style={{ marginBottom: '4px' }}>{linkedInvoice?.invoiceNumber || 'Brak faktury'}</h2>
           </div>
           {linkedInvoice && (
-            <span style={{ fontSize: '12px', fontWeight: 800, color: Number(linkedInvoice.paidAmount || 0) >= Number(linkedInvoice.grossAmount || 0) - 0.01 ? '#159447' : '#b77908' }}>
-              {Number(linkedInvoice.paidAmount || 0) >= Number(linkedInvoice.grossAmount || 0) - 0.01
+            <span style={{ fontSize: '12px', fontWeight: 800, color: (Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) >= Number(linkedInvoice.grossAmount || 0) - 0.01 ? '#159447' : '#b77908' }}>
+              {(Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) >= Number(linkedInvoice.grossAmount || 0) - 0.01
                 ? 'Zapłacona'
-                : Number(linkedInvoice.paidAmount || 0) > 0
+                : (Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) > 0
                   ? 'Częściowo zapłacona'
                   : linkedInvoice.status || 'Wystawiona'}
             </span>
@@ -7894,7 +7896,11 @@ function FinancePage({
       const paid = invoice.jobId
         ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
         : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
-      const remaining = Math.max(0, gross - paid)
+      const vatSettled = Math.min(
+        Math.max(0, Number(invoice.vatSettledAmount || 0)),
+        Math.max(0, Number(invoice.vatAmount || 0))
+      )
+      const remaining = Math.max(0, gross - paid - vatSettled)
       const dueDate = invoice.dueDate || null
       const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
@@ -9617,6 +9623,7 @@ function SettingsPage({
         vat_amount: Number(item.vatAmount || 0),
         gross_amount: Number(item.grossAmount || 0),
         paid_amount: Number(item.paidAmount || 0),
+        vat_settled_amount: Number(item.vatSettledAmount || 0),
         items: Array.isArray(item.items) ? item.items : [],
         notes: item.notes || null,
         ksef_status: item.ksefStatus || null,

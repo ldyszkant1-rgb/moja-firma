@@ -147,7 +147,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
 
   const remove = async (client) => {
     const confirmed = await onConfirm(
-      `Usunąć klienta „${client.name}”?\n\nJeżeli ma przypisane roboty, aplikacja nie pozwoli go usunąć.`
+      `Usunąć klienta „${client.name}”?\n\nJeżeli ma przypisane realizacje, aplikacja nie pozwoli go usunąć.`
     )
     if (!confirmed) return
 
@@ -249,7 +249,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
             return (
               <>
                 <div className="client-detail-stats">
-                  <div><span>Roboty</span><strong>{clientJobs.length}</strong></div>
+                  <div><span>Realizacje</span><strong>{clientJobs.length}</strong></div>
                   <div><span>Wartość robót</span><strong>{totalValue.toLocaleString('pl-PL')} zł</strong></div>
                   <div><span>Faktury</span><strong>{invoiced.toLocaleString('pl-PL')} zł</strong></div>
                   <div><span>Zapłacono</span><strong>{paid.toLocaleString('pl-PL')} zł</strong></div>
@@ -257,7 +257,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                 </div>
 
                 <div className="client-detail-jobs">
-                  <div className="client-detail-section-title">Roboty klienta</div>
+                  <div className="client-detail-section-title">Realizacje klienta</div>
                   {clientJobs.length === 0 ? (
                     <div className="client-detail-empty">Brak przypisanych robót.</div>
                   ) : clientJobs.map((job) => {
@@ -309,7 +309,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
           <div className="detail-card clients-empty">
             <div className="clients-empty-icon">👤</div>
             <h2>{clients.length ? 'Brak wyników' : 'Nie masz jeszcze klientów'}</h2>
-            <p>{clients.length ? 'Zmień wyszukiwaną frazę.' : 'Dodaj pierwszego klienta, aby później przypisywać do niego roboty.'}</p>
+            <p>{clients.length ? 'Zmień wyszukiwaną frazę.' : 'Dodaj pierwszego klienta, aby później przypisywać do niego realizacje.'}</p>
             {!clients.length && (
               <button type="button" className="client-save-button" onClick={openNew}>+ Dodaj klienta</button>
             )}
@@ -336,7 +336,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
                 </div>
 
                 <div className="client-card-footer" onClick={(event) => event.stopPropagation()}>
-                  <span>🔧 {clientJobs.length} {clientJobs.length === 1 ? 'robota' : clientJobs.length < 5 ? 'roboty' : 'robót'}</span>
+                  <span>🔧 {clientJobs.length} {clientJobs.length === 1 ? 'realizacja' : clientJobs.length < 5 ? 'realizacje' : 'robót'}</span>
                   <div>
                     <button type="button" onClick={() => openEdit(client)}>Edytuj</button>
                     <button type="button" className="client-delete-button" onClick={() => remove(client)}>Usuń</button>

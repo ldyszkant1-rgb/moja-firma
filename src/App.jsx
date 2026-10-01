@@ -7840,7 +7840,89 @@ function FinancePage({
         0
       )
 
-  const receivables = jobs
+  /*
+   * NALEŻNOŚCI — faktury są źródłem prawdy dla wystawionych dokumentów.
+   *
+   * Dla faktur powiązanych z robotą wpłaty nadal pozostają w job_payments
+   * (to księga faktycznie otrzymanej gotówki), a kwota faktury i termin
+   * pochodzą z public.invoices. Jeżeli na jednej robocie istnieje więcej
+   * niż jedna faktura, wpłaty z poziomu roboty rozdzielamy chronologicznie
+   * między faktury, żeby nie policzyć tej samej wpłaty kilka razy.
+   *
+   * Stare roboty bez rekordu invoices zachowują dotychczasowy fallback
+   * oparty o legacy payment_due_date / invoice_amount.
+   */
+  const invoicesByJob = new Map()
+  invoices.forEach((invoice) => {
+    if (!invoice.jobId) return
+    const key = String(invoice.jobId)
+    const current = invoicesByJob.get(key) || []
+    current.push(invoice)
+    invoicesByJob.set(key, current)
+  })
+
+  const allocatedPaymentsByInvoice = new Map()
+
+  invoicesByJob.forEach((jobInvoices, jobId) => {
+    const payments = allJobPayments
+      .filter((payment) => String(payment.jobId) === String(jobId))
+      .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
+    let remainingPayments = payments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    )
+
+    const sortedInvoices = [...jobInvoices].sort((a, b) => {
+      const dateCompare = String(a.issueDate || '').localeCompare(String(b.issueDate || ''))
+      if (dateCompare !== 0) return dateCompare
+      return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+    })
+
+    sortedInvoices.forEach((invoice) => {
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const allocated = Math.min(gross, Math.max(0, remainingPayments))
+      allocatedPaymentsByInvoice.set(String(invoice.id), allocated)
+      remainingPayments = Math.max(0, remainingPayments - allocated)
+    })
+  })
+
+  const invoiceReceivables = invoices
+    .filter((invoice) => invoice.status !== 'Anulowana')
+    .map((invoice) => {
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const paid = invoice.jobId
+        ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
+        : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
+      const remaining = Math.max(0, gross - paid)
+      const dueDate = invoice.dueDate || null
+      const invoiceIssued = Boolean(invoice.issueDate)
+      const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
+      const job = invoice.jobId
+        ? jobs.find((item) => String(item.id) === String(invoice.jobId))
+        : null
+      const client = clients.find((item) => String(item.id) === String(invoice.clientId))
+      return {
+        id: `invoice-${invoice.id}`,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber || 'Bez numeru',
+        job: job || {
+          id: `invoice-${invoice.id}`,
+          name: invoice.invoiceNumber || 'Faktura',
+          location: '',
+        },
+        invoiceValue: gross,
+        paid,
+        remaining,
+        dueDate,
+        invoiceIssued,
+        isOverdue,
+        clientName: client?.shortName || client?.name || 'Bez przypisanego klienta',
+      }
+    })
+    .filter((item) => item.invoiceIssued && item.remaining > 0.01)
+
+  const legacyReceivables = jobs
+    .filter((job) => !invoicesByJob.has(String(job.id)))
     .map((job) => {
       const jobValue = calculateTotal(job)
       const invoiceValue = Number(job.invoiceAmount || 0) || jobValue
@@ -7848,15 +7930,27 @@ function FinancePage({
         .filter((payment) => payment.jobId === job.id)
         .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
       const remaining = Math.max(0, invoiceValue - paid)
-      // Należność pokazujemy dopiero, gdy robota ma ustawiony termin płatności.
-      // W obecnej logice Aeroinstal oznacza to, że faktura została wystawiona.
       const dueDate = job.paymentDueDate || null
       const invoiceIssued = Boolean(dueDate)
       const isOverdue = invoiceIssued && remaining > 0 && dueDate < getTodayString()
       const client = clients.find((item) => String(item.id) === String(job.clientId))
-      return { job, invoiceValue, paid, remaining, dueDate, invoiceIssued, isOverdue, clientName: client?.shortName || client?.name || 'Bez przypisanego klienta' }
+      return {
+        id: `legacy-job-${job.id}`,
+        invoiceId: null,
+        invoiceNumber: job.invoiceNumber || 'Faktura legacy',
+        job,
+        invoiceValue,
+        paid,
+        remaining,
+        dueDate,
+        invoiceIssued,
+        isOverdue,
+        clientName: client?.shortName || client?.name || 'Bez przypisanego klienta',
+      }
     })
     .filter((item) => item.invoiceIssued && item.remaining > 0.01)
+
+  const receivables = [...invoiceReceivables, ...legacyReceivables]
     .sort((a, b) => {
       if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1
       if (!a.dueDate) return 1
@@ -8181,7 +8275,7 @@ function FinancePage({
           <div className="receivables-total">{formatMoney(totalReceivables)}</div>
         </div>
         <div className="receivables-summary">
-          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona robota' : 'nieopłacone roboty'}</span>
+          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'}</span>
           {overdueReceivables > 0 && <strong>🔴 Zaległe: {formatMoney(overdueReceivables)}</strong>}
         </div>
         {receivables.length > 0 ? (
@@ -8191,9 +8285,9 @@ function FinancePage({
                 ? 'Zaległość • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
                 : 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
               return (
-                <button type="button" className="receivable-row" key={item.job.id} onClick={() => onOpenJob?.(item.job)}>
+                <button type="button" className="receivable-row" key={item.id} onClick={() => item.invoiceId ? setInvoiceToOpen?.(item.invoiceId) : onOpenJob?.(item.job)}>
                   <div className="receivable-main">
-                    <strong>{item.job.name || 'Bez nazwy'}</strong>
+                    <strong>{item.invoiceNumber || item.job.name || 'Bez nazwy'}</strong>
                     <span>{item.clientName}</span>
                   </div>
                   <div className="receivable-amount">

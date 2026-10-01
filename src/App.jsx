@@ -8061,18 +8061,39 @@ function FinancePage({
     const label = new Intl.DateTimeFormat('pl-PL', { month: 'short' })
       .format(date)
       .replace('.', '')
-    const payments = allJobPayments
+
+    const trendPayments = allJobPayments
       .filter((payment) => payment.paidAt?.startsWith(key))
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+    const trendJobsWithPaymentHistory = new Set(
+      allJobPayments.map((payment) => String(payment.jobId))
+    )
+
+    const trendLegacyCompletedJobs = jobs.filter(
+      (job) =>
+        job.completed === true &&
+        job.completedAt?.startsWith(key) &&
+        !trendJobsWithPaymentHistory.has(String(job.id))
+    )
+
+    const trendRevenue =
+      trendPayments +
+      trendLegacyCompletedJobs.reduce(
+        (sum, job) => sum + calculateTotal(job),
+        0
+      )
+
     const monthCostValue = costs
       .filter((cost) => cost.month?.startsWith(key) && cost.type !== 'revenue')
       .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
+
     return {
       key,
       label: label.charAt(0).toUpperCase() + label.slice(1),
-      revenue: payments,
+      revenue: trendRevenue,
       costs: monthCostValue,
-      profit: payments - monthCostValue,
+      profit: trendRevenue - monthCostValue,
     }
   })
 
@@ -8515,7 +8536,7 @@ function FinancePage({
       <section className="finance-command-center">
         <div className="finance-kpi-grid">
           <div className="finance-kpi-card finance-kpi-revenue">
-            <span>PRZYCHÓD</span>
+            <span>OTRZYMANE</span>
             <strong>{formatMoney(revenue)}</strong>
             <small>Faktycznie otrzymane pieniądze</small>
           </div>
@@ -8614,7 +8635,7 @@ function FinancePage({
                     <div
                       className="finance-trend-bar finance-trend-bar-revenue"
                       style={{ height: `${Math.max(6, (item.revenue / trendMax) * 100)}%` }}
-                      title={`Przychód: ${formatMoney(item.revenue)}`}
+                      title={`Otrzymane: ${formatMoney(item.revenue)}`}
                     />
                     <div
                       className="finance-trend-bar finance-trend-bar-costs"
@@ -8627,7 +8648,7 @@ function FinancePage({
               ))}
             </div>
             <div className="finance-trend-legend">
-              <span><i className="finance-trend-dot finance-trend-dot-revenue" /> Przychód</span>
+              <span><i className="finance-trend-dot finance-trend-dot-revenue" /> Otrzymane</span>
               <span><i className="finance-trend-dot finance-trend-dot-costs" /> Koszty</span>
             </div>
           </div>
@@ -9246,7 +9267,7 @@ function FinancePage({
           }}
         >
           <div>
-            <span>Przychód</span>
+            <span>Otrzymane</span>
             <strong>{formatMoney(yearRevenue)}</strong>
             <small>{yearPayments.length} płatności</small>
           </div>

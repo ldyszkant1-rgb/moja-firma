@@ -793,6 +793,7 @@ function App() {
               regon: parsed.company?.regon || '385589939',
               address: parsed.company?.address || 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
               email: parsed.company?.email || 'Aeroinstal@wp.pl',
+              bankAccount: parsed.company?.bankAccount || 'PL17109010980000000144484746',
             },
             categories: parsed.categories || [
               { name: 'ZUS', enabled: true },
@@ -823,6 +824,7 @@ function App() {
           regon: '385589939',
           address: 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
           email: 'Aeroinstal@wp.pl',
+          bankAccount: 'PL17109010980000000144484746',
         },
         categories: [
           { name: 'ZUS', enabled: true },
@@ -9455,6 +9457,7 @@ function SettingsPage({
         regon: draftCompany.regon.trim(),
         address: draftCompany.address.trim(),
         email: draftCompany.email.trim(),
+        bankAccount: draftCompany.bankAccount?.trim() || '',
       },
     })
 
@@ -9895,6 +9898,7 @@ function SettingsPage({
                   ['regon', 'REGON'],
                   ['address', 'Adres'],
                   ['email', 'E-mail'],
+                  ['bankAccount', 'Numer rachunku bankowego'],
                 ].map(([key, label]) => (
                   <label
                     key={key}

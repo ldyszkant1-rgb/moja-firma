@@ -7892,15 +7892,13 @@ function FinancePage({
   const invoiceReceivables = invoices
     .filter((invoice) => invoice.status !== 'Anulowana')
     .map((invoice) => {
-      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const net = Math.max(0, Number(invoice.netAmount || 0))
       const paid = invoice.jobId
         ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
-        : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
-      const vatSettled = Math.min(
-        Math.max(0, Number(invoice.vatSettledAmount || 0)),
-        Math.max(0, Number(invoice.vatAmount || 0))
-      )
-      const remaining = Math.max(0, gross - paid - vatSettled)
+        : Math.min(net, Math.max(0, Number(invoice.paidAmount || 0)))
+      // W Finanse pokazujemy kwotę, którą kontrahent jest winien netto.
+      // VAT rozliczony wcześniej nie jest częścią należności netto.
+      const remaining = Math.max(0, net - paid)
       const dueDate = invoice.dueDate || null
       const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
@@ -7917,7 +7915,7 @@ function FinancePage({
           name: invoice.invoiceNumber || 'Faktura',
           location: '',
         },
-        invoiceValue: gross,
+        invoiceValue: net,
         paid,
         remaining,
         dueDate,

@@ -2554,19 +2554,12 @@ function App() {
         {activePage === 'finance' && (
 
           <FinancePage
-
-            jobs={
-              jobs
-            }
-
-            settings={
-              settings
-            }
-
+            jobs={jobs}
+            settings={settings}
             clients={clients}
-
+            invoices={invoices}
             onOpenJob={setSelectedJob}
-
+            onOpenInvoice={openInvoiceFromJob}
           />
 
         )}
@@ -7389,7 +7382,9 @@ function FinancePage({
   jobs,
   settings,
   clients = [],
+  invoices = [],
   onOpenJob,
+  onOpenInvoice,
 }) {
 
   const categoryOptions =
@@ -8285,7 +8280,7 @@ function FinancePage({
                 ? 'Zaległość • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
                 : 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
               return (
-                <button type="button" className="receivable-row" key={item.id} onClick={() => item.invoiceId ? setInvoiceToOpen?.(item.invoiceId) : onOpenJob?.(item.job)}>
+                <button type="button" className="receivable-row" key={item.id} onClick={() => item.invoiceId ? onOpenInvoice?.(item.invoiceId) : onOpenJob?.(item.job)}>
                   <div className="receivable-main">
                     <strong>{item.invoiceNumber || item.job.name || 'Bez nazwy'}</strong>
                     <span>{item.clientName}</span>

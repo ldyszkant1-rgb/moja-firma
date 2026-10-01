@@ -7691,10 +7691,29 @@ function FinancePage({
       job.completedAt.startsWith(yearPrefix)
   )
 
-  const yearRevenue = completedJobsThisYear.reduce(
-    (sum, job) => sum + calculateTotal(job),
-    0
+  const yearPayments = allJobPayments.filter(
+    (payment) =>
+      payment.paidAt &&
+      payment.paidAt.startsWith(yearPrefix)
   )
+
+  const jobsWithAnyPaymentHistoryThisYear = new Set(
+    allJobPayments.map((payment) => String(payment.jobId))
+  )
+
+  const legacyCompletedJobsThisYear = completedJobsThisYear.filter(
+    (job) => !jobsWithAnyPaymentHistoryThisYear.has(String(job.id))
+  )
+
+  const yearRevenue =
+    yearPayments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    ) +
+    legacyCompletedJobsThisYear.reduce(
+      (sum, job) => sum + calculateTotal(job),
+      0
+    )
 
   const yearCostsList = costs.filter(
     (cost) =>
@@ -7849,6 +7868,88 @@ function FinancePage({
   const overdueReceivables = receivables.filter((item) => item.isOverdue).reduce((sum, item) => sum + item.remaining, 0)
 
   const splitAmount = revenue / 2
+
+  const totalPaymentExpected = totalReceivables + monthPayments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0
+  )
+
+  const paymentCollectionPercent = totalPaymentExpected > 0
+    ? Math.min(
+        100,
+        Math.max(
+          0,
+          (monthPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0) /
+            totalPaymentExpected) *
+            100
+        )
+      )
+    : 0
+
+  const monthAlerts = [
+    overdueReceivables > 0
+      ? {
+          type: 'danger',
+          icon: '🔴',
+          title: 'Zaległe płatności',
+          text: `Do odzyskania: ${formatMoney(overdueReceivables)}`,
+          action: 'receivables',
+        }
+      : null,
+    receivables.length > 0 && overdueReceivables <= 0
+      ? {
+          type: 'warning',
+          icon: '🟠',
+          title: 'Oczekujące płatności',
+          text: `Do otrzymania: ${formatMoney(totalReceivables)}`,
+          action: 'receivables',
+        }
+      : null,
+    completedJobsThisMonth.length > 0 && monthPayments.length === 0
+      ? {
+          type: 'warning',
+          icon: '🟠',
+          title: 'Brak zaksięgowanych płatności',
+          text: `${completedJobsThisMonth.length} zakończonych robót w tym miesiącu`,
+          action: 'jobs',
+        }
+      : null,
+    Math.abs(partnerCostBalance) > 0.01
+      ? {
+          type: 'info',
+          icon: '🔵',
+          title: 'Nierozliczone koszty wspólników',
+          text: `${balanceDirection}: ${formatMoney(balanceAmount)}`,
+          action: 'partner',
+        }
+      : null,
+  ].filter(Boolean)
+
+  const trendMonths = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(selectedYear, selectedMonthNumber - 1 - (5 - index), 1)
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const label = new Intl.DateTimeFormat('pl-PL', { month: 'short' })
+      .format(date)
+      .replace('.', '')
+    const payments = allJobPayments
+      .filter((payment) => payment.paidAt?.startsWith(key))
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+    const monthCostValue = costs
+      .filter((cost) => cost.month?.startsWith(key) && cost.type !== 'revenue')
+      .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
+    return {
+      key,
+      label: label.charAt(0).toUpperCase() + label.slice(1),
+      revenue: payments,
+      costs: monthCostValue,
+      profit: payments - monthCostValue,
+    }
+  })
+
+  const trendMax = Math.max(
+    1,
+    ...trendMonths.flatMap((item) => [item.revenue, item.costs])
+  )
 
   const recordPartnerTransfer = async (amount) => {
     const safeAmount = Number(amount || 0)
@@ -8279,78 +8380,159 @@ function FinancePage({
         })()}
       </div>
 
-      <div
-        className="finance-summary"
-        style={{
-          marginBottom: '14px',
-        }}
-      >
-        <div>
-          <span>Przychód</span>
-          <strong>{formatMoney(revenue)}</strong>
-          <small>
-            {completedJobsThisMonth.length === 0
-              ? 'Brak zakończonych robót'
-              : `${completedJobsThisMonth.length} zakończonych robót`}
-          </small>
-        </div>
-
-        <div>
-          <span>Koszty</span>
-          <strong>{formatMoney(totalCosts)}</strong>
-          <small>{monthCosts.length} wpisów</small>
-        </div>
-
-        <div>
-          <span>Zysk</span>
-          <strong>{formatMoney(profit)}</strong>
-          <small>Po kosztach</small>
-        </div>
-      </div>
-
-
-      <div className="finance-overview-grid">
-
-        <div className="finance-overview-card finance-overview-card-main">
-          <div className="finance-overview-label">PIENIĄDZE W TYM MIESIĄCU</div>
-          <div className="finance-overview-title">Podział 50/50</div>
-          <div className="finance-overview-value">{formatMoney(revenue)}</div>
-          <div className="finance-overview-subtitle">
-            Faktycznie otrzymane pieniądze
+      <section className="finance-command-center">
+        <div className="finance-kpi-grid">
+          <div className="finance-kpi-card finance-kpi-revenue">
+            <span>PRZYCHÓD</span>
+            <strong>{formatMoney(revenue)}</strong>
+            <small>Faktycznie otrzymane pieniądze</small>
           </div>
+          <div className="finance-kpi-card">
+            <span>KOSZTY</span>
+            <strong>{formatMoney(totalCosts)}</strong>
+            <small>{monthCosts.length} wpisów w miesiącu</small>
+          </div>
+          <div className="finance-kpi-card finance-kpi-profit">
+            <span>ZYSK</span>
+            <strong>{formatMoney(profit)}</strong>
+            <small>Przychód minus koszty</small>
+          </div>
+          <div className="finance-kpi-card finance-kpi-split">
+            <span>DO PODZIAŁU 50/50</span>
+            <strong>{formatMoney(splitAmount)}</strong>
+            <small>Na osobę</small>
+          </div>
+        </div>
 
-          <div className="finance-share-grid">
-            <div className="finance-share-item">
-              <span>Łukasz</span>
-              <strong>{formatMoney(splitAmount)}</strong>
+        <div className="finance-command-grid">
+          <div className="finance-command-card">
+            <div className="finance-command-card-header">
+              <div>
+                <div className="finance-overview-label">PŁATNOŚCI</div>
+                <h2>Gotówka i należności</h2>
+              </div>
+              <span className="finance-command-icon">💰</span>
             </div>
-            <div className="finance-share-item">
-              <span>Paweł</span>
-              <strong>{formatMoney(splitAmount)}</strong>
+
+            <div className="finance-payment-row">
+              <span>Otrzymane w miesiącu</span>
+              <strong>{formatMoney(monthPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0))}</strong>
+            </div>
+            <div className="finance-payment-row">
+              <span>Do otrzymania</span>
+              <strong className="finance-warning-value">{formatMoney(totalReceivables)}</strong>
+            </div>
+
+            <div className="finance-payment-progress">
+              <div className="finance-payment-progress-label">
+                <span>Ściągnięte należności</span>
+                <strong>{Math.round(paymentCollectionPercent)}%</strong>
+              </div>
+              <div className="finance-payment-progress-track">
+                <div
+                  className="finance-payment-progress-fill"
+                  style={{ width: `${paymentCollectionPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="finance-command-card">
+            <div className="finance-command-card-header">
+              <div>
+                <div className="finance-overview-label">WSPÓLNICY</div>
+                <h2>Podział i koszty</h2>
+              </div>
+              <span className="finance-command-icon">👥</span>
+            </div>
+
+            <div className="finance-partner-mini-grid">
+              <div>
+                <span>Łukasz</span>
+                <strong>{formatMoney(splitAmount)}</strong>
+              </div>
+              <div>
+                <span>Paweł</span>
+                <strong>{formatMoney(splitAmount)}</strong>
+              </div>
+            </div>
+
+            <div className="finance-payment-row finance-payment-row-border">
+              <span>Saldo kosztów</span>
+              <strong className={partnerCostBalance > 0.01 || partnerCostBalance < -0.01 ? 'finance-warning-value' : 'finance-success-value'}>
+                {Math.abs(partnerCostBalance) > 0.01 ? formatMoney(balanceAmount) : 'Rozliczone'}
+              </strong>
             </div>
           </div>
         </div>
 
-        <div className="finance-overview-card">
-          <div className="finance-overview-label">KOSZTY</div>
-          <div className="finance-overview-title">Kto zapłacił</div>
+        <div className="finance-command-grid finance-command-grid-bottom">
+          <div className="finance-command-card">
+            <div className="finance-command-card-header">
+              <div>
+                <div className="finance-overview-label">TREND</div>
+                <h2>Ostatnie 6 miesięcy</h2>
+              </div>
+            </div>
 
-          <div className="finance-cost-person-row">
-            <span>Łukasz</span>
-            <strong>{formatMoney(lukaszCosts)}</strong>
-          </div>
-          <div className="finance-cost-person-row">
-            <span>Paweł</span>
-            <strong>{formatMoney(pawelCosts)}</strong>
+            <div className="finance-trend-chart">
+              {trendMonths.map((item) => (
+                <div className="finance-trend-column" key={item.key}>
+                  <div className="finance-trend-bars">
+                    <div
+                      className="finance-trend-bar finance-trend-bar-revenue"
+                      style={{ height: `${Math.max(6, (item.revenue / trendMax) * 100)}%` }}
+                      title={`Przychód: ${formatMoney(item.revenue)}`}
+                    />
+                    <div
+                      className="finance-trend-bar finance-trend-bar-costs"
+                      style={{ height: `${Math.max(4, (item.costs / trendMax) * 100)}%` }}
+                      title={`Koszty: ${formatMoney(item.costs)}`}
+                    />
+                  </div>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="finance-trend-legend">
+              <span><i className="finance-trend-dot finance-trend-dot-revenue" /> Przychód</span>
+              <span><i className="finance-trend-dot finance-trend-dot-costs" /> Koszty</span>
+            </div>
           </div>
 
-          <div className="finance-cost-difference">
-            <span>Wyrównanie 50/50</span>
-            <strong>{formatMoney(Math.abs(currentCostBalance))}</strong>
+          <div className="finance-command-card">
+            <div className="finance-command-card-header">
+              <div>
+                <div className="finance-overview-label">WYMAGA UWAGI</div>
+                <h2>Najważniejsze działania</h2>
+              </div>
+              <span className="finance-command-icon">⚠️</span>
+            </div>
+
+            {monthAlerts.length === 0 ? (
+              <div className="finance-alert-empty">
+                <span>✓</span>
+                <div>
+                  <strong>Wszystko rozliczone</strong>
+                  <small>Brak pilnych spraw finansowych.</small>
+                </div>
+              </div>
+            ) : (
+              <div className="finance-alert-list">
+                {monthAlerts.map((alert, index) => (
+                  <div className={`finance-alert-item finance-alert-${alert.type}`} key={`${alert.title}-${index}`}>
+                    <span className="finance-alert-icon">{alert.icon}</span>
+                    <div>
+                      <strong>{alert.title}</strong>
+                      <small>{alert.text}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-      </div>
+      </section>
 
       <div className="finance-partner-card">
         <div className="finance-partner-card-header">
@@ -8904,7 +9086,7 @@ function FinancePage({
         <div className="finance-cost-header">
           <div>
             <h2 style={{ marginBottom: '4px' }}>Podsumowanie {selectedYear}</h2>
-            <span>Cały wybrany rok</span>
+            <span>Otrzymane płatności i koszty</span>
           </div>
         </div>
 
@@ -8918,7 +9100,7 @@ function FinancePage({
           <div>
             <span>Przychód</span>
             <strong>{formatMoney(yearRevenue)}</strong>
-            <small>{completedJobsThisYear.length} zakończonych robót</small>
+            <small>{yearPayments.length} płatności</small>
           </div>
 
           <div>

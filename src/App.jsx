@@ -7896,7 +7896,7 @@ function FinancePage({
         : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
       const remaining = Math.max(0, gross - paid)
       const dueDate = invoice.dueDate || null
-      const invoiceIssued = Boolean(invoice.issueDate)
+      const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
       const job = invoice.jobId
         ? jobs.find((item) => String(item.id) === String(invoice.jobId))

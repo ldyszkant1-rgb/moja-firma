@@ -7730,7 +7730,9 @@ function FinancePage({
     .filter((cost) => cost.paidBy === 'Paweł')
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
 
-  const currentCostBalance = lukaszCosts - pawelCosts
+  // Każdy wspólnik ponosi połowę każdego kosztu. Jeśli Łukasz zapłacił 2000 zł,
+  // Paweł powinien wyrównać Łukaszowi 1000 zł, a nie całe 2000 zł.
+  const currentCostBalance = (lukaszCosts - pawelCosts) / 2
 
   const selectedMonthEnd = `${selectedMonthKey}-31`
 
@@ -7745,8 +7747,8 @@ function FinancePage({
   const historicalCostBalance = costsThroughSelectedMonth.reduce(
     (sum, cost) => {
       const amount = Number(cost.amount || 0)
-      if (cost.paidBy === 'Łukasz') return sum + amount
-      if (cost.paidBy === 'Paweł') return sum - amount
+      if (cost.paidBy === 'Łukasz') return sum + amount / 2
+      if (cost.paidBy === 'Paweł') return sum - amount / 2
       return sum
     },
     0
@@ -7797,8 +7799,8 @@ function FinancePage({
       .reduce(
         (sum, cost) => {
           const amount = Number(cost.amount || 0)
-          if (cost.paidBy === 'Łukasz') return sum + amount
-          if (cost.paidBy === 'Paweł') return sum - amount
+          if (cost.paidBy === 'Łukasz') return sum + amount / 2
+          if (cost.paidBy === 'Paweł') return sum - amount / 2
           return sum
         },
         0
@@ -8343,7 +8345,7 @@ function FinancePage({
           </div>
 
           <div className="finance-cost-difference">
-            <span>Różnica w tym miesiącu</span>
+            <span>Wyrównanie 50/50</span>
             <strong>{formatMoney(Math.abs(currentCostBalance))}</strong>
           </div>
         </div>
@@ -8415,8 +8417,8 @@ function FinancePage({
         <div className="finance-partner-explanation">
           <span>Jak to działa?</span>
           <p>
-            Koszty wpływają na wynik firmy, ale nie muszą być wyrównywane w tym samym miesiącu.
-            Jeśli jedna osoba wyłoży więcej, różnica zostaje tutaj i przechodzi dalej.
+            Każdy koszt dzielimy po 50/50. Jeśli jedna osoba zapłaci więcej, druga oddaje jej tylko swoją połowę tego kosztu.
+            Przykład: przy koszcie 2000 zł zapłaconym przez Łukasza, Paweł oddaje 1000 zł. Nierozliczone saldo przechodzi dalej.
           </p>
         </div>
       </div>

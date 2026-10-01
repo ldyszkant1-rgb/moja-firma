@@ -10789,3 +10789,9 @@ section {
  .invoice-document-table{break-inside:auto}
  .invoice-document-table-row{break-inside:avoid}
 }
+
+.invoice-document-amount-words{margin-top:15px;padding:12px 15px;border:1px solid #e1e8ee;border-radius:8px;background:#fafcfd;display:flex;gap:12px;align-items:baseline}
+.invoice-document-amount-words span{color:#78889b;font-size:9px;font-weight:850;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.invoice-document-amount-words strong{font-size:11px;color:#34455f;text-transform:lowercase}
+.invoice-document-payment{grid-template-columns:1.2fr 1fr 1fr 2fr}
+@media(max-width:700px){.invoice-document-payment{grid-template-columns:1fr}.invoice-document-amount-words{display:block}.invoice-document-amount-words strong{display:block;margin-top:5px;line-height:1.45}}

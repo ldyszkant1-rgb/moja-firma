@@ -10541,3 +10541,72 @@ section {
     width: 13px;
   }
 }
+
+/* Podsumowanie roczne Finansów */
+.finance-year-summary {
+  margin-bottom: 14px;
+  padding: 18px;
+  border: 1px solid #e1e9f0;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbfe 100%);
+  box-shadow: var(--shadow);
+}
+.finance-year-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.finance-year-summary-header h2 {
+  margin: 4px 0 0;
+  color: #12234f;
+  font-size: 19px;
+}
+.finance-year-summary-badge {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eaf5ff;
+  color: #1673b9;
+  font-size: 11px;
+  font-weight: 800;
+}
+.finance-year-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.finance-year-summary-grid > div {
+  padding: 13px;
+  border-radius: 14px;
+  background: #f7f9fb;
+}
+.finance-year-summary-grid span {
+  display: block;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 700;
+}
+.finance-year-summary-grid strong {
+  display: block;
+  margin-top: 5px;
+  color: #18284f;
+  font-size: 18px;
+  white-space: nowrap;
+}
+.finance-year-positive { color: #168b49 !important; }
+.finance-year-negative { color: #c43d3d !important; }
+.finance-year-warning { color: #b4770b !important; }
+
+@media (max-width: 700px) {
+  .finance-year-summary {
+    padding: 15px;
+    border-radius: 17px;
+  }
+  .finance-year-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .finance-year-summary-grid strong {
+    font-size: 16px;
+  }
+}

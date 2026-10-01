@@ -7867,7 +7867,7 @@ function FinancePage({
   const totalReceivables = receivables.reduce((sum, item) => sum + item.remaining, 0)
   const overdueReceivables = receivables.filter((item) => item.isOverdue).reduce((sum, item) => sum + item.remaining, 0)
 
-  const splitAmount = revenue / 2
+  const splitAmount = share
 
   const totalPaymentExpected = totalReceivables + monthPayments.reduce(
     (sum, payment) => sum + Number(payment.amount || 0),

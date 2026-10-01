@@ -8,4 +8,3 @@ export async function createInvoice(x){const {data,error}=await supabase.from('i
 export async function updateInvoice(x){const {data,error}=await supabase.from('invoices').update(row(x)).eq('id',x.id).select('*').single();if(error)throw error;return map(data)}
 export async function deleteInvoice(id){const {error}=await supabase.from('invoices').delete().eq('id',id);if(error)throw error}
 export function subscribeToInvoices(cb){const ch=supabase.channel('aeroinstal-invoices').on('postgres_changes',{event:'*',schema:'public',table:'invoices'},cb).subscribe();return()=>supabase.removeChannel(ch)}
-export async function generateInvoiceNumber(){const y=new Date().getFullYear();const {count,error}=await supabase.from('invoices').select('id',{count:'exact',head:true}).gte('issue_date',y+'-01-01').lt('issue_date',(y+1)+'-01-01');if(error)throw error;return 'FV/'+y+'/'+String((count||0)+1).padStart(3,'0')}

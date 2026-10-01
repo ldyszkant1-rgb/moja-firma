@@ -2608,6 +2608,7 @@ function App() {
 
 function StartPage({
   jobs,
+  invoices = [],
   onOpenJob,
   onJobs,
   generalReminders,
@@ -2766,6 +2767,7 @@ function StartPage({
               <JobCard
                 key={job.id}
                 job={job}
+                invoices={invoices}
                 onClick={() => onOpenJob(job)}
                 onToggleTask={onToggleJobTask}
               />

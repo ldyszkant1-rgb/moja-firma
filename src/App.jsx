@@ -2559,7 +2559,13 @@ function App() {
             clients={clients}
             invoices={invoices}
             onOpenJob={setSelectedJob}
-            onOpenInvoice={openInvoiceFromJob}
+            onOpenInvoice={(invoiceId) => {
+              if (!invoiceId) return
+              setSelectedJob(null)
+              setInvoiceJobToCreate(null)
+              setInvoiceToOpen(invoiceId)
+              setActivePage('invoices')
+            }}
           />
 
         )}

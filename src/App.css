@@ -10610,3 +10610,99 @@ section {
     font-size: 16px;
   }
 }
+
+
+/* =========================================================
+   FAKTURY — EDYTOR W STYLU NOWOCZESNEJ APLIKACJI FAKTUROWEJ
+   ========================================================= */
+.invoice-editor-page{width:100%;max-width:1000px;margin:0 auto;padding-bottom:30px}
+.invoice-editor-top{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:center;gap:12px;margin:4px 0 18px}
+.invoice-editor-top h1{margin:3px 0 0;color:#12234f;font-size:31px;line-height:1.08}
+.invoice-back-button{width:44px;height:44px;border:1px solid #dce6ee;border-radius:50%;background:#fff;color:#12234f;font-size:25px;box-shadow:0 4px 12px rgba(30,70,105,.06)}
+.invoice-editor-number{padding:9px 13px;border-radius:999px;background:#eaf5ff;color:#087fce;font-size:12px;font-weight:850;letter-spacing:.5px}
+.invoice-editor-card{background:#fff;border:1px solid #dce6ee;border-radius:24px;box-shadow:0 10px 30px rgba(30,70,105,.08);overflow:hidden}
+.invoice-editor-section{padding:22px 24px;border-bottom:1px solid #edf1f4}
+.invoice-editor-section-title{color:#172b4d;font-size:18px;font-weight:850}
+.invoice-editor-muted{margin-top:4px;color:#8290a4;font-size:12px}
+.invoice-editor-grid{display:grid;gap:12px;margin-top:16px}
+.invoice-editor-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.invoice-field{display:grid;gap:6px;min-width:0}
+.invoice-field>span{color:#6c7b91;font-size:10px;font-weight:850;letter-spacing:1px;text-transform:uppercase}
+.invoice-field input,.invoice-field select,.invoice-editor-full-select,.invoice-item-row input,.invoice-item-row select,.invoice-party select,.invoice-notes-area,.invoice-list-tools>input{width:100%;box-sizing:border-box;border:1px solid #d5e1ea;border-radius:12px;background:#fff;color:#172b4d;padding:12px 13px;font:inherit;font-size:14px;outline:none}
+.invoice-field input:focus,.invoice-field select:focus,.invoice-editor-full-select:focus,.invoice-item-row input:focus,.invoice-item-row select:focus,.invoice-party select:focus,.invoice-notes-area:focus,.invoice-list-tools>input:focus{border-color:#168fe5;box-shadow:0 0 0 3px rgba(22,143,229,.09)}
+.invoice-party{min-width:0;padding:20px;border:1px solid #dce7ef;border-radius:18px;background:#f8fbfd;display:flex;flex-direction:column;gap:5px}
+.invoice-party-buyer{background:#f4f9ff;border-color:#cfe3f4}
+.invoice-party-label{margin-bottom:3px;color:#687a91;font-size:10px;font-weight:850;letter-spacing:1.1px;text-transform:uppercase}
+.invoice-party strong{color:#172b4d;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.invoice-party span{color:#65758b;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.invoice-party select{margin-bottom:4px;background:#fff}
+.invoice-editor-parties{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:22px 24px;border-bottom:1px solid #edf1f4}
+.invoice-editor-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:13px}
+.invoice-editor-full-select{margin-top:13px}
+.invoice-add-button{flex:0 0 auto;border:1px solid #168fe5;border-radius:11px;background:#eaf5ff;color:#087fce;padding:9px 12px;font-weight:800}
+.invoice-items-table{width:100%;overflow-x:auto}
+.invoice-items-head,.invoice-item-row{min-width:760px;display:grid;grid-template-columns:minmax(190px,2fr) 82px 82px 125px 75px 125px 34px;gap:7px;align-items:center}
+.invoice-items-head{padding:0 0 8px;color:#7a899d;font-size:9px;font-weight:850;letter-spacing:.8px;text-transform:uppercase}
+.invoice-item-row{padding:8px 0;border-top:1px solid #edf1f4}
+.invoice-item-row strong{text-align:right;color:#172b4d;font-size:13px;white-space:nowrap}
+.invoice-remove-item{width:30px;height:30px;border:1px solid #f0caca;border-radius:9px;background:#fff7f7;color:#b45454;font-size:19px;line-height:1}
+.invoice-totals{margin-top:16px;padding:15px 16px;border:1px solid #dce7ef;border-radius:15px;background:#f8fbfd;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.invoice-totals div{display:flex;flex-direction:column;gap:4px}
+.invoice-totals span{color:#7b899c;font-size:10px;font-weight:800;text-transform:uppercase}
+.invoice-totals strong{color:#172b4d;font-size:17px}
+.invoice-total-main{padding-left:15px;border-left:1px solid #dbe5ed}
+.invoice-total-main strong{color:#087fce;font-size:22px}
+.invoice-editor-finance-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #edf1f4}
+.invoice-editor-finance-grid>.invoice-editor-section{border-bottom:0}
+.invoice-payment-card{border-right:1px solid #edf1f4}
+.invoice-finance-row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #edf1f4;margin:13px 0 16px}
+.invoice-finance-row span{color:#6d7d92;font-size:12px}
+.invoice-finance-row strong{color:#172b4d;font-size:14px;white-space:nowrap}
+.invoice-finance-note{margin-top:8px;color:#718198;font-size:11px;line-height:1.5}
+.invoice-remaining-box{margin-top:16px;padding:15px;border:1px solid #cde8d7;border-radius:14px;background:#f2fbf5;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.invoice-remaining-box span{color:#517262;font-size:11px;font-weight:750}
+.invoice-remaining-box strong{color:#168b49;font-size:20px;white-space:nowrap}
+.invoice-notes-area{resize:vertical;min-height:170px;margin-top:13px;line-height:1.5}
+.invoice-editor-actions{display:grid;grid-template-columns:.7fr 1.3fr;gap:10px;padding:20px 24px;background:#fbfdfe}
+.invoice-cancel-button,.invoice-save-button{min-height:52px;border-radius:13px;font-weight:850;font-size:15px}
+.invoice-cancel-button{border:1px solid #f0caca;background:#fff7f7;color:#b45454}
+.invoice-save-button{border:0;background:#168fe5;color:#fff;box-shadow:0 7px 18px rgba(22,143,229,.18)}
+.invoice-save-button:disabled{opacity:.65}
+.invoice-list-tools{display:grid;gap:10px}
+.invoice-filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.invoice-filter-row button{white-space:nowrap;padding:8px 10px;border:1px solid #d7e2eb;border-radius:10px;background:#fff;color:#52627a;font-weight:700}
+.invoice-filter-row button.active{border-color:#168fe5;background:#eaf5ff;color:#087fce}
+.invoice-list-card{padding:0;overflow:hidden}
+.invoice-list-main{width:100%;border:0;background:#fff;padding:15px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#172b4d}
+.invoice-list-main>div{min-width:0}
+.invoice-list-main>div>strong,.invoice-list-main>div>span,.invoice-list-main>div>small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.invoice-list-main>div>strong{font-size:15px}
+.invoice-list-main>div>span{margin-top:3px;color:#64748b;font-size:12px}
+.invoice-list-main>div>small{margin-top:5px;color:#8290a4;font-size:10px}
+.invoice-list-main>strong{white-space:nowrap;font-size:15px}
+.invoice-list-delete{margin:0 15px 12px;border:0;background:transparent;color:#b45454;font-size:11px;font-weight:800}
+@media(max-width:700px){
+ .invoice-editor-page{padding-bottom:10px}
+ .invoice-editor-top h1{font-size:26px}
+ .invoice-editor-number{font-size:10px;padding:8px 10px}
+ .invoice-editor-card{border-radius:18px}
+ .invoice-editor-section{padding:18px 15px}
+ .invoice-editor-parties{grid-template-columns:1fr;padding:15px}
+ .invoice-editor-grid-2{grid-template-columns:1fr 1fr}
+ .invoice-editor-finance-grid{grid-template-columns:1fr}
+ .invoice-payment-card{border-right:0;border-bottom:1px solid #edf1f4!important}
+ .invoice-totals{grid-template-columns:1fr 1fr}
+ .invoice-total-main{grid-column:1/-1;border-left:0;border-top:1px solid #dbe5ed;padding:11px 0 0}
+ .invoice-editor-actions{grid-template-columns:.65fr 1.35fr;padding:15px}
+ .invoice-save-button,.invoice-cancel-button{min-height:50px;font-size:14px}
+}
+@media(max-width:430px){
+ .invoice-editor-grid-2{grid-template-columns:1fr}
+ .invoice-editor-top{grid-template-columns:40px minmax(0,1fr) auto}
+ .invoice-back-button{width:40px;height:40px}
+ .invoice-editor-top h1{font-size:23px}
+ .invoice-editor-section-head{align-items:center}
+ .invoice-add-button{font-size:11px;padding:8px 9px}
+ .invoice-party{padding:15px}
+ .invoice-editor-actions{grid-template-columns:1fr 1.45fr}
+}

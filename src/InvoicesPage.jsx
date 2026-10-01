@@ -10,6 +10,40 @@ const total=j=>{const q=j?.quantities||{},r=j?.rates||{};return Number(q.mb||0)*
 const items=j=>{if(!j)return[];const q=j.quantities||{},r=j.rates||{};return[['Prace wentylacyjne – mb',q.mb,r.mb,'mb'],['Prace wentylacyjne – m²',q.m2,r.m2,'m²'],['Prace wentylacyjne – kg',q.kg,r.kg,'kg']].filter(x=>Number(x[1]||0)>0&&Number(x[2]||0)>0).map(x=>({name:x[0],quantity:Number(x[1]),netUnit:Number(x[2]),unit:x[3],vatRate:23}))}
 const amounts=it=>(it||[]).reduce((a,x)=>{const net=Number(x.quantity||0)*Number(x.netUnit||0),vat=net*Number(x.vatRate||0)/100;a.net+=net;a.vat+=vat;a.gross+=net+vat;return a},{net:0,vat:0,gross:0})
 const blankItem=()=>({name:'',quantity:1,netUnit:0,unit:'szt.',vatRate:23})
+const polishAmountInWords=value=>{
+ const n=Math.max(0,Math.round(Number(value||0)*100))
+ const zl=Math.floor(n/100),gr=n%100
+ const ones=['zero','jeden','dwa','trzy','cztery','pięć','sześć','siedem','osiem','dziewięć']
+ const teens=['dziesięć','jedenaście','dwanaście','trzynaście','czternaście','piętnaście','szesnaście','siedemnaście','osiemnaście','dziewiętnaście']
+ const tens=['','', 'dwadzieścia','trzydzieści','czterdzieści','pięćdziesiąt','sześćdziesiąt','siedemdziesiąt','osiemdziesiąt','dziewięćdziesiąt']
+ const hundreds=['','sto','dwieście','trzysta','czterysta','pięćset','sześćset','siedemset','osiemset','dziewięćset']
+ const groups=[['',''],['tysiąc','tysiące','tysięcy'],['milion','miliony','milionów']]
+ const under1000=x=>{
+  const out=[]
+  const h=Math.floor(x/100),rest=x%100
+  if(h)out.push(hundreds[h])
+  if(rest>=10&&rest<20)out.push(teens[rest-10])
+  else{const t=Math.floor(rest/10),o=rest%10;if(t)out.push(tens[t]);if(o)out.push(ones[o])}
+  return out.join(' ')
+ }
+ const parts=[]
+ let rest=zl,gi=0
+ while(rest>0){
+  const part=rest%1000
+  if(part){
+   let words=under1000(part)
+   if(gi>0){
+    const form=part===1?groups[gi][0]:(part%10>=2&&part%10<=4&&!(part%100>=12&&part%100<=14)?groups[gi][1]:groups[gi][2])
+    if(!(gi===1&&part===1))words += ' '+form
+    else words=groups[gi][0]
+   }
+   parts.unshift(words)
+  }
+  rest=Math.floor(rest/1000);gi++
+ }
+ return (parts.join(' ')||'zero')+' złotych '+String(gr).padStart(2,'0')+'/100'
+}
+
 
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={},prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
  const [edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
@@ -105,9 +139,11 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      <div className="invoice-document-summary-vat"><div><span>Razem netto</span><strong>{money(a.net)}</strong></div><div><span>VAT</span><strong>{money(a.vat)}</strong></div></div>
      <div className="invoice-document-total"><span>DO ZAPŁATY</span><strong>{money(a.gross)}</strong></div>
     </div>
+    <div className="invoice-document-amount-words"><span>Kwota słownie</span><strong>{polishAmountInWords(a.gross)}</strong></div>
     <div className="invoice-document-payment">
      <div><span>Do zapłaty</span><strong>{money(remaining)}</strong></div>
      <div><span>Waluta</span><strong>{preview.currency||'PLN'}</strong></div>
+     <div><span>Rachunek bankowy</span><strong>{seller.bankAccount||'—'}</strong></div>
      <div><span>Status</span><strong>{paymentStatus(preview)}</strong></div>
     </div>
     {preview.notes&&<div className="invoice-document-notes"><span>UWAGI</span><p>{preview.notes}</p></div>}

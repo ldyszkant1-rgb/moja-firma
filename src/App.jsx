@@ -2544,6 +2544,7 @@ function App() {
             invoices={invoices}
             jobs={jobs}
             clients={clients}
+            settings={settings}
             prefillJobId={invoiceJobToCreate}
             openInvoiceId={invoiceToOpen}
             onPrefillConsumed={() => setInvoiceJobToCreate(null)}

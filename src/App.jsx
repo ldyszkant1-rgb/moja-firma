@@ -8633,6 +8633,22 @@ function FinancePage({
         </div>
       </section>
 
+      <section className="finance-year-summary">
+        <div className="finance-year-summary-header">
+          <div>
+            <div className="finance-overview-label">PODSUMOWANIE ROKU</div>
+            <h2>Rok {selectedYear}</h2>
+          </div>
+          <span className="finance-year-summary-badge">Bieżący rok</span>
+        </div>
+        <div className="finance-year-summary-grid">
+          <div><span>Otrzymane</span><strong>{formatMoney(yearRevenue)}</strong></div>
+          <div><span>Koszty</span><strong>{formatMoney(yearCosts)}</strong></div>
+          <div><span>Zysk</span><strong className={yearProfit >= 0 ? 'finance-year-positive' : 'finance-year-negative'}>{formatMoney(yearProfit)}</strong></div>
+          <div><span>Do odzyskania netto</span><strong className={totalReceivables > 0.01 ? 'finance-year-warning' : 'finance-year-positive'}>{formatMoney(totalReceivables)}</strong></div>
+        </div>
+      </section>
+
       <div className="finance-partner-card">
         <div className="finance-partner-card-header">
           <div>

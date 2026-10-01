@@ -578,7 +578,7 @@ class JobsErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('Błąd zakładki Roboty:', error, info)
+    console.error('Błąd zakładki Realizacje:', error, info)
   }
 
   render() {
@@ -902,7 +902,7 @@ function App() {
    */
 
   /*
-   * Roboty są przechowywane wspólnie w Supabase.
+   * Realizacje są przechowywane wspólnie w Supabase.
    *
    * LocalStorage nie jest źródłem danych robót, ponieważ każdy
    * telefon/komputer ma własną pamięć lokalną. Korzystanie z niej
@@ -960,7 +960,7 @@ function App() {
         }
 
         console.log(
-          'Roboty wczytane z Supabase:',
+          'Realizacje wczytane z Supabase:',
           remoteJobs.length
         )
 
@@ -1205,7 +1205,7 @@ function App() {
     try {
       await updateSupabaseJob(updatedJob)
     } catch (error) {
-      console.error('Nie udało się zmienić zadania roboty:', error)
+      console.error('Nie udało się zmienić zadania realizacje:', error)
       setJobs((currentJobs) =>
         currentJobs.map((item) =>
           String(item.id) === String(job.id) ? job : item
@@ -1221,7 +1221,7 @@ function App() {
 
   /*
    * Automatyczne czyszczenie kosza po 30 dniach.
-   * Pliki ze Storage są usuwane razem z robotą.
+   * Pliki ze Storage są usuwane razem z realizacją.
    */
   useEffect(() => {
 
@@ -1276,7 +1276,7 @@ function App() {
             await hardDeleteSupabaseJob(job.id)
           } catch (deleteError) {
             console.error(
-              'Nie udało się trwale usunąć starej roboty z kosza:',
+              'Nie udało się trwale usunąć starej realizacje z kosza:',
               job.id,
               deleteError
             )
@@ -1307,7 +1307,7 @@ function App() {
    * Synchronizacja robót na żywo z Supabase.
    *
    * Supabase wysyła konkretny rekord, który się zmienił.
-   * Aktualizujemy tylko tę jedną robotę zamiast pobierać
+   * Aktualizujemy tylko tę jedną realizację zamiast pobierać
    * całą tabelę ponownie. Dzięki temu aplikacja nie robi
    * niepotrzebnego przeładowania listy i powinna działać
    * płynniej na telefonie.
@@ -1667,7 +1667,7 @@ function App() {
   }, [])
 
   /*
-   * Nowa robota.
+   * Nowa realizacja.
    */
 
   const [newJob, setNewJob] =
@@ -1729,19 +1729,19 @@ function App() {
       )
 
       console.log(
-        'Robota została zaktualizowana w Supabase:',
+        'Realizacja została zaktualizowana w Supabase:',
         updatedJob.name
       )
 
     } catch (error) {
 
       console.error(
-        'Nie udało się zaktualizować roboty w Supabase:',
+        'Nie udało się zaktualizować realizacje w Supabase:',
         error
       )
 
       showCustomAlert(
-        'Robota została zmieniona lokalnie, ale nie udało się zapisać zmiany w Supabase.'
+        'Realizacja została zmieniona lokalnie, ale nie udało się zapisać zmiany w Supabase.'
       )
 
     }
@@ -1756,7 +1756,7 @@ function App() {
     }
 
     const confirmed = window.confirm(
-      `Czy przenieść robotę „${jobToDelete.name || ''}” do kosza?\n\nRobota zostanie ukryta z listy, ale będzie można ją przywrócić przez 30 dni.`
+      `Czy przenieść realizację „${jobToDelete.name || ''}” do kosza?\n\nRealizacja zostanie ukryta z listy, ale będzie można ją przywrócić przez 30 dni.`
     )
 
     if (!confirmed) {
@@ -1784,7 +1784,7 @@ function App() {
       setSelectedJob(null)
 
       showCustomAlert(
-        'Robota została przeniesiona do kosza. Możesz ją przywrócić przez 30 dni.'
+        'Realizacja została przeniesiona do kosza. Możesz ją przywrócić przez 30 dni.'
       )
 
       return
@@ -1810,22 +1810,22 @@ function App() {
       setSelectedJob(null)
 
       console.log(
-        'Robota została przeniesiona do kosza:',
+        'Realizacja została przeniesiona do kosza:',
         savedDeletedJob.name
       )
 
       showCustomAlert(
-        'Robota została przeniesiona do kosza. Możesz ją przywrócić przez 30 dni.'
+        'Realizacja została przeniesiona do kosza. Możesz ją przywrócić przez 30 dni.'
       )
 
     } catch (error) {
       console.error(
-        'Nie udało się przenieść roboty do kosza:',
+        'Nie udało się przenieść realizacje do kosza:',
         error
       )
 
       showCustomAlert(
-        'Nie udało się przenieść roboty do kosza. Spróbuj ponownie.'
+        'Nie udało się przenieść realizacje do kosza. Spróbuj ponownie.'
       )
     }
   }
@@ -1838,7 +1838,7 @@ function App() {
     }
 
     const confirmed = window.confirm(
-      `Przywrócić robotę „${jobToRestore.name || ''}” do aktywnych?`
+      `Przywrócić realizację „${jobToRestore.name || ''}” do aktywnych?`
     )
 
     if (!confirmed) {
@@ -1865,7 +1865,7 @@ function App() {
         ...currentJobs,
       ])
 
-      showCustomAlert('Robota została przywrócona.')
+      showCustomAlert('Realizacja została przywrócona.')
       return
     }
 
@@ -1887,20 +1887,20 @@ function App() {
       ])
 
       console.log(
-        'Robota została przywrócona:',
+        'Realizacja została przywrócona:',
         restoredJob.name
       )
 
-      showCustomAlert('Robota została przywrócona do aktywnych.')
+      showCustomAlert('Realizacja została przywrócona do aktywnych.')
 
     } catch (error) {
       console.error(
-        'Nie udało się przywrócić roboty:',
+        'Nie udało się przywrócić realizacje:',
         error
       )
 
       showCustomAlert(
-        'Nie udało się przywrócić roboty. Spróbuj ponownie.'
+        'Nie udało się przywrócić realizacje. Spróbuj ponownie.'
       )
     }
   }
@@ -1913,7 +1913,7 @@ function App() {
     }
 
     const confirmed = window.confirm(
-      `Usunąć robotę „${jobToDelete.name || ''}” na zawsze?\n\nTej operacji nie będzie można cofnąć.`
+      `Usunąć realizację „${jobToDelete.name || ''}” na zawsze?\n\nTej operacji nie będzie można cofnąć.`
     )
 
     if (!confirmed) {
@@ -1930,7 +1930,7 @@ function App() {
         )
       )
 
-      showCustomAlert('Robota została trwale usunięta.')
+      showCustomAlert('Realizacja została trwale usunięta.')
       return
     }
 
@@ -1975,16 +1975,16 @@ function App() {
         )
       )
 
-      showCustomAlert('Robota została trwale usunięta.')
+      showCustomAlert('Realizacja została trwale usunięta.')
 
     } catch (error) {
       console.error(
-        'Nie udało się trwale usunąć roboty:',
+        'Nie udało się trwale usunąć realizacje:',
         error
       )
 
       showCustomAlert(
-        'Nie udało się trwale usunąć roboty. Spróbuj ponownie.'
+        'Nie udało się trwale usunąć realizacje. Spróbuj ponownie.'
       )
     }
   }
@@ -2078,10 +2078,10 @@ function App() {
 
       setJobs((current) => [savedJob, ...current])
       setOffers((current) => current.map((item) => String(item.id) === String(savedOffer.id) ? savedOffer : item))
-      showCustomAlert('Oferta została zamieniona na robotę. Robota trafiła do realizacji.')
+      showCustomAlert('Oferta została zamieniona na realizację. Realizacja trafiła do realizacji.')
     } catch (error) {
-      console.error('Nie udało się utworzyć roboty z oferty:', error)
-      showCustomAlert('Nie udało się utworzyć roboty z oferty. Spróbuj ponownie.')
+      console.error('Nie udało się utworzyć realizacje z oferty:', error)
+      showCustomAlert('Nie udało się utworzyć realizacje z oferty. Spróbuj ponownie.')
     }
   }
 
@@ -2093,7 +2093,7 @@ function App() {
     ) {
 
       showCustomAlert(
-        'Podaj nazwę roboty.'
+        'Podaj nazwę realizacje.'
       )
 
       return
@@ -2189,8 +2189,8 @@ function App() {
 
 
     /*
-     * Najpierw zapisujemy robotę do Supabase.
-     * Dzięki temu prawdziwym identyfikatorem roboty
+     * Najpierw zapisujemy realizację do Supabase.
+     * Dzięki temu prawdziwym identyfikatorem realizacje
      * staje się UUID z bazy.
      */
     let savedJob
@@ -2203,19 +2203,19 @@ function App() {
         )
 
       console.log(
-        'Nowa robota zapisana w Supabase:',
+        'Nowa realizacja zapisana w Supabase:',
         savedJob
       )
 
     } catch (error) {
 
       console.error(
-        'Nie udało się zapisać nowej roboty w Supabase:',
+        'Nie udało się zapisać nowej realizacje w Supabase:',
         error
       )
 
       showCustomAlert(
-        'Nie udało się zapisać roboty w Supabase. Robota nie została utworzona.'
+        'Nie udało się zapisać realizacje w Supabase. Realizacja nie została utworzona.'
       )
 
       return
@@ -2228,7 +2228,7 @@ function App() {
      * zdjęć i notatek. Na tym etapie są one jeszcze
      * obsługiwane przez obecną aplikację.
      *
-     * Z Supabase bierzemy UUID jako ID roboty.
+     * Z Supabase bierzemy UUID jako ID realizacje.
      */
     const finalJob = {
 
@@ -2668,21 +2668,21 @@ function StartPage({
       <div className="dashboard-grid">
         <DashboardCard
           icon="📋"
-          label="Wszystkie roboty"
+          label="Wszystkie realizacje"
           value={jobs.length}
           onClick={() => onJobs('all')}
         />
 
         <DashboardCard
           icon="▶"
-          label="Aktywne roboty"
+          label="Aktywne realizacje"
           value={activeJobs.length}
           onClick={() => onJobs('active')}
         />
 
         <DashboardCard
           icon="✓"
-          label="Zakończone roboty"
+          label="Zakończone realizacje"
           value={completedJobs.length}
           completed
           onClick={() => onJobs('completed')}
@@ -2882,7 +2882,7 @@ function StartPage({
         <div className="section-title">
           <h2>Ostatnio zakończone</h2>
           <button className="section-link" onClick={onJobs}>
-            Roboty
+            Realizacje
           </button>
         </div>
 
@@ -3651,7 +3651,7 @@ function JobCard({
       </section>
 
       <button type="button" className="job-card-open-link" onClick={onClick}>
-        <span>Otwórz szczegóły roboty</span>
+        <span>Otwórz szczegóły realizacje</span>
         <span aria-hidden="true">→</span>
       </button>
     </article>
@@ -3770,7 +3770,7 @@ function JobsPage({
           </div>
 
           <h1>
-            Roboty
+            Realizacje
           </h1>
 
         </div>
@@ -3788,7 +3788,7 @@ function JobsPage({
             whiteSpace: 'nowrap',
           }}
         >
-          + Nowa robota
+          + Nowa realizacja
         </button>
 
       </div>
@@ -3855,7 +3855,7 @@ function JobsPage({
                   marginTop: '3px',
                 }}
               >
-                Roboty są przechowywane przez 30 dni.
+                Realizacje są przechowywane przez 30 dni.
               </div>
             </div>
           </div>
@@ -4030,7 +4030,7 @@ function JobsPage({
       >
         <div className="job-summary-item">
           <strong>{jobs.length}</strong>
-          <span>{jobs.length === 1 ? 'robota' : 'robót'}</span>
+          <span>{jobs.length === 1 ? 'realizacja' : 'robót'}</span>
         </div>
         <div className="job-summary-item">
           <strong>{activeCount}</strong>
@@ -4228,7 +4228,7 @@ function NewJobPage({
           </div>
 
           <h1>
-            Dodaj robotę
+            Dodaj realizację
           </h1>
 
         </div>
@@ -4249,7 +4249,7 @@ function NewJobPage({
 
             className="job-new-input"
 
-            placeholder="Nazwa roboty"
+            placeholder="Nazwa realizacje"
 
             value={
               newJob.name
@@ -4303,7 +4303,7 @@ function NewJobPage({
       <div className="detail-card">
 
         <h2>
-          Zakres roboty
+          Zakres realizacje
         </h2>
 
 
@@ -4580,7 +4580,7 @@ function NewJobPage({
         }
 
       >
-        Utwórz robotę
+        Utwórz realizację
       </button>
 
     </div>
@@ -4671,7 +4671,7 @@ function JobDetails({
     if (!editedJob.name.trim()) {
 
       showCustomAlert(
-        'Podaj nazwę roboty.'
+        'Podaj nazwę realizacje.'
       )
 
       return
@@ -5241,7 +5241,7 @@ function JobDetails({
 
       /*
        * Supabase zwraca pełną, aktualną wersję
-       * roboty wraz ze wszystkimi zdjęciami.
+       * realizacje wraz ze wszystkimi zdjęciami.
        */
 
       setEditedJob(
@@ -5250,7 +5250,7 @@ function JobDetails({
 
       /*
        * Aktualizujemy tylko stan aplikacji.
-       * Nie wysyłamy ponownie całej roboty do Supabase.
+       * Nie wysyłamy ponownie całej realizacje do Supabase.
        */
 
       onUpdate(
@@ -5765,7 +5765,7 @@ function JobDetails({
 
             className="note-text-input job-edit-input"
 
-            placeholder="Nazwa roboty"
+            placeholder="Nazwa realizacje"
 
             value={
               editedJob.name
@@ -5871,7 +5871,7 @@ function JobDetails({
 
       <div className="detail-card job-stage-card">
         <div className="detail-title">
-          <h2>Etap roboty</h2>
+          <h2>Etap realizacje</h2>
           <span
             className="job-stage-pill"
             style={getJobStageStyle(normalizeJobStage(editedJob))}
@@ -6209,7 +6209,7 @@ function JobDetails({
       <div className="detail-card">
 
         <h2>
-          Zakres roboty
+          Zakres realizacje
         </h2>
 
 
@@ -6769,7 +6769,7 @@ function JobDetails({
               ZADANIA
             </div>
             <h2>
-              Zadania na tej robocie
+              Zadania na tej realizacji
             </h2>
           </div>
 
@@ -7127,7 +7127,7 @@ function JobDetails({
         >
           {nextStage === 'W toku' && '▶ Rozpocznij realizację'}
           {nextStage === 'Odbiór' && '✓ Przejdź do odbioru'}
-          {nextStage === 'Zakończone' && '✓ Zakończ robotę'}
+          {nextStage === 'Zakończone' && '✓ Zakończ realizację'}
         </button>
       )}
 
@@ -7167,7 +7167,7 @@ function JobDetails({
           }}
 
         >
-          🗑 Usuń robotę
+          🗑 Usuń realizację
 
         </button>
 
@@ -7846,13 +7846,13 @@ function FinancePage({
   /*
    * NALEŻNOŚCI — faktury są źródłem prawdy dla wystawionych dokumentów.
    *
-   * Dla faktur powiązanych z robotą wpłaty nadal pozostają w job_payments
+   * Dla faktur powiązanych z realizacją wpłaty nadal pozostają w job_payments
    * (to księga faktycznie otrzymanej gotówki), a kwota faktury i termin
-   * pochodzą z public.invoices. Jeżeli na jednej robocie istnieje więcej
-   * niż jedna faktura, wpłaty z poziomu roboty rozdzielamy chronologicznie
+   * pochodzą z public.invoices. Jeżeli na jednej realizacji istnieje więcej
+   * niż jedna faktura, wpłaty z poziomu realizacje rozdzielamy chronologicznie
    * między faktury, żeby nie policzyć tej samej wpłaty kilka razy.
    *
-   * Stare roboty bez rekordu invoices zachowują dotychczasowy fallback
+   * Stare realizacje bez rekordu invoices zachowują dotychczasowy fallback
    * oparty o legacy payment_due_date / invoice_amount.
    */
   const invoicesByJob = new Map()
@@ -9033,7 +9033,7 @@ function FinancePage({
       <div className="detail-card" style={{ marginTop: '14px' }}>
         <div className="finance-cost-header">
           <div>
-            <h2 style={{ marginBottom: '4px' }}>Zakończone roboty</h2>
+            <h2 style={{ marginBottom: '4px' }}>Zakończone realizacje</h2>
             <span>Przychód w {monthTitle}</span>
           </div>
           <strong>{formatMoney(revenue)}</strong>
@@ -9971,7 +9971,7 @@ function SettingsPage({
                 opacity: 0.65,
               }}
             >
-              Te stawki będą automatycznie podpowiadane przy dodawaniu nowej roboty.
+              Te stawki będą automatycznie podpowiadane przy dodawaniu nowej realizacje.
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
@@ -10060,7 +10060,7 @@ function SettingsPage({
             <h2>Kopia zapasowa</h2>
 
             <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.6 }}>
-              Kopia zapisuje ustawienia, roboty, finanse oraz informacje o zdjęciach
+              Kopia zapisuje ustawienia, realizacje, finanse oraz informacje o zdjęciach
               i dokumentach. Same pliki pozostają bezpiecznie w Supabase Storage.
             </div>
 
@@ -10152,7 +10152,7 @@ function BottomNavigation({
 
         icon="🔧"
 
-        label="Roboty"
+        label="Realizacje"
 
         active={
           activePage === 'jobs'

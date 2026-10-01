@@ -7869,19 +7869,19 @@ function FinancePage({
 
   const splitAmount = share
 
-  const totalPaymentExpected = totalReceivables + monthPayments.reduce(
+  const totalPaidAllTime = allJobPayments.reduce(
     (sum, payment) => sum + Number(payment.amount || 0),
     0
   )
+
+  const totalPaymentExpected = totalPaidAllTime + totalReceivables
 
   const paymentCollectionPercent = totalPaymentExpected > 0
     ? Math.min(
         100,
         Math.max(
           0,
-          (monthPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0) /
-            totalPaymentExpected) *
-            100
+          (totalPaidAllTime / totalPaymentExpected) * 100
         )
       )
     : 0
@@ -8425,7 +8425,7 @@ function FinancePage({
 
             <div className="finance-payment-progress">
               <div className="finance-payment-progress-label">
-                <span>Ściągnięte należności</span>
+                <span>Ogólny poziom spływu płatności</span>
                 <strong>{Math.round(paymentCollectionPercent)}%</strong>
               </div>
               <div className="finance-payment-progress-track">

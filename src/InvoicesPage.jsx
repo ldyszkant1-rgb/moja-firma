@@ -102,7 +102,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      </div>
      <div className="invoice-party invoice-party-buyer">
       <div className="invoice-party-label">Nabywca</div>
-      <select value={edit.clientId||''} onChange={e=>{const c=cm.get(e.target.value);setEdit({...edit,clientId:e.target.value,jobId:c?.id&&edit.jobId?edit.jobId:edit.jobId})}}>
+      <select value={edit.clientId||''} onChange={e=>{const c=cm.get(e.target.value);setEdit({...edit,clientId:e.target.value})}}>
        <option value="">Wybierz klienta</option>
        {clients.map(c=><option key={c.id} value={c.id}>{c.shortName||c.name}</option>)}
       </select>

@@ -5914,7 +5914,7 @@ function JobDetails({
             ))}
           </div>
         )}
-
+      </div>
 
       <div className="detail-card" style={{ marginTop: '14px' }}>
         <div className="detail-title">
@@ -5962,7 +5962,7 @@ function JobDetails({
         )}
       </div>
 
-      {/* ZDJĘCIE GŁÓWNE */
+      {/* ZDJĘCIE GŁÓWNE */}
 
       <div
         className="detail-card"

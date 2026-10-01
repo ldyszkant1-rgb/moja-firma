@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import logo from './assets/logo.png'
 import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
 
 const money=v=>Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł'
@@ -11,7 +12,7 @@ const amounts=it=>(it||[]).reduce((a,x)=>{const net=Number(x.quantity||0)*Number
 const blankItem=()=>({name:'',quantity:1,netUnit:0,unit:'szt.',vatRate:23})
 
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={},prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
- const [edit,setEdit]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
+ const [edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients])
  const jm=useMemo(()=>new Map(jobs.map(j=>[String(j.id),j])),[jobs])
  const company=settings?.company||{}
@@ -63,6 +64,57 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
   if(!(await onConfirm?.('Usunąć fakturę '+x.invoiceNumber+'?'+warning)))return
   try{await deleteInvoice(x.id);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:{deletedId:x.id}}))}
   catch(e){console.error(e);onAlert?.('Nie udało się usunąć faktury.')}
+ }
+
+ if(preview){
+  const a=amounts(preview.items)
+  const buyer=cm.get(String(preview.clientId))
+  const seller=company
+  const paid=Number(preview.paidAmount||0)
+  const vatSettled=Number(preview.vatSettledAmount||0)
+  const remaining=Math.max(0,a.gross-paid-vatSettled)
+  return <div className="invoice-preview-shell">
+   <div className="invoice-preview-toolbar">
+    <button type="button" className="invoice-preview-close" onClick={()=>setPreview(null)}>← Wróć do edycji</button>
+    <div className="invoice-preview-toolbar-title">Podgląd faktury</div>
+    <button type="button" className="invoice-preview-print" onClick={()=>window.print()}>Drukuj / PDF</button>
+   </div>
+   <div className="invoice-preview-paper">
+    <div className="invoice-document-head">
+     <img src={logo} alt="Aeroinstal" className="invoice-document-logo"/>
+     <div className="invoice-document-title">
+      <div className="invoice-document-type">FAKTURA</div>
+      <strong>{preview.invoiceNumber||'NOWA'}</strong>
+     </div>
+    </div>
+    <div className="invoice-document-meta">
+     <div><span>Data wystawienia</span><strong>{formatDate(preview.issueDate)}</strong></div>
+     <div><span>Data sprzedaży</span><strong>{formatDate(preview.saleDate||preview.issueDate)}</strong></div>
+     <div><span>Termin płatności</span><strong>{formatDate(preview.dueDate)}</strong></div>
+     <div><span>Sposób płatności</span><strong>{preview.paymentMethod||'Przelew'}</strong></div>
+    </div>
+    <div className="invoice-document-parties">
+     <div><span className="invoice-document-label">SPRZEDAWCA</span><strong>{seller.name||'AEROINSTAL ŁUKASZ DYSZKANT'}</strong><p>NIP: {seller.nip||'5833105866'}</p><p>{seller.address||'ul. Cicha 4A/9, 83-000 Pruszcz Gdański'}</p>{seller.email&&<p>{seller.email}</p>}</div>
+     <div><span className="invoice-document-label">NABYWCA</span><strong>{buyer?.name||buyer?.shortName||'—'}</strong>{buyer?.nip&&<p>NIP: {buyer.nip}</p>}{buyer?.address&&<p>{buyer.address}</p>}{buyer?.email&&<p>{buyer.email}</p>}</div>
+    </div>
+    <div className="invoice-document-table">
+     <div className="invoice-document-table-head"><span>Lp.</span><span>Nazwa towaru / usługi</span><span>Ilość</span><span>J.m.</span><span>Cena netto</span><span>VAT</span><span>Wartość netto</span><span>Wartość brutto</span></div>
+     {(preview.items||[]).map((x,i)=>{const net=Number(x.quantity||0)*Number(x.netUnit||0),gross=net*(1+Number(x.vatRate||0)/100);return <div className="invoice-document-table-row" key={i}><span>{i+1}</span><span>{x.name||'—'}</span><span>{x.quantity??0}</span><span>{x.unit||'szt.'}</span><span>{money(net/Math.max(1,Number(x.quantity||0)))}</span><span>{Number(x.vatRate||0)}%</span><span>{money(net)}</span><span>{money(gross)}</span></div>})}
+    </div>
+    <div className="invoice-document-summary">
+     <div className="invoice-document-summary-vat"><div><span>Razem netto</span><strong>{money(a.net)}</strong></div><div><span>VAT</span><strong>{money(a.vat)}</strong></div></div>
+     <div className="invoice-document-total"><span>DO ZAPŁATY</span><strong>{money(a.gross)}</strong></div>
+    </div>
+    <div className="invoice-document-payment">
+     <div><span>Do zapłaty</span><strong>{money(remaining)}</strong></div>
+     <div><span>Waluta</span><strong>{preview.currency||'PLN'}</strong></div>
+     <div><span>Status</span><strong>{paymentStatus(preview)}</strong></div>
+    </div>
+    {preview.notes&&<div className="invoice-document-notes"><span>UWAGI</span><p>{preview.notes}</p></div>}
+    <div className="invoice-document-signatures"><div>Osoba wystawiająca fakturę</div><div>Odbiorca / osoba upoważniona</div></div>
+    <div className="invoice-document-footer">{seller.name||'AEROINSTAL ŁUKASZ DYSZKANT'} · NIP {seller.nip||'5833105866'}</div>
+   </div>
+  </div>
  }
 
  if(edit){
@@ -161,6 +213,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
     <div className="invoice-editor-actions">
      <button type="button" className="invoice-cancel-button" onClick={()=>setEdit(null)}>Anuluj</button>
+     <button type="button" className="invoice-preview-button" onClick={()=>setPreview({...edit,items:Array.isArray(edit.items)?edit.items:[]})}>👁 Podgląd</button>
      <button type="button" className="invoice-save-button" disabled={saving} onClick={save}>{saving?'Zapisywanie…':'💾 Zapisz fakturę'}</button>
     </div>
    </div>

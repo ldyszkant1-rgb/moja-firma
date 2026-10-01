@@ -147,7 +147,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
 
   const remove = async (client) => {
     const confirmed = await onConfirm(
-      `Usunąć klienta „${client.name}”?\n\nJeżeli ma przypisane realizacje, aplikacja nie pozwoli go usunąć.`
+      `Usunąć klienta „${client.name}”?\n\nJeżeli ma powiązane realizacje, faktury lub oferty, aplikacja nie pozwoli go usunąć.`
     )
     if (!confirmed) return
 

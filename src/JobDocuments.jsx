@@ -231,10 +231,10 @@ function renderJobMeta(job, dateLabel, dateValue, overrides = {}) {
   const location = overrides.location ?? job?.location ?? '—'
   return `
     <div class="meta">
-      <div class="meta-box"><span class="meta-label">Robota</span><span class="meta-value">${escapeHtml(name)}</span></div>
+      <div class="meta-box"><span class="meta-label">Realizacja</span><span class="meta-value">${escapeHtml(name)}</span></div>
       <div class="meta-box"><span class="meta-label">Lokalizacja</span><span class="meta-value">${escapeHtml(location)}</span></div>
       <div class="meta-box"><span class="meta-label">${escapeHtml(dateLabel)}</span><span class="meta-value">${escapeHtml(dateValue || '—')}</span></div>
-      <div class="meta-box"><span class="meta-label">Status roboty</span><span class="meta-value">${escapeHtml(job?.status || 'W toku')}</span></div>
+      <div class="meta-box"><span class="meta-label">Status realizacje</span><span class="meta-value">${escapeHtml(job?.status || 'W toku')}</span></div>
     </div>
   `
 }
@@ -253,13 +253,13 @@ function printContract(job, client, company, draft, onPreview) {
     <div class="parties">${partyHtml('Zleceniodawca', cl)}${partyHtml('Zleceniobiorca / Wykonawca', c)}</div>
 
     <h2>§ 1. Przedmiot umowy</h2>
-    <div class="clause"><span class="clause-number">1.</span>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania roboty związane z realizacją instalacji wentylacyjnej dla wskazanej poniżej roboty.</div>
+    <div class="clause"><span class="clause-number">1.</span>Zleceniodawca zleca, a Zleceniobiorca przyjmuje do wykonania realizacje związane z realizacją instalacji wentylacyjnej dla wskazanej poniżej realizacje.</div>
     <div class="scope">${escapeHtml(scope)}</div>
 
     <h2>§ 2. Miejsce i zakres realizacji</h2>
     <div class="clause"><span class="clause-number">1.</span>Miejsce wykonania robót: <strong>${escapeHtml(draft.location || '—')}</strong>.</div>
-    <div class="clause"><span class="clause-number">2.</span>Nazwa / oznaczenie roboty: <strong>${escapeHtml(draft.name || '—')}</strong>.</div>
-    <div class="clause"><span class="clause-number">3.</span>Roboty zostaną wykonane zgodnie z ustaleniami Stron, przekazaną dokumentacją oraz zasadami prawidłowego wykonawstwa.</div>
+    <div class="clause"><span class="clause-number">2.</span>Nazwa / oznaczenie realizacje: <strong>${escapeHtml(draft.name || '—')}</strong>.</div>
+    <div class="clause"><span class="clause-number">3.</span>Realizacje zostaną wykonane zgodnie z ustaleniami Stron, przekazaną dokumentacją oraz zasadami prawidłowego wykonawstwa.</div>
 
     <h2>§ 3. Wynagrodzenie</h2>
     <table><thead><tr><th>Zakres</th><th>Ilość</th><th>Stawka</th><th>Wartość</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Wartość zostanie ustalona na podstawie uzgodnionego zakresu robót.</td></tr>'}</tbody></table>
@@ -268,7 +268,7 @@ function printContract(job, client, company, draft, onPreview) {
     <div class="clause"><span class="clause-number">2.</span>Termin płatności wynagrodzenia zostanie określony na fakturze lub w odrębnym uzgodnieniu Stron.</div>
 
     <h2>§ 4. Wykonanie i odbiór</h2>
-    <div class="clause"><span class="clause-number">1.</span>Zleceniobiorca zobowiązuje się wykonać roboty z należytą starannością oraz zgodnie z ustalonym zakresem.</div>
+    <div class="clause"><span class="clause-number">1.</span>Zleceniobiorca zobowiązuje się wykonać realizacje z należytą starannością oraz zgodnie z ustalonym zakresem.</div>
     <div class="clause"><span class="clause-number">2.</span>Odbiór wykonanych robót zostanie potwierdzony protokołem odbioru, podpisanym przez przedstawicieli Stron.</div>
     <div class="clause"><span class="clause-number">3.</span>Ewentualne uwagi lub usterki zostaną wpisane do protokołu odbioru wraz z uzgodnionym terminem ich usunięcia.</div>
 
@@ -288,7 +288,7 @@ function printContract(job, client, company, draft, onPreview) {
     <div class="footer">Dokument przygotowany w aplikacji Aeroinstal • ${date}</div>
   `
 
-  openPrintWindow('Umowa zlecenie • ' + (draft.name || 'Robota'), html, onPreview)
+  openPrintWindow('Umowa zlecenie • ' + (draft.name || 'Realizacja'), html, onPreview)
 }
 
 function printAcceptance(job, client, company, draft, onPreview) {
@@ -311,8 +311,8 @@ function printAcceptance(job, client, company, draft, onPreview) {
     <div class="total"><span>Łączna wartość robót</span><strong>${formatMoney(total)}</strong></div>
 
     <h2>§ 3. Stan wykonania</h2>
-    <div class="checkbox-line"><span class="checkbox"></span> Roboty wykonano zgodnie z ustalonym zakresem i odebrano bez zastrzeżeń.</div>
-    <div class="checkbox-line"><span class="checkbox"></span> Roboty odebrano z zastrzeżeniami wskazanymi poniżej.</div>
+    <div class="checkbox-line"><span class="checkbox"></span> Realizacje wykonano zgodnie z ustalonym zakresem i odebrano bez zastrzeżeń.</div>
+    <div class="checkbox-line"><span class="checkbox"></span> Realizacje odebrano z zastrzeżeniami wskazanymi poniżej.</div>
 
     <h2>§ 4. Uwagi / usterki / ustalenia</h2>
     <div class="remarks">${escapeHtml(draft.remarks || '')}</div>
@@ -327,12 +327,12 @@ function printAcceptance(job, client, company, draft, onPreview) {
     <div class="footer">Dokument przygotowany w aplikacji Aeroinstal • ${formatDate(new Date())}</div>
   `
 
-  openPrintWindow('Protokół odbioru • ' + (draft.name || 'Robota'), html, onPreview)
+  openPrintWindow('Protokół odbioru • ' + (draft.name || 'Realizacja'), html, onPreview)
 }
 
 function initialDraft(type, job, client) {
   const cl = clientData(client)
-  const defaultScope = job?.scope || job?.description || 'Wykonanie robót montażowych zgodnie z ustaleniami Stron, dokumentacją techniczną oraz zakresem określonym dla danej roboty.'
+  const defaultScope = job?.scope || job?.description || 'Wykonanie robót montażowych zgodnie z ustaleniami Stron, dokumentacją techniczną oraz zakresem określonym dla danej realizacje.'
   const defaultRemarks = (Array.isArray(job?.notes) ? job.notes : [])
     .filter((item) => item?.text)
     .map((item) => item.text)
@@ -461,7 +461,7 @@ export default function JobDocuments({ job, clients, company }) {
             {isContract ? 'Umowa zlecenie' : 'Protokół odbioru robót'}
           </h2>
           <p style={{ margin: 0, color: '#718096', fontSize: '12px', lineHeight: 1.45 }}>
-            Sprawdź i popraw dane dokumentu przed wydrukiem. Zmiany dotyczą tego wydruku i nie zmieniają danych roboty ani kartoteki klienta.
+            Sprawdź i popraw dane dokumentu przed wydrukiem. Zmiany dotyczą tego wydruku i nie zmieniają danych realizacje ani kartoteki klienta.
           </p>
         </div>
 
@@ -487,7 +487,7 @@ export default function JobDocuments({ job, clients, company }) {
           </div>
 
           <div>
-            <label style={labelStyle}>Nazwa roboty</label>
+            <label style={labelStyle}>Nazwa realizacje</label>
             <input value={draft.name} onChange={(e) => setField('name', e.target.value)} style={inputStyle} />
           </div>
 

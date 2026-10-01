@@ -7973,19 +7973,45 @@ function FinancePage({
 
   const splitAmount = share
 
-  const totalPaidAllTime = allJobPayments.reduce(
-    (sum, payment) => sum + Number(payment.amount || 0),
-    0
-  )
+  // Spływ płatności liczymy w tej samej bazie co należności:
+  // netto. Dzięki temu wpłata brutto nie może sztucznie zawyżyć wskaźnika
+  // ponad wartość netto faktury.
+  const totalPaidNetFromInvoices = invoices.reduce((sum, invoice) => {
+    if (invoice.status === 'Anulowana' || invoice.status === 'Do wystawienia') {
+      return sum
+    }
 
-  const totalPaymentExpected = totalPaidAllTime + totalReceivables
+    const net = Math.max(0, Number(invoice.netAmount || 0))
+    const paid = invoice.jobId
+      ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
+      : Number(invoice.paidAmount || 0)
+
+    return sum + Math.min(net, Math.max(0, paid))
+  }, 0)
+
+  const legacyPaidNet = jobs
+    .filter((job) => !invoicesByJob.has(String(job.id)))
+    .reduce((sum, job) => {
+      const invoiceValue = Math.max(
+        0,
+        Number(job.invoiceAmount || 0) || calculateTotal(job)
+      )
+      const paid = allJobPayments
+        .filter((payment) => String(payment.jobId) === String(job.id))
+        .reduce((paymentSum, payment) => paymentSum + Number(payment.amount || 0), 0)
+
+      return sum + Math.min(invoiceValue, Math.max(0, paid))
+    }, 0)
+
+  const totalPaidNet = totalPaidNetFromInvoices + legacyPaidNet
+  const totalPaymentExpected = totalPaidNet + totalReceivables
 
   const paymentCollectionPercent = totalPaymentExpected > 0
     ? Math.min(
         100,
         Math.max(
           0,
-          (totalPaidAllTime / totalPaymentExpected) * 100
+          (totalPaidNet / totalPaymentExpected) * 100
         )
       )
     : 0
@@ -8531,7 +8557,7 @@ function FinancePage({
 
             <div className="finance-payment-progress">
               <div className="finance-payment-progress-label">
-                <span>Ogólny poziom spływu płatności</span>
+                <span>Ogólny poziom spływu płatności netto</span>
                 <strong>{Math.round(paymentCollectionPercent)}%</strong>
               </div>
               <div className="finance-payment-progress-track">

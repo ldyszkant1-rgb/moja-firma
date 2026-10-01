@@ -9334,7 +9334,7 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers] = await Promise.all([
+      const [remoteJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteClients] = await Promise.all([
         getJobs(),
         getOffers(),
         getInvoices(),
@@ -9342,22 +9342,24 @@ function SettingsPage({
         getAllJobPayments(),
         getPartnerSettlements(),
         getPartnerTransfers(),
+        getClients(),
       ])
 
       const backup = {
         app: 'Aeroinstal',
-        backupVersion: 4,
+        backupVersion: 5,
         createdAt: new Date().toISOString(),
         settings,
         jobs: Array.isArray(remoteJobs) ? remoteJobs : [],
         offers: Array.isArray(remoteOffers) ? remoteOffers : [],
+        clients: Array.isArray(remoteClients) ? remoteClients : [],
         invoices: Array.isArray(remoteInvoices) ? remoteInvoices : [],
         finance: Array.isArray(remoteFinance) ? remoteFinance : [],
         generalReminders: Array.isArray(generalReminders) ? generalReminders : [],
         jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
         partnerSettlements: Array.isArray(remotePartnerSettlements) ? remotePartnerSettlements : [],
         partnerTransfers: Array.isArray(remotePartnerTransfers) ? remotePartnerTransfers : [],
-        note: 'Kopia zawiera dane aplikacji, płatności i rozliczenia wspólników. Zdjęcia i dokumenty pozostają w Supabase Storage.',
+        note: 'Kopia zawiera dane aplikacji, klientów, płatności i rozliczenia wspólników. Zdjęcia i dokumenty pozostają w Supabase Storage.',
       }
 
       const blob = new Blob(
@@ -9397,7 +9399,7 @@ function SettingsPage({
       if (
         !backup ||
         backup.app !== 'Aeroinstal' ||
-        ![1, 2, 3, 4].includes(backup.backupVersion) ||
+        ![1, 2, 3, 4, 5].includes(backup.backupVersion) ||
         !Array.isArray(backup.jobs) ||
         !Array.isArray(backup.finance) ||
         !backup.settings
@@ -9480,6 +9482,28 @@ function SettingsPage({
           .upsert(offerRows, { onConflict: 'id' })
 
         if (offerError) throw offerError
+      }
+
+      const clientRows = (backup.clients || []).map((item) => ({
+        id: item.id,
+        organization_id: item.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        name: item.name || '',
+        nip: item.nip || null,
+        address: item.address || null,
+        contact_name: item.contactName || null,
+        phone: item.phone || null,
+        email: item.email || null,
+        notes: item.notes || null,
+        short_name: item.shortName || null,
+        created_at: item.createdAt || undefined,
+        updated_at: item.updatedAt || undefined,
+      }))
+
+      if (clientRows.length > 0) {
+        const { error: clientError } = await supabase
+          .from('clients')
+          .upsert(clientRows, { onConflict: 'id' })
+        if (clientError) throw clientError
       }
 
       const invoiceRows = (backup.invoices || []).map((item) => ({

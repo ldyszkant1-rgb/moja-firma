@@ -8280,7 +8280,7 @@ function FinancePage({
           <div className="receivables-total">{formatMoney(totalReceivables)}</div>
         </div>
         <div className="receivables-summary">
-          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'}</span>
+          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'} • kwoty netto</span>
           {overdueReceivables > 0 && <strong>🔴 Zaległe: {formatMoney(overdueReceivables)}</strong>}
         </div>
         {receivables.length > 0 ? (
@@ -8297,7 +8297,9 @@ function FinancePage({
                   </div>
                   <div className="receivable-amount">
                     <strong>{formatMoney(item.remaining)}</strong>
-                    <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>{dueLabel}</span>
+                    <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>
+                      {item.isOverdue ? dueLabel + ' • ' + Math.max(1, Math.ceil((new Date(getTodayString()) - new Date(item.dueDate)) / 86400000)) + ' dni' : dueLabel}
+                    </span>
                   </div>
                   <span className="receivable-arrow">→</span>
                 </button>

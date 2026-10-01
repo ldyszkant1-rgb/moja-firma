@@ -237,7 +237,7 @@ export default function OffersPage({
               <option>Oferta dla klienta</option>
               <option>Zlecenie od klienta</option>
             </select>
-            <input className="job-new-input" placeholder="Nazwa oferty / roboty" value={editing.name || ''} onChange={(e) => change('name', e.target.value)} />
+            <input className="job-new-input" placeholder="Nazwa oferty / realizacje" value={editing.name || ''} onChange={(e) => change('name', e.target.value)} />
             <input className="job-new-input" placeholder="Lokalizacja / statek" value={editing.location || ''} onChange={(e) => change('location', e.target.value)} />
             <select className="job-new-input" value={editing.clientId || ''} onChange={(e) => change('clientId', e.target.value || null)}>
               <option value="">Klient — opcjonalnie</option>
@@ -387,9 +387,9 @@ export default function OffersPage({
                   📄 PDF / Drukuj
                 </button>
                 {offer.status === 'Zaakceptowana' && !offer.convertedJobId && (
-                  <button type="button" className="save-button" onClick={() => onConvertToJob(offer)}>Utwórz robotę</button>
+                  <button type="button" className="save-button" onClick={() => onConvertToJob(offer)}>Utwórz realizację</button>
                 )}
-                {offer.convertedJobId && <span style={{ alignSelf: 'center', fontSize: 13, color: '#159447', fontWeight: 700 }}>✓ Robota utworzona</span>}
+                {offer.convertedJobId && <span style={{ alignSelf: 'center', fontSize: 13, color: '#159447', fontWeight: 700 }}>✓ Realizacja utworzona</span>}
                 <button
                   type="button"
                   className="back-button"

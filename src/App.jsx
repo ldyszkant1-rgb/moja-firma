@@ -587,7 +587,7 @@ class JobsErrorBoundary extends React.Component {
       return (
         <div className="sub-page" style={{ padding: '24px 16px 140px' }}>
           <div className="detail-card" style={{ border: '1px solid #f0caca', background: '#fff8f8' }}>
-            <div className="small-label" style={{ color: '#c43d3d' }}>BŁĄD ZAKŁADKI ROBOTY</div>
+            <div className="small-label" style={{ color: '#c43d3d' }}>BŁĄD ZAKŁADKI REALIZACJE</div>
             <h2 style={{ marginTop: '8px', color: '#12234f' }}>Aplikacja napotkała błąd</h2>
             <p style={{ color: '#657491', lineHeight: 1.5 }}>Zamiast białego ekranu pokazuję teraz dokładny komunikat.</p>
             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#ffffff', border: '1px solid #eadede', borderRadius: '12px', padding: '12px', color: '#8b2525', fontSize: '12px' }}>{message}</pre>
@@ -3660,7 +3660,7 @@ function JobCard({
 
 
 /* =====================================================
-   ROBOTY
+   REALIZACJE
    ===================================================== */
 
 function JobsPage({
@@ -4081,7 +4081,7 @@ function JobsPage({
 
 
 /* =====================================================
-   NOWA ROBOTA
+   NOWA REALIZACJA
    ===================================================== */
 
 function NewJobPage({
@@ -4224,7 +4224,7 @@ function NewJobPage({
         <div>
 
           <div className="small-label">
-            NOWA ROBOTA
+            NOWA REALIZACJA
           </div>
 
           <h1>
@@ -4591,7 +4591,7 @@ function NewJobPage({
 
 
 /* =====================================================
-   SZCZEGÓŁY ROBOTY
+   SZCZEGÓŁY REALIZACJE
    ===================================================== */
 
 function JobDetails({
@@ -5753,7 +5753,7 @@ function JobDetails({
 
 
       <div className="small-label">
-        ROBOTA
+        REALIZACJA
       </div>
 
 

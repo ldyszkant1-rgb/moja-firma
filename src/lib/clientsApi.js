@@ -74,15 +74,31 @@ export async function updateClient(client) {
 export async function deleteClient(clientId) {
   if (!clientId) throw new Error('Brak ID klienta.')
 
-  const { count, error: jobsError } = await supabase
-    .from('jobs')
-    .select('id', { count: 'exact', head: true })
-    .eq('client_id', clientId)
+  const [
+    { count: jobsCount, error: jobsError },
+    { count: invoicesCount, error: invoicesError },
+    { count: offersCount, error: offersError },
+  ] = await Promise.all([
+    supabase
+      .from('jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId),
+    supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId),
+    supabase
+      .from('offers')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId),
+  ])
 
   if (jobsError) throw jobsError
+  if (invoicesError) throw invoicesError
+  if (offersError) throw offersError
 
-  if ((count || 0) > 0) {
-    throw new Error('Nie można usunąć klienta, który ma przypisane roboty. Najpierw zmień klienta w tych robotach.')
+  if ((jobsCount || 0) > 0 || (invoicesCount || 0) > 0 || (offersCount || 0) > 0) {
+    throw new Error('Nie można usunąć klienta, który ma powiązane realizacje, faktury lub oferty. Najpierw usuń lub zmień te powiązania.')
   }
 
   const { error } = await supabase

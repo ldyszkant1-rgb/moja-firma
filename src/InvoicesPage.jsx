@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
-import {createInvoice,updateInvoice,deleteInvoice,generateInvoiceNumber} from './lib/invoicesApi'
+import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
 const money=v=>Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł'
 const today=()=>new Date().toISOString().slice(0,10)
 const addDays=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
@@ -11,14 +11,14 @@ const label={display:'block',marginBottom:'6px',color:'#64748b',fontSize:'11px',
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
  const [edit,setEdit]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients]),jm=useMemo(()=>new Map(jobs.map(j=>[String(j.id),j])),[jobs])
- const open=async job=>{const n=await generateInvoiceNumber();const t=job?total(job):0;setEdit({jobId:job?.id||'',clientId:job?.clientId||'',invoiceNumber:n,issueDate:today(),saleDate:today(),dueDate:addDays(today(),14),status:'Do wystawienia',paymentMethod:'Przelew',items:items(job),netAmount:t,vatAmount:t*.23,grossAmount:t*1.23,paidAmount:0,notes:''})}
+ const open=async job=>{const t=job?total(job):0;setEdit({jobId:job?.id||'',clientId:job?.clientId||'',invoiceNumber:'',issueDate:today(),saleDate:today(),dueDate:addDays(today(),14),status:'Do wystawienia',paymentMethod:'Przelew',items:items(job),netAmount:t,vatAmount:t*.23,grossAmount:t*1.23,paidAmount:0,notes:''})}
  useEffect(()=>{if(!prefillJobId||edit)return;const j=jm.get(String(prefillJobId));if(!j)return;open(j);onPrefillConsumed?.()},[prefillJobId,jm,edit])
  useEffect(()=>{if(!openInvoiceId||edit)return;const inv=invoices.find(x=>String(x.id)===String(openInvoiceId));if(!inv)return;setEdit({...inv});onOpenConsumed?.()},[openInvoiceId,invoices,edit])
 
  const save=async()=>{if(!edit.clientId){onAlert?.('Wybierz klienta.');return}setSaving(true);try{const x=edit.id?await updateInvoice(edit):await createInvoice(edit);setEdit(null);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}));onAlert?.('Faktura została zapisana.')}catch(e){console.error(e);onAlert?.('Nie udało się zapisać faktury.')}finally{setSaving(false)}}
  const remove=async x=>{if(!(await onConfirm?.('Usunąć fakturę '+x.invoiceNumber+'?')))return;await deleteInvoice(x.id);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:{deletedId:x.id}}))}
  if(edit){const a=amounts(edit.items);return <div className="sub-page"><div className="page-heading"><div><div className="small-label">AEROINSTAL</div><h1>{edit.id?'Edytuj fakturę':'Nowa faktura'}</h1></div></div><div className="detail-card" style={{display:'grid',gap:'12px'}}>
- <div><label style={label}>Numer faktury</label><input style={input} value={edit.invoiceNumber} onChange={e=>setEdit({...edit,invoiceNumber:e.target.value})}/></div>
+ <div><label style={label}>Numer faktury</label><input style={input} value={edit.invoiceNumber||''} onChange={e=>setEdit({...edit,invoiceNumber:e.target.value})} placeholder="Zostanie nadany automatycznie" disabled={!edit.id}/></div>
  <div><label style={label}>Klient</label><select style={input} value={edit.clientId} onChange={e=>setEdit({...edit,clientId:e.target.value})}><option value="">Wybierz klienta</option>{clients.map(c=><option key={c.id} value={c.id}>{c.shortName||c.name}</option>)}</select></div>
  <div><label style={label}>Robota</label><select style={input} value={edit.jobId||''} onChange={e=>{const j=jm.get(e.target.value);const it=items(j);const a=amounts(it);setEdit({...edit,jobId:e.target.value,clientId:j?.clientId||edit.clientId,items:it,...{netAmount:a.net,vatAmount:a.vat,grossAmount:a.gross}})}}><option value="">Bez powiązania</option>{jobs.map(j=><option key={j.id} value={j.id}>{j.name||'Bez nazwy'}{j.location?' • '+j.location:''}</option>)}</select></div>
  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9}}><div><label style={label}>Data wystawienia</label><input type="date" style={input} value={edit.issueDate} onChange={e=>setEdit({...edit,issueDate:e.target.value})}/></div><div><label style={label}>Termin płatności</label><input type="date" style={input} value={edit.dueDate||''} onChange={e=>setEdit({...edit,dueDate:e.target.value})}/></div></div>

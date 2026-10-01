@@ -193,25 +193,7 @@ function mapAppJobToSupabaseJob(job) {
     completed_at:
       job.completedAt || null,
 
-    invoice_number:
-      job.invoiceNumber || null,
-
-    invoice_date:
-      job.invoiceDate || null,
-
-    invoice_amount:
-      job.invoiceAmount == null
-        ? null
-        : parseDecimal(
-            job.invoiceAmount
-          ),
-
-    payment_due_date:
-      job.paymentDueDate || null,
-
-    paid_at:
-      job.paidAt || null,
-
+    // Dane faktury nie są zapisywane w jobs — źródłem prawdy jest public.invoices.\n
     quantity_mb:
       parseDecimal(
         job.quantities?.mb

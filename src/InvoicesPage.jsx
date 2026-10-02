@@ -212,7 +212,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      <div><span>Sposób płatności</span><strong>{preview.paymentMethod||'Przelew'}</strong></div>
     </div>
     <div className="invoice-document-parties">
-     <div><span className="invoice-document-label">SPRZEDAWCA</span><strong>{seller.name||'AEROINSTAL ŁUKASZ DYSZKANT'}</strong><p>NIP: {seller.nip||'5833105866'}</p><p>{seller.address||'ul. Cicha 4A/9, 83-000 Pruszcz Gdański'}</p>{seller.email&&<p>{seller.email}</p>}</div>
+     <div><span className="invoice-document-label">SPRZEDAWCA</span><strong>{seller.name||company.name||'Twoja firma'}</strong><p>NIP: {seller.nip||company.nip||'—'}</p><p>{seller.address||company.address||'—'}</p>{seller.email&&<p>{seller.email}</p>}</div>
      <div><span className="invoice-document-label">NABYWCA</span><strong>{buyer?.name||buyer?.shortName||'—'}</strong>{buyer?.nip&&<p>NIP: {buyer.nip}</p>}{buyer?.address&&<p>{buyer.address}</p>}{buyer?.email&&<p>{buyer.email}</p>}</div>
     </div>
     <div className="invoice-document-table">
@@ -232,7 +232,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
     </div>
     {preview.notes&&<div className="invoice-document-notes"><span>UWAGI</span><p>{preview.notes}</p></div>}
     <div className="invoice-document-signatures"><div>Osoba wystawiająca fakturę</div><div>Odbiorca / osoba upoważniona</div></div>
-    <div className="invoice-document-footer">{seller.name||'AEROINSTAL ŁUKASZ DYSZKANT'} · NIP {seller.nip||'5833105866'}</div>
+    <div className="invoice-document-footer">{seller.name||company.name||'Twoja firma'} · NIP {seller.nip||company.nip||'—'}</div>
    </div>
   </div>
  }
@@ -247,7 +247,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
   return <div className="invoice-editor-page">
    <div className="invoice-editor-top">
     <button type="button" className="invoice-back-button" onClick={()=>setEdit(null)}>←</button>
-    <div><div className="small-label">AEROINSTAL</div><h1>{edit.id?'Edytuj fakturę':'Nowa faktura'}</h1></div>
+    <div><div className="small-label">{company.shortName || company.name || 'Twoja firma'}</div><h1>{edit.id?'Edytuj fakturę':'Nowa faktura'}</h1></div>
     <div className="invoice-editor-number">{edit.invoiceNumber||'NOWA'}</div>
    </div>
 
@@ -371,7 +371,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  })
 
  return <div className="sub-page">
-  <div className="page-heading"><div><div className="small-label">AEROINSTAL</div><h1>Faktury</h1></div><button type="button" onClick={()=>open()} style={{minHeight:44,padding:'0 14px',border:0,borderRadius:12,background:'#168fe5',color:'#fff',fontWeight:800}}>+ Nowa faktura</button></div>
+  <div className="page-heading"><div><div className="small-label">{company.shortName || company.name || 'Twoja firma'}</div><h1>Faktury</h1></div><button type="button" onClick={()=>open()} style={{minHeight:44,padding:'0 14px',border:0,borderRadius:12,background:'#168fe5',color:'#fff',fontWeight:800}}>+ Nowa faktura</button></div>
   <div className="dashboard-grid">{[['Wszystkie',invoices.length],['Do wystawienia',invoices.filter(x=>x.status==='Do wystawienia').length],['Wystawione',invoices.filter(x=>x.status==='Wystawiona').length],['Zapłacone',invoices.filter(x=>paymentStatus(x)==='Zapłacona').length]].map(([l,v])=><div className="dashboard-card" key={l}><div className="dashboard-icon">🧾</div><div><span>{l}</span><strong>{v}</strong></div></div>)}</div>
   <div className="detail-card invoice-list-tools"><input placeholder="Szukaj faktury, klienta lub realizacji…" value={query} onChange={e=>setQuery(e.target.value)}/><div className="invoice-filter-row">{['all','Do wystawienia','Wystawiona','Częściowo zapłacona','Zapłacona','Przeterminowana','Wysłana do KSeF','Błąd KSeF'].map(x=><button type="button" key={x} onClick={()=>setFilter(x)} className={filter===x?'active':''}>{x==='all'?'Wszystkie':x}</button>)}</div></div>
   <div style={{display:'grid',gap:9}}>{list.map(x=>{const c=cm.get(String(x.clientId)),j=jm.get(String(x.jobId));return <div key={x.id} className="detail-card invoice-list-card"><button type="button" className="invoice-list-main" onClick={()=>setEdit({...x,items:Array.isArray(x.items)?x.items:[]})}><div><strong>{x.invoiceNumber}</strong><span>{c?.shortName||c?.name||'Brak klienta'}{j?.name?' • '+j.name:''}</span><small>Wystawiona: {formatDate(x.issueDate)} · Termin: {formatDate(x.dueDate)} · {paymentStatus(x)}</small></div><strong>{money(x.grossAmount)}</strong></button><button type="button" onClick={()=>remove(x)} className="invoice-list-delete">Usuń</button></div>})}</div>

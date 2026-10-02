@@ -22,6 +22,71 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: 'Brak danych zalogowanego użytkownika.' }, { status: 401, headers: corsHeaders })
     }
 
+    if (action === 'create-company') {
+      const companyName = String(body?.name || '').trim()
+      const displayName = String(body?.displayName || '').trim()
+      if (!companyName) {
+        return Response.json({ error: 'Podaj nazwę firmy.' }, { status: 400, headers: corsHeaders })
+      }
+
+      const { data: existingMembership } = await ctx.supabaseAdmin
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle()
+
+      if (existingMembership) {
+        return Response.json({ error: 'To konto ma już przypisaną firmę.' }, { status: 409, headers: corsHeaders })
+      }
+
+      let slug = companyName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 50)
+
+      if (!slug) slug = `firma-${crypto.randomUUID().replaceAll('-', '').slice(0, 10)}`
+
+      const { data: organization, error: organizationError } = await ctx.supabaseAdmin
+        .from('organizations')
+        .insert({
+          name: companyName,
+          short_name: companyName,
+          slug,
+          plan: 'free',
+          email,
+        })
+        .select('id')
+        .single()
+
+      if (organizationError) {
+        if (organizationError.code === '23505') {
+          return Response.json({ error: 'Taka nazwa firmy jest już zajęta. Wybierz inną nazwę.' }, { status: 409, headers: corsHeaders })
+        }
+        throw organizationError
+      }
+
+      const { error: membershipError } = await ctx.supabaseAdmin
+        .from('organization_members')
+        .insert({
+          organization_id: organization.id,
+          user_id: userId,
+          role: 'owner',
+          display_name: displayName || email.split('@')[0],
+          email,
+        })
+
+      if (membershipError) {
+        await ctx.supabaseAdmin.from('organizations').delete().eq('id', organization.id)
+        throw membershipError
+      }
+
+      return Response.json({ ok: true, organizationId: organization.id }, { headers: corsHeaders })
+    }
+
     if (action === 'send') {
       const inviteEmail = String(body?.email || '').trim().toLowerCase()
       const role = body?.role === 'admin' ? 'admin' : 'employee'

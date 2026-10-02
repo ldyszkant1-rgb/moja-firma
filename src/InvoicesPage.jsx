@@ -81,7 +81,9 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  const save=async()=>{
   if(!edit.clientId){onAlert?.('Wybierz klienta.');return}
   if(!edit.issueDate){onAlert?.('Podaj datę wystawienia.');return}
+  if(!edit.saleDate){onAlert?.('Podaj datę sprzedaży.');return}
   if(!edit.dueDate){onAlert?.('Podaj termin płatności.');return}
+  if(new Date(edit.saleDate+'T23:59:59')>new Date(edit.issueDate+'T23:59:59')){onAlert?.('Data sprzedaży nie może być późniejsza niż data wystawienia.');return}
   if(new Date(edit.dueDate+'T23:59:59')<new Date(edit.issueDate+'T00:00:00')){onAlert?.('Termin płatności nie może być wcześniejszy niż data wystawienia.');return}
   if(!edit.items?.length){onAlert?.('Dodaj co najmniej jedną pozycję.');return}
   if(edit.items.some(x=>!String(x.name||'').trim())){onAlert?.('Każda pozycja musi mieć opis.');return}

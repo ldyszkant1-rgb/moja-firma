@@ -9808,23 +9808,56 @@ function SettingsPage({
     setEditingCompany(true)
   }
 
-  const saveCompany = () => {
+  const saveCompany = async () => {
     if (!draftCompany.name.trim()) {
       showCustomAlert('Podaj nazwę firmy.')
       return
     }
 
+    const nextCompany = {
+      shortName: draftCompany.shortName?.trim() || draftCompany.name.trim(),
+      name: draftCompany.name.trim(),
+      nip: draftCompany.nip.trim(),
+      regon: draftCompany.regon.trim(),
+      address: draftCompany.address.trim(),
+      email: draftCompany.email.trim(),
+      bankAccount: draftCompany.bankAccount?.trim() || '',
+    }
+
+    if (authSession) {
+      try {
+        const { data: organization, error: organizationError } = await supabase
+          .from('organizations')
+          .select('id')
+          .maybeSingle()
+
+        if (organizationError) throw organizationError
+        if (!organization?.id) throw new Error('Nie znaleziono organizacji użytkownika.')
+
+        const { error: updateError } = await supabase
+          .from('organizations')
+          .update({
+            name: nextCompany.name,
+            short_name: nextCompany.shortName,
+            nip: nextCompany.nip || null,
+            regon: nextCompany.regon || null,
+            address: nextCompany.address || null,
+            email: nextCompany.email || null,
+            bank_account: nextCompany.bankAccount || null,
+          })
+          .eq('id', organization.id)
+
+        if (updateError) throw updateError
+      } catch (error) {
+        console.error('Nie udało się zapisać danych firmy w Supabase:', error)
+        await showCustomAlert('Nie udało się zapisać danych firmy. Spróbuj ponownie.')
+        return
+      }
+    }
+
     setSettings({
       ...settings,
-      company: {
-        shortName: draftCompany.shortName?.trim() || draftCompany.name.trim(),
-        name: draftCompany.name.trim(),
-        nip: draftCompany.nip.trim(),
-        regon: draftCompany.regon.trim(),
-        address: draftCompany.address.trim(),
-        email: draftCompany.email.trim(),
-        bankAccount: draftCompany.bankAccount?.trim() || '',
-      },
+      company: nextCompany,
     })
 
     setEditingCompany(false)

@@ -4,6 +4,7 @@ function mapPayment(row) {
   return {
     id: row.id,
     jobId: row.job_id,
+    invoiceId: row.invoice_id || null,
     amount: Number(row.amount || 0),
     paidAt: row.paid_at || null,
     note: row.note || '',
@@ -33,7 +34,7 @@ export async function getAllJobPayments() {
   return (data || []).map(mapPayment)
 }
 
-export async function createJobPayment({ jobId, amount, paidAt, note }) {
+export async function createJobPayment({ jobId, invoiceId = null, amount, paidAt, note }) {
   const numericAmount = Number(amount || 0)
   if (!jobId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new Error('Nieprawidłowa wpłata.')
@@ -43,6 +44,7 @@ export async function createJobPayment({ jobId, amount, paidAt, note }) {
     .from('job_payments')
     .insert({
       job_id: jobId,
+      invoice_id: invoiceId || null,
       amount: numericAmount,
       paid_at: paidAt || new Date().toISOString().slice(0, 10),
       note: note?.trim() || null,

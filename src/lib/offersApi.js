@@ -40,7 +40,7 @@ function mapRow(row) {
 
 function payload(offer) {
   return {
-        organization_id: offer.organizationId || undefined,
+        organization_id: offer.organizationId || null,
     client_id: offer.clientId || null,
     document_type: offer.documentType || 'Oferta dla klienta',
     offer_number: offer.offerNumber || null,

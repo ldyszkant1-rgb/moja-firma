@@ -1257,6 +1257,10 @@ function App() {
     const cleanupOldTrash = async () => {
       try {
         const trash = await getDeletedJobs()
+        const [trashInvoices, trashPayments] = await Promise.all([
+          getInvoices(),
+          getAllJobPayments(),
+        ])
         const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
 
         for (const job of trash) {
@@ -1267,6 +1271,24 @@ function App() {
           const deletedTime = new Date(job.deletedAt).getTime()
 
           if (!Number.isFinite(deletedTime) || deletedTime > cutoff) {
+            continue
+          }
+
+          const linkedInvoices = trashInvoices.filter(
+            (invoice) => String(invoice.jobId || '') === String(job.id)
+          )
+          const linkedPayments = trashPayments.filter(
+            (payment) => String(payment.jobId || '') === String(job.id)
+          )
+
+          // Nie usuwamy automatycznie realizacji, która ma historię finansową.
+          // Dzięki temu 30-dniowe czyszczenie kosza nie może osierocić faktur
+          // ani płatności ani usunąć plików potrzebnych do ich dalszej obsługi.
+          if (linkedInvoices.length || linkedPayments.length) {
+            console.warn(
+              'Pominięto automatyczne trwałe usunięcie realizacji z historią finansową:',
+              job.id
+            )
             continue
           }
 
@@ -1962,6 +1984,24 @@ function App() {
     }
 
     try {
+      const [jobPayments, allInvoices] = await Promise.all([
+        getJobPayments(jobToDelete.id),
+        getInvoices(),
+      ])
+      const linkedPayments = jobPayments.filter(
+        (payment) => String(payment.jobId || '') === String(jobToDelete.id)
+      )
+      const linkedInvoices = allInvoices.filter(
+        (invoice) => String(invoice.jobId || '') === String(jobToDelete.id)
+      )
+
+      if (linkedInvoices.length || linkedPayments.length) {
+        showCustomAlert(
+          'Nie można trwale usunąć tej realizacji. Jest powiązana z fakturą lub historią płatności. Najpierw usuń lub rozlicz te powiązania.'
+        )
+        return
+      }
+
       const filesToDelete = []
 
       if (jobToDelete.mainPhoto?.path) {

@@ -11698,3 +11698,372 @@ section {
     display: none;
   }
 }
+
+
+/* =====================================================
+   AEROINSTAL — FINALNY POLISH PULPITU / MOBILE
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+  /* Więcej miejsca na treść, bez zasłaniania ostatnich elementów. */
+  .app {
+    padding-bottom: 108px !important;
+  }
+
+  .content {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+    padding-bottom: 18px !important;
+  }
+
+  /* Pogoda — bardziej zwarta karta. */
+  .weather-card {
+    margin-bottom: 10px !important;
+    padding: 9px 11px 8px !important;
+    border-radius: 17px !important;
+    box-shadow: 0 5px 18px rgba(30,70,105,.055) !important;
+  }
+
+  .weather-main,
+  .weather-location {
+    min-height: 58px !important;
+  }
+
+  .weather-main {
+    padding-left: 3px !important;
+  }
+
+  .weather-main strong {
+    font-size: 26px !important;
+  }
+
+  .weather-icon {
+    font-size: 31px !important;
+  }
+
+  .weather-location {
+    padding-left: 10px !important;
+  }
+
+  .weather-location strong {
+    font-size: 16px !important;
+  }
+
+  .weather-location span {
+    font-size: 11px !important;
+  }
+
+  .weather-date {
+    min-height: 42px !important;
+    padding: 3px 0 !important;
+  }
+
+  .weather-date strong {
+    font-size: 16px !important;
+  }
+
+  .weather-date span {
+    font-size: 11px !important;
+  }
+
+  .weather-forecast {
+    padding-top: 6px !important;
+  }
+
+  .forecast-icon {
+    font-size: 18px !important;
+  }
+
+  .forecast-day > span {
+    font-size: 10px !important;
+  }
+
+  .forecast-day strong {
+    font-size: 13px !important;
+  }
+
+  .forecast-day small {
+    font-size: 10px !important;
+  }
+
+  /* Centrum sterowania — 2 x 2 zamiast czterech ogromnych bloków. */
+  .dashboard-command-center {
+    margin-bottom: 13px !important;
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .dashboard-command-heading {
+    margin-bottom: 10px !important;
+  }
+
+  .dashboard-command-heading h2 {
+    font-size: 18px !important;
+  }
+
+  .dashboard-command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .dashboard-command-action {
+    min-height: 72px !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-command-action-icon {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  .dashboard-command-action strong {
+    font-size: 12px !important;
+  }
+
+  .dashboard-command-action small {
+    font-size: 9px !important;
+  }
+
+  /* Wymaga uwagi — trochę lżejsza karta. */
+  .dashboard-attention-section {
+    margin-bottom: 14px !important;
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .dashboard-attention-header {
+    margin-bottom: 10px !important;
+  }
+
+  .dashboard-attention-header h2 {
+    font-size: 18px !important;
+  }
+
+  .dashboard-attention-grid {
+    gap: 7px !important;
+  }
+
+  .dashboard-attention-card {
+    min-height: 64px !important;
+    padding: 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .dashboard-attention-icon {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  .dashboard-attention-card strong {
+    font-size: 16px !important;
+  }
+
+  .dashboard-attention-card small {
+    font-size: 9px !important;
+  }
+
+  /* Statystyki — spójniejsze wizualnie z resztą Pulpitu. */
+  .dashboard-grid {
+    gap: 7px !important;
+    margin-bottom: 13px !important;
+  }
+
+  .dashboard-card {
+    min-height: 79px !important;
+    padding: 9px 10px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 16px rgba(30,70,105,.045) !important;
+  }
+
+  .dashboard-icon {
+    width: 37px !important;
+    height: 37px !important;
+    flex-basis: 37px !important;
+    font-size: 18px !important;
+  }
+
+  .dashboard-card span {
+    font-size: 10px !important;
+  }
+
+  .dashboard-card strong {
+    font-size: 22px !important;
+  }
+
+  .dashboard-value-card {
+    min-height: 79px !important;
+    padding: 9px 11px !important;
+    border-radius: 15px !important;
+  }
+
+  .dashboard-value-icon {
+    width: 39px !important;
+    height: 39px !important;
+    flex-basis: 39px !important;
+    font-size: 18px !important;
+  }
+
+  .dashboard-value-card span {
+    font-size: 10px !important;
+  }
+
+  .dashboard-value-card strong {
+    font-size: 20px !important;
+  }
+
+  /* Wszystkie kolejne sekcje mają jedną skalę odstępów. */
+  section {
+    margin-bottom: 18px !important;
+  }
+
+  .section-title {
+    margin-bottom: 8px !important;
+  }
+
+  .section-title h2 {
+    font-size: 22px !important;
+  }
+
+  /* Finanse na Pulpicie — mocny nagłówek, ale bez ogromnych przerw. */
+  .dashboard-finance-section {
+    margin-top: 17px !important;
+  }
+
+  .dashboard-finance-grid {
+    gap: 8px !important;
+  }
+
+  .dashboard-finance-card {
+    padding: 14px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 5px 17px rgba(17,39,71,.045) !important;
+  }
+
+  .dashboard-finance-icon {
+    width: 37px !important;
+    height: 37px !important;
+    flex-basis: 37px !important;
+    border-radius: 11px !important;
+  }
+
+  .dashboard-finance-copy strong {
+    font-size: 19px !important;
+  }
+
+  /* Dzisiaj / Do zrobienia. */
+  .dashboard-today-section {
+    margin-top: 18px !important;
+  }
+
+  .dashboard-today-list {
+    border-radius: 16px !important;
+  }
+
+  .dashboard-today-row {
+    padding: 10px 11px !important;
+  }
+
+  /* Dzień pracy. */
+  .dashboard-workday-section {
+    margin-top: 19px !important;
+  }
+
+  .dashboard-workday-card {
+    border-radius: 16px !important;
+  }
+
+  .dashboard-workday-main {
+    padding: 14px !important;
+  }
+
+  .dashboard-workday-top strong {
+    font-size: 16px !important;
+  }
+
+  .dashboard-workday-progress {
+    font-size: 16px !important;
+  }
+
+  /* Karty realizacji na Pulpicie. */
+  .job-card {
+    border-radius: 16px !important;
+    box-shadow: 0 5px 17px rgba(30,70,105,.045) !important;
+  }
+
+  /* Przypomnienia i zakończone — ta sama skala kart. */
+  .notes-dashboard,
+  .empty-card {
+    border-radius: 16px !important;
+    box-shadow: 0 5px 17px rgba(30,70,105,.045) !important;
+  }
+
+  /* Dolna nawigacja: jeden wiersz + przewijanie poziome. */
+  .bottom-navigation {
+    left: 6px !important;
+    right: 6px !important;
+    bottom: max(6px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    min-height: 67px !important;
+    height: 67px !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 2px !important;
+    padding: 4px !important;
+    border-radius: 21px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .bottom-navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    flex: 0 0 66px !important;
+    width: 66px !important;
+    min-width: 66px !important;
+    height: 59px !important;
+    border-radius: 15px !important;
+    gap: 2px !important;
+  }
+
+  .nav-item > span {
+    font-size: 21px !important;
+    line-height: 1 !important;
+  }
+
+  .nav-item small {
+    font-size: 8.5px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap;
+  }
+
+  .nav-item.active {
+    background: #edf7ff !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .nav-item {
+    flex-basis: 63px !important;
+    width: 63px !important;
+    min-width: 63px !important;
+  }
+
+  .nav-item small {
+    font-size: 8px !important;
+  }
+}

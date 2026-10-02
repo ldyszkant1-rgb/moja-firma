@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
+import AuthPage from './AuthPage'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
@@ -604,6 +605,32 @@ function App() {
   const [deviceId] = useState(() => getOrCreateDeviceId())
   const [deviceUser, setDeviceUser] = useState(() => getLocalDeviceUser())
   const [deviceLoading, setDeviceLoading] = useState(true)
+  const [authSession, setAuthSession] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return
+      setAuthSession(data.session || null)
+      setAuthChecked(true)
+    }).catch((error) => {
+      console.error('Nie udało się sprawdzić sesji logowania:', error)
+      if (mounted) setAuthChecked(true)
+    })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+      setAuthSession(session || null)
+      setAuthChecked(true)
+    })
+
+    return () => {
+      mounted = false
+      authListener?.subscription?.unsubscribe()
+    }
+  }, [])
 
   const [activePage, setActivePage] =
     useState('start')
@@ -2410,7 +2437,52 @@ function App() {
 
   if (selectedJob) {
 
+      useEffect(() => {
+    if (!authSession) return
+
+    let cancelled = false
+    const loadOrganizationContext = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('id,name,short_name,nip,regon,address,email,bank_account')
+          .maybeSingle()
+        if (error) throw error
+        if (cancelled || !data) return
+        setSettings((current) => ({
+          ...current,
+          company: {
+            ...current.company,
+            shortName: data.short_name || data.name || current.company.shortName,
+            name: data.name || current.company.name,
+            nip: data.nip || current.company.nip || '',
+            regon: data.regon || current.company.regon || '',
+            address: data.address || current.company.address || '',
+            email: data.email || current.company.email || authSession.user?.email || '',
+            bankAccount: data.bank_account || current.company.bankAccount || '',
+          },
+        }))
+      } catch (error) {
+        console.error('Nie udało się wczytać firmy zalogowanego użytkownika:', error)
+      }
+    }
+    loadOrganizationContext()
+    return () => { cancelled = true }
+  }, [authSession])
+
+  if (!authChecked || (deviceLoading && !authSession)) {
     return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f5f9fd', color: '#68758a' }}>
+        Sprawdzam dostęp…
+      </div>
+    )
+  }
+
+  if (!authSession && !deviceUser) {
+    return <AuthPage />
+  }
+
+return (
       <>
         <JobDetails
 

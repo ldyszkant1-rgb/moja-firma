@@ -7553,6 +7553,7 @@ function DocumentRow({
 
 function FinancePage({
   jobs,
+  organizationMembers = [],
   settings,
   clients = [],
   invoices = [],
@@ -7573,6 +7574,14 @@ function FinancePage({
     categoryOptions.length > 0
       ? categoryOptions
       : [{ name: 'Inne', enabled: true }]
+  const partnerNames = organizationMembers
+    .map((member) => String(member.display_name || member.email || '').trim())
+    .filter(Boolean)
+    .filter((name, index, list) => list.indexOf(name) === index)
+
+  const partnerOne = partnerNames[0] || ''
+  const partnerTwo = partnerNames[1] || ''
+  const hasPartnerSettlement = Boolean(partnerOne && partnerTwo)
 
   const today = new Date()
   const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
@@ -7654,8 +7663,8 @@ function FinancePage({
     note: '',
   })
   const [transferForm, setTransferForm] = useState({
-    fromPerson: 'Paweł',
-    toPerson: 'Łukasz',
+    fromPerson: partnerTwo,
+    toPerson: partnerOne,
     amount: '',
     note: '',
   })
@@ -7780,7 +7789,7 @@ function FinancePage({
   const [editCost, setEditCost] = useState({
     category: 'ZUS',
     amount: '',
-    paidBy: 'Łukasz',
+    paidBy: partnerOne,
     description: '',
     date: getTodayString(),
   })
@@ -7788,7 +7797,7 @@ function FinancePage({
   const [newCost, setNewCost] = useState({
     category: 'ZUS',
     amount: '',
-    paidBy: 'Łukasz',
+    paidBy: partnerOne,
     description: '',
     date: getTodayString(),
   })
@@ -7850,7 +7859,7 @@ function FinancePage({
   )
 
   const profit = revenue - totalCosts
-  const share = profit / 2
+  const share = hasPartnerSettlement ? profit / 2 : 0
 
   // Roczne podsumowanie dla aktualnie wybranego roku.
   const yearPrefix = `${selectedYear}-`
@@ -7912,17 +7921,17 @@ function FinancePage({
    *    aplikacja sama wylicza kwotę — użytkownik tylko potwierdza.
    */
 
-  const lukaszCosts = monthCosts
-    .filter((cost) => cost.paidBy === 'Łukasz')
+  const partnerOneCosts = monthCosts
+    .filter((cost) => cost.paidBy === partnerOne)
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
 
-  const pawelCosts = monthCosts
-    .filter((cost) => cost.paidBy === 'Paweł')
+  const partnerTwoCosts = monthCosts
+    .filter((cost) => cost.paidBy === partnerTwo)
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
 
   // Każdy wspólnik ponosi połowę każdego kosztu. Jeśli Łukasz zapłacił 2000 zł,
   // Paweł powinien wyrównać Łukaszowi 1000 zł, a nie całe 2000 zł.
-  const currentCostBalance = (lukaszCosts - pawelCosts) / 2
+  const currentCostBalance = (partnerOneCosts - partnerTwoCosts) / 2
 
   const selectedMonthEnd = `${selectedMonthKey}-31`
 
@@ -7937,8 +7946,8 @@ function FinancePage({
   const historicalCostBalance = costsThroughSelectedMonth.reduce(
     (sum, cost) => {
       const amount = Number(cost.amount || 0)
-      if (cost.paidBy === 'Łukasz') return sum + amount / 2
-      if (cost.paidBy === 'Paweł') return sum - amount / 2
+      if (cost.paidBy === partnerOne) return sum + amount / 2
+      if (cost.paidBy === partnerTwo) return sum - amount / 2
       return sum
     },
     0
@@ -7954,11 +7963,11 @@ function FinancePage({
       (sum, item) => {
         const amount = Number(item.amount || 0)
 
-        if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') {
+        if (item.fromPerson === partnerTwo && item.toPerson === partnerOne) {
           return sum - amount
         }
 
-        if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') {
+        if (item.fromPerson === partnerOne && item.toPerson === partnerTwo) {
           return sum + amount
         }
 
@@ -7971,9 +7980,9 @@ function FinancePage({
 
   const balanceDirection =
     partnerCostBalance > 0.01
-      ? 'Paweł oddaje Łukaszowi'
+      ? partnerTwo + ' oddaje ' + partnerOne
       : partnerCostBalance < -0.01
-        ? 'Łukasz oddaje Pawłowi'
+        ? partnerOne + ' oddaje ' + partnerTwo
         : 'Brak salda między wspólnikami'
 
   const balanceAmount = Math.abs(partnerCostBalance)
@@ -7989,8 +7998,8 @@ function FinancePage({
       .reduce(
         (sum, cost) => {
           const amount = Number(cost.amount || 0)
-          if (cost.paidBy === 'Łukasz') return sum + amount / 2
-          if (cost.paidBy === 'Paweł') return sum - amount / 2
+          if (cost.paidBy === partnerOne) return sum + amount / 2
+          if (cost.paidBy === partnerTwo) return sum - amount / 2
           return sum
         },
         0
@@ -8004,8 +8013,8 @@ function FinancePage({
       .reduce(
         (sum, item) => {
           const amount = Number(item.amount || 0)
-          if (item.fromPerson === 'Paweł' && item.toPerson === 'Łukasz') return sum - amount
-          if (item.fromPerson === 'Łukasz' && item.toPerson === 'Paweł') return sum + amount
+          if (item.fromPerson === partnerTwo && item.toPerson === partnerOne) return sum - amount
+          if (item.fromPerson === partnerOne && item.toPerson === partnerTwo) return sum + amount
           return sum
         },
         0
@@ -8234,7 +8243,7 @@ function FinancePage({
           action: 'jobs',
         }
       : null,
-    Math.abs(partnerCostBalance) > 0.01
+    hasPartnerSettlement && Math.abs(partnerCostBalance) > 0.01
       ? {
           type: 'info',
           icon: '🔵',
@@ -8415,7 +8424,7 @@ function FinancePage({
     setNewCost({
       category: 'ZUS',
       amount: '',
-      paidBy: 'Łukasz',
+      paidBy: partnerOne,
       description: '',
       date: getTodayString(),
     })
@@ -8452,7 +8461,7 @@ function FinancePage({
     setEditCost({
       category: 'ZUS',
       amount: '',
-      paidBy: 'Łukasz',
+      paidBy: partnerOne,
       description: '',
       date: getTodayString(),
     })
@@ -8508,7 +8517,7 @@ function FinancePage({
 
       <div className="page-heading finance-page-heading">
         <div>
-          <div className="small-label">{settings?.company?.shortName || 'Aeroinstal'}</div>
+          <div className="small-label">{settings?.company?.shortName || 'Twoja firma'}</div>
           <h1>Finanse</h1>
           <div className="finance-page-subtitle">Kontrola pieniędzy, należności i kosztów</div>
         </div>
@@ -8807,6 +8816,7 @@ function FinancePage({
             </div>
           </div>
 
+          {hasPartnerSettlement && (
           <div className="finance-command-card">
             <div className="finance-command-card-header">
               <div>
@@ -8818,11 +8828,11 @@ function FinancePage({
 
             <div className="finance-partner-mini-grid">
               <div>
-                <span>Łukasz</span>
+                <span>{partnerOne}</span>
                 <strong>{formatMoney(splitAmount)}</strong>
               </div>
               <div>
-                <span>Paweł</span>
+                <span>{partnerTwo}</span>
                 <strong>{formatMoney(splitAmount)}</strong>
               </div>
             </div>
@@ -8835,6 +8845,8 @@ function FinancePage({
             </div>
           </div>
         </div>
+
+          )}
 
         <div className="finance-command-grid finance-command-grid-bottom">
           <div className="finance-command-card">
@@ -8920,6 +8932,7 @@ function FinancePage({
         </div>
       </section>
 
+      {hasPartnerSettlement && (
       <div className="finance-partner-card">
         <div className="finance-partner-card-header">
           <div>
@@ -8990,6 +9003,8 @@ function FinancePage({
           </p>
         </div>
       </div>
+
+      )}
 
       <div className="detail-card finance-cost-card">
         <div className="finance-cost-header finance-cost-header-modern">
@@ -9143,8 +9158,8 @@ function FinancePage({
                     setEditCost({ ...editCost, paidBy: e.target.value })
                   }
                 >
-                  <option value="Łukasz">Łukasz</option>
-                  <option value="Paweł">Paweł</option>
+                  <option value={partnerOne}>{partnerOne}</option>
+                  <option value={partnerTwo}>{partnerTwo}</option>
                 </select>
               </div>
 
@@ -9252,8 +9267,8 @@ function FinancePage({
                     setNewCost({ ...newCost, paidBy: e.target.value })
                   }
                 >
-                  <option value="Łukasz">Łukasz</option>
-                  <option value="Paweł">Paweł</option>
+                  <option value={partnerOne}>{partnerOne}</option>
+                  <option value={partnerTwo}>{partnerTwo}</option>
                 </select>
               </div>
 

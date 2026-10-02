@@ -2260,43 +2260,6 @@ function App() {
 
 
 
-  if (selectedJob) {
-
-  if (selectedJob) {
-
-      useEffect(() => {
-    if (!authSession) return
-
-    let cancelled = false
-    const loadOrganizationContext = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id,name,short_name,nip,regon,address,email,bank_account')
-          .maybeSingle()
-        if (error) throw error
-        if (cancelled || !data) return
-        setSettings((current) => ({
-          ...current,
-          company: {
-            ...current.company,
-            shortName: data.short_name || data.name || current.company.shortName,
-            name: data.name || current.company.name,
-            nip: data.nip || current.company.nip || '',
-            regon: data.regon || current.company.regon || '',
-            address: data.address || current.company.address || '',
-            email: data.email || current.company.email || authSession.user?.email || '',
-            bankAccount: data.bank_account || current.company.bankAccount || '',
-          },
-        }))
-      } catch (error) {
-        console.error('Nie udało się wczytać firmy zalogowanego użytkownika:', error)
-      }
-    }
-    loadOrganizationContext()
-    return () => { cancelled = true }
-  }, [authSession])
-
   useEffect(() => {
     if (!authSession) return
 
@@ -2365,6 +2328,7 @@ function App() {
     return <AuthPage session={authSession} recovery={authRecovery} />
   }
 
+  if (selectedJob) {
 return (
       <>
         <JobDetails

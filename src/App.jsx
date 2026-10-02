@@ -10703,7 +10703,7 @@ function TeamSettings({ authSession }) {
       if (data?.error) throw new Error(data.error)
       setEmail('')
       await loadTeam()
-      await showCustomAlert('Zaproszenie zostało wysłane.')
+      await showCustomAlert(data?.existingUser ? 'To konto już istnieje. Zaproszenie zostało zapisane i pojawi się użytkownikowi po zalogowaniu.' : 'Zaproszenie zostało wysłane.')
     } catch (error) {
       console.error('Nie udało się wysłać zaproszenia:', error)
       await showCustomAlert(error?.message || 'Nie udało się wysłać zaproszenia.')

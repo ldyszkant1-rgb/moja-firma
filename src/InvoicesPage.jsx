@@ -199,7 +199,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
    </div>
    <div className="invoice-preview-paper">
     <div className="invoice-document-head">
-     <img src={logo} alt="Aeroinstal" className="invoice-document-logo"/>
+     <img src={logo} alt={settings?.company?.shortName || settings?.company?.name || "Twoja firma"} className="invoice-document-logo"/>
      <div className="invoice-document-title">
       <div className="invoice-document-type">FAKTURA</div>
       <strong>{preview.invoiceNumber||'NOWA'}</strong>

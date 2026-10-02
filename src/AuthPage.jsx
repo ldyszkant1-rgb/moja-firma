@@ -44,7 +44,7 @@ export default function AuthPage() {
       return
     }
 
-    if (mode === 'register' && !cleanCompany) {
+    if ((mode === 'register' || mode === 'setup') && !cleanCompany) {
       setError('Podaj nazwę swojej firmy.')
       return
     }

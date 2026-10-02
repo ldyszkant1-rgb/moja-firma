@@ -267,9 +267,9 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
     <div className="invoice-editor-parties">
      <div className="invoice-party">
       <div className="invoice-party-label">Sprzedawca</div>
-      <strong>{company.name||'AEROINSTAL ŁUKASZ DYSZKANT'}</strong>
-      <span>NIP: {company.nip||'5833105866'}</span>
-      <span>{company.address||'ul. Cicha 4A/9, 83-000 Pruszcz Gdański'}</span>
+      <strong>{company.name||'Twoja firma'}</strong>
+      <span>NIP: {company.nip||'—'}</span>
+      <span>{company.address||'—'}</span>
       {company.email&&<span>{company.email}</span>}
      </div>
      <div className="invoice-party invoice-party-buyer">

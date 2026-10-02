@@ -10205,16 +10205,44 @@ function SettingsPage({
       <div className="settings-list settings-page">
         <div className="settings-item settings-item-locked settings-section-user">
           <div>
-            <span>👤 Użytkownicy</span>
-            <div className="settings-locked-info">
-              <strong>{users.first}</strong> / <strong>{users.second}</strong>
-            </div>
-            <div className="settings-locked-note">
-              Ten telefon: <strong>{users.active}</strong>
-            </div>
+            <span>👤 Użytkownik</span>
+            {authSession ? (
+              <>
+                <div className="settings-locked-info">
+                  <strong>{authSession.user?.user_metadata?.display_name || authSession.user?.email || 'Zalogowany użytkownik'}</strong>
+                </div>
+                <div className="settings-locked-note">
+                  {authSession.user?.email || 'Konto firmowe'}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="settings-locked-info">
+                  <strong>{users.first}</strong> / <strong>{users.second}</strong>
+                </div>
+                <div className="settings-locked-note">
+                  Ten telefon: <strong>{users.active}</strong>
+                </div>
+              </>
+            )}
           </div>
-          <span className="settings-lock-icon">📱</span>
+          <span className="settings-lock-icon">{authSession ? '🔐' : '📱'}</span>
         </div>
+
+        {authSession && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-4px' }}>
+            <button
+              type="button"
+              className="back-button"
+              onClick={async () => {
+                await supabase.auth.signOut()
+                window.location.reload()
+              }}
+            >
+              Wyloguj się
+            </button>
+          </div>
+        )}
 
         <div
           className="settings-item settings-section-row"

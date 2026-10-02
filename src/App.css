@@ -11458,3 +11458,171 @@ section {
     padding: 15px;
   }
 }
+
+
+/* =========================================================
+   DASHBOARD — DZISIAJ DO ZROBIENIA
+   ========================================================= */
+
+.dashboard-today-section {
+  margin-top: 22px;
+}
+
+.dashboard-today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+.dashboard-today-header h2 {
+  margin: 3px 0 0;
+  color: #12234f;
+}
+
+.dashboard-today-count {
+  min-width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef5fa;
+  border: 1px solid #dbe7ef;
+  color: #087fce;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.dashboard-today-list {
+  overflow: hidden;
+  border: 1px solid #dfe7ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 7px 22px rgba(17, 39, 71, .045);
+}
+
+.dashboard-today-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.dashboard-today-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-today-row-overdue {
+  background: #fffafa;
+}
+
+.dashboard-today-check {
+  width: 31px;
+  height: 31px;
+  border: 1px solid #cfe0ea;
+  border-radius: 10px;
+  background: #f8fbfd;
+  color: #168fe5;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dashboard-today-row-overdue .dashboard-today-check {
+  border-color: #efcaca;
+  background: #fff2f2;
+  color: #c43d3d;
+}
+
+.dashboard-today-main {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-today-main strong,
+.dashboard-today-main span {
+  display: block;
+}
+
+.dashboard-today-main strong {
+  color: #12234f;
+  font-size: 13px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-today-main span {
+  margin-top: 3px;
+  color: #718096;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-today-type {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #f5f7f9;
+  color: #718096;
+  border: 1px solid #e2e8ee;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .03em;
+}
+
+.dashboard-today-type-job {
+  background: #edf7ff;
+  border-color: #d5eafb;
+  color: #087fce;
+}
+
+.dashboard-today-empty {
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  padding: 26px 15px;
+  text-align: center;
+}
+
+.dashboard-today-empty > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 3px;
+  border-radius: 50%;
+  background: #e9f7ee;
+  color: #168a4b;
+  font-weight: 900;
+}
+
+.dashboard-today-empty strong {
+  color: #173d2a;
+  font-size: 14px;
+}
+
+.dashboard-today-empty small {
+  color: #718477;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .dashboard-today-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .dashboard-today-type {
+    display: none;
+  }
+}

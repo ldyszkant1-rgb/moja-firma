@@ -9789,8 +9789,9 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteClients] = await Promise.all([
+      const [remoteJobs, remoteDeletedJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteClients] = await Promise.all([
         getJobs(),
+        getDeletedJobs(),
         getOffers(),
         getInvoices(),
         getFinance(),
@@ -9805,7 +9806,10 @@ function SettingsPage({
         backupVersion: 5,
         createdAt: new Date().toISOString(),
         settings,
-        jobs: Array.isArray(remoteJobs) ? remoteJobs : [],
+        jobs: [
+          ...(Array.isArray(remoteJobs) ? remoteJobs : []),
+          ...(Array.isArray(remoteDeletedJobs) ? remoteDeletedJobs : []),
+        ],
         offers: Array.isArray(remoteOffers) ? remoteOffers : [],
         clients: Array.isArray(remoteClients) ? remoteClients : [],
         invoices: Array.isArray(remoteInvoices) ? remoteInvoices : [],
@@ -9894,7 +9898,7 @@ function SettingsPage({
         notes: Array.isArray(job.notes) ? job.notes : [],
         photos: Array.isArray(job.photos) ? job.photos : [],
         main_photo: job.mainPhoto || null,
-        deleted_at: null,
+        deleted_at: job.deletedAt || null,
       }))
 
       if (jobsRows.length > 0) {

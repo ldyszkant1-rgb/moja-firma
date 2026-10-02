@@ -6118,19 +6118,52 @@ function JobDetails({
         </div>
         {linkedInvoice ? (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Kwota</span>
-                <strong>{formatMoney(linkedInvoice.grossAmount)}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Termin</span>
-                <strong>{linkedInvoice.dueDate ? formatDate(linkedInvoice.dueDate) : '—'}</strong>
-              </div>
-            </div>
-            <button type="button" className="document-button" style={{ marginTop: '12px', width: '100%' }} onClick={() => onOpenInvoice?.(linkedInvoice)}>
-              🧾 Otwórz fakturę
-            </button>
+            {(() => {
+              const invoiceNet = Math.max(0, Number(linkedInvoice.netAmount || 0))
+              const invoiceVat = Math.max(0, Number(linkedInvoice.vatAmount || 0))
+              const invoiceGross = Math.max(0, Number(linkedInvoice.grossAmount || 0))
+              const invoicePaid = Math.min(invoiceGross, Math.max(0, Number(linkedInvoice.paidAmount || 0)))
+              const vatSettled = Math.min(invoiceVat, Math.max(0, Number(linkedInvoice.vatSettledAmount || 0)))
+              const netPaid = Math.min(invoiceNet, invoicePaid)
+              const remainingNet = Math.max(0, invoiceNet - netPaid)
+
+              return (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Netto</span>
+                      <strong>{formatMoney(invoiceNet)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Brutto</span>
+                      <strong>{formatMoney(invoiceGross)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Otrzymano</span>
+                      <strong>{formatMoney(netPaid)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>VAT rozliczony</span>
+                      <strong>{formatMoney(vatSettled)}</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '14px', background: remainingNet > 0.01 ? '#fff8e8' : '#edf9f1', border: remainingNet > 0.01 ? '1px solid #f0d58a' : '1px solid #b9e3c7' }}>
+                    <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Do odzyskania netto</span>
+                    <strong style={{ display: 'block', marginTop: '4px', fontSize: '22px', color: remainingNet > 0.01 ? '#9a6800' : '#159447' }}>
+                      {formatMoney(remainingNet)}
+                    </strong>
+                    <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#718096' }}>
+                      Termin płatności: {linkedInvoice.dueDate ? formatDate(linkedInvoice.dueDate) : '—'}
+                    </span>
+                  </div>
+
+                  <button type="button" className="document-button" style={{ marginTop: '12px', width: '100%' }} onClick={() => onOpenInvoice?.(linkedInvoice)}>
+                    🧾 Otwórz fakturę i rozliczenie
+                  </button>
+                </>
+              )
+            })()}
           </>
         ) : (
           <>

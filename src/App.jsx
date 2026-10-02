@@ -2749,6 +2749,7 @@ return (
           <SettingsPage
             settings={settings}
             setSettings={setSettings}
+            authSession={authSession}
           />
 
         )}
@@ -9733,6 +9734,7 @@ function CostIcon({ category }) {
 function SettingsPage({
   settings,
   setSettings,
+  authSession,
 }) {
 
   const [editingRates, setEditingRates] = useState(false)

@@ -758,7 +758,7 @@ function App() {
 
     try {
       localStorage.setItem(
-        'aeroinstal_settings',
+        'moja_firma_settings',
         JSON.stringify(settings)
       )
     } catch (error) {
@@ -2410,9 +2410,9 @@ return (
 
           className="app-logo"
 
-          alt={settings.company?.shortName || 'Aeroinstal'}
+          alt={settings.company?.shortName || 'Moja Firma'}
 
-          title={settings.company?.shortName || 'Aeroinstal'}
+          title={settings.company?.shortName || 'Moja Firma'}
 
         />
 
@@ -9649,12 +9649,12 @@ function SettingsPage({
   }
 
   const company = {
-    shortName: settings.company?.shortName || 'Aeroinstal',
-    name: settings.company?.name || 'AEROINSTAL ŁUKASZ DYSZKANT',
-    nip: settings.company?.nip || '5833105866',
-    regon: settings.company?.regon || '385589939',
-    address: settings.company?.address || 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
-    email: settings.company?.email || 'Aeroinstal@wp.pl',
+    shortName: settings.company?.shortName || '',
+    name: settings.company?.name || '',
+    nip: settings.company?.nip || '',
+    regon: settings.company?.regon || '',
+    address: settings.company?.address || '',
+    email: settings.company?.email || '',
     bankAccount: settings.company?.bankAccount || '',
   }
 
@@ -9778,7 +9778,7 @@ function SettingsPage({
       ])
 
       const backup = {
-        app: 'Aeroinstal',
+        app: 'Moja Firma',
         backupVersion: 5,
         createdAt: new Date().toISOString(),
         settings,
@@ -9807,7 +9807,7 @@ function SettingsPage({
       const date = new Date().toISOString().slice(0, 10)
 
       link.href = url
-      link.download = `aeroinstal-backup-${date}.json`
+      link.download = `moja-firma-backup-${date}.json`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -9833,7 +9833,7 @@ function SettingsPage({
 
       if (
         !backup ||
-        backup.app !== 'Aeroinstal' ||
+        !['Moja Firma', 'Aeroinstal'].includes(backup.app) ||
         ![1, 2, 3, 4, 5].includes(backup.backupVersion) ||
         !Array.isArray(backup.jobs) ||
         !Array.isArray(backup.finance) ||
@@ -10110,10 +10110,10 @@ function SettingsPage({
             ) : (
               <>
                 <div className="settings-locked-info">
-                  <strong>{users.first}</strong> / <strong>{users.second}</strong>
+                  <strong>Zalogowany użytkownik</strong>
                 </div>
                 <div className="settings-locked-note">
-                  Ten telefon: <strong>{users.active}</strong>
+                  Konto firmowe
                 </div>
               </>
             )}
@@ -10147,7 +10147,7 @@ function SettingsPage({
             <span>🏢 Firma</span>
             {!showCompany && (
               <div style={{ marginTop: '5px', fontSize: '13px', opacity: 0.7 }}>
-                {company.shortName || 'Aeroinstal'}
+                {company.shortName || 'Twoja firma'}
               </div>
             )}
           </div>
@@ -10245,7 +10245,7 @@ function SettingsPage({
                   marginTop: '14px',
                 }}
               >
-                <div><strong>{company.shortName || 'Aeroinstal'}</strong></div>
+                <div><strong>{company.shortName || 'Twoja firma'}</strong></div>
                 <div style={{ marginTop: '4px' }}>Pełna nazwa: {company.name || '—'}</div>
                 <div>NIP: {company.nip || '—'}</div>
                 <div>REGON: {company.regon || '—'}</div>

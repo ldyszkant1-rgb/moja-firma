@@ -60,6 +60,32 @@ export default function AuthPage() {
 
         if (signInError) throw signInError
 
+        const { data: membership, error: membershipError } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .limit(1)
+
+        if (membershipError) throw membershipError
+
+        if (!membership?.length) {
+          setMessage('Konto jest aktywne. Dokończ teraz tworzenie swojej firmy.')
+          setMode('setup')
+          return
+        }
+
+        window.location.reload()
+        return
+      }
+
+      if (mode === 'setup') {
+        const { error: organizationError } = await supabase.rpc('create_organization', {
+          p_name: cleanCompany,
+          p_slug: slugify(cleanCompany),
+          p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
+        })
+
+        if (organizationError) throw organizationError
+
         window.location.reload()
         return
       }
@@ -160,17 +186,19 @@ export default function AuthPage() {
               lineHeight: 1.15,
             }}
           >
-            {mode === 'login' ? 'Zaloguj się' : 'Utwórz swoją firmę'}
+            {mode === 'login' ? 'Zaloguj się' : mode === 'setup' ? 'Dokończ konfigurację' : 'Utwórz swoją firmę'}
           </h1>
           <p style={{ margin: 0, color: '#68758a', lineHeight: 1.5 }}>
             {mode === 'login'
               ? 'Zaloguj się do swojej przestrzeni firmy.'
-              : 'Załóż konto, utwórz firmę i później dodawaj swoich pracowników.'}
+              : mode === 'setup'
+                ? 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
+                : 'Załóż konto, utwórz firmę i później dodawaj swoich pracowników.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          {mode === 'register' && (
+          {(mode === 'register' || mode === 'setup') && (
             <>
               <label style={{ display: 'grid', gap: '6px' }}>
                 <strong style={{ color: '#243451' }}>Twoje imię</strong>
@@ -299,7 +327,9 @@ export default function AuthPage() {
           >
             {mode === 'login'
               ? 'Nie masz konta? Utwórz firmę'
-              : 'Masz już konto? Zaloguj się'}
+              : mode === 'setup'
+                ? ''
+                : 'Masz już konto? Zaloguj się'}
           </button>
         </div>
       </section>

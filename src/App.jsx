@@ -2531,6 +2531,7 @@ return (
 
           <ClientsPage
             clients={clients}
+            settings={settings}
             jobs={jobs}
             onRefresh={loadClients}
             onAlert={showCustomAlert}

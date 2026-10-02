@@ -12,7 +12,8 @@ function slugify(value) {
 }
 
 export default function AuthPage({ session = null }) {
-  const invitationId = session?.user?.user_metadata?.invitation_id || null
+  const [invitationId, setInvitationId] = useState(session?.user?.user_metadata?.invitation_id || null)
+  const [pendingInvitations, setPendingInvitations] = useState([])
   const invitedEmail = session?.user?.email || ''
   const hasInvitation = Boolean(invitationId)
 
@@ -26,11 +27,41 @@ export default function AuthPage({ session = null }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let cancelled = false
     if (!session) return
+
     setEmail(session.user?.email || '')
     setDisplayName(session.user?.user_metadata?.display_name || session.user?.email?.split('@')[0] || '')
-    setMode(invitationId ? 'accept' : 'setup')
-  }, [session, invitationId])
+
+    const metadataInvitationId = session.user?.user_metadata?.invitation_id || null
+    if (metadataInvitationId) {
+      setInvitationId(metadataInvitationId)
+      setMode('accept')
+      return () => { cancelled = true }
+    }
+
+    supabase.functions.invoke('organization-invitations', {
+      body: { action: 'list-my-invitations' },
+    }).then(({ data, error }) => {
+      if (cancelled) return
+      if (error || data?.error) {
+        setMode('setup')
+        return
+      }
+      const invites = Array.isArray(data?.invitations) ? data.invitations : []
+      setPendingInvitations(invites)
+      if (invites.length) {
+        setInvitationId(invites[0].id)
+        setMode('accept')
+      } else {
+        setMode('setup')
+      }
+    }).catch(() => {
+      if (!cancelled) setMode('setup')
+    })
+
+    return () => { cancelled = true }
+  }, [session])
 
   const title = useMemo(() => {
     if (mode === 'login') return 'Zaloguj się'
@@ -193,7 +224,9 @@ export default function AuthPage({ session = null }) {
           <div style={inviteBoxStyle}>
             <strong>Zaproszenie do firmy</strong>
             <div style={{ marginTop: 6, color: '#53647b' }}>
-              Zaproszenie zostało wysłane na <strong>{invitedEmail}</strong>.
+              {pendingInvitations.find((invite) => invite.id === invitationId)?.organization_name
+                ? <>Zaproszenie do <strong>{pendingInvitations.find((invite) => invite.id === invitationId).organization_name}</strong>.</>
+                : <>Zaproszenie zostało wysłane na <strong>{invitedEmail}</strong>.</>}
             </div>
           </div>
         )}

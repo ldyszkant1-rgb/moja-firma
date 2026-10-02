@@ -1,4 +1,4 @@
-import { createSupabaseContext } from 'npm:@supabase/server@1'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,20 +7,41 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-
-  const { data: ctx, error: authError } = await createSupabaseContext(req, { auth: 'user' })
-  if (authError) return Response.json({ error: authError.message }, { status: authError.status, headers: corsHeaders })
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Brak konfiguracji Supabase po stronie serwera.')
+    }
+
+    const authHeader = req.headers.get('Authorization') || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '')
+    if (!token) {
+      return Response.json({ error: 'Brak autoryzacji.' }, { status: 401, headers: corsHeaders })
+    }
+
+    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token)
+    if (userError || !user) {
+      return Response.json({ error: 'Sesja logowania jest nieprawidłowa lub wygasła.' }, { status: 401, headers: corsHeaders })
+    }
+
     const body = await req.json().catch(() => ({}))
     const action = body?.action || 'send'
-    const userId = ctx.userClaims?.sub
-    const email = String(ctx.userClaims?.email || '').trim().toLowerCase()
-
-    if (!userId || !email) {
-      return Response.json({ error: 'Brak danych zalogowanego użytkownika.' }, { status: 401, headers: corsHeaders })
-    }
+    const userId = user.id
+    const email = String(user.email || '').trim().toLowerCase()
 
     if (action === 'create-company') {
       const companyName = String(body?.name || '').trim()
@@ -29,7 +50,7 @@ Deno.serve(async (req: Request) => {
         return Response.json({ error: 'Podaj nazwę firmy.' }, { status: 400, headers: corsHeaders })
       }
 
-      const { data: existingMembership } = await ctx.supabaseAdmin
+      const { data: existingMembership } = await admin
         .from('organization_members')
         .select('organization_id')
         .eq('user_id', userId)
@@ -50,7 +71,7 @@ Deno.serve(async (req: Request) => {
 
       if (!slug) slug = `firma-${crypto.randomUUID().replaceAll('-', '').slice(0, 10)}`
 
-      const { data: organization, error: organizationError } = await ctx.supabaseAdmin
+      const { data: organization, error: organizationError } = await admin
         .from('organizations')
         .insert({
           name: companyName,
@@ -69,7 +90,7 @@ Deno.serve(async (req: Request) => {
         throw organizationError
       }
 
-      const { error: membershipError } = await ctx.supabaseAdmin
+      const { error: membershipError } = await admin
         .from('organization_members')
         .insert({
           organization_id: organization.id,
@@ -80,42 +101,23 @@ Deno.serve(async (req: Request) => {
         })
 
       if (membershipError) {
-        await ctx.supabaseAdmin.from('organizations').delete().eq('id', organization.id)
+        await admin.from('organizations').delete().eq('id', organization.id)
         throw membershipError
       }
 
       return Response.json({ ok: true, organizationId: organization.id }, { headers: corsHeaders })
     }
 
-    if (action === 'list-my-invitations') {
-      const { data: rows, error: listError } = await ctx.supabaseAdmin
-        .from('organization_invitations')
-        .select('id,organization_id,email,role,status,expires_at,created_at')
-        .eq('email', email)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
+    const { data: membership } = await admin
+      .from('organization_members')
+      .select('organization_id,role')
+      .eq('user_id', userId)
+      .in('role', ['owner', 'admin'])
+      .limit(1)
+      .maybeSingle()
 
-      if (listError) throw listError
-
-      const organizationIds = [...new Set((rows || []).map((row) => row.organization_id))]
-      let organizations = []
-      if (organizationIds.length) {
-        const { data: orgRows } = await ctx.supabaseAdmin
-          .from('organizations')
-          .select('id,name,short_name')
-          .in('id', organizationIds)
-        organizations = orgRows || []
-      }
-
-      return Response.json({
-        invitations: (rows || []).map((row) => ({
-          ...row,
-          organization_name: organizations.find((org) => org.id === row.organization_id)?.short_name
-            || organizations.find((org) => org.id === row.organization_id)?.name
-            || 'Firma',
-        })),
-      }, { headers: corsHeaders })
+    if (!membership) {
+      return Response.json({ error: 'Brak uprawnień do zarządzania pracownikami.' }, { status: 403, headers: corsHeaders })
     }
 
     if (action === 'send') {
@@ -129,31 +131,16 @@ Deno.serve(async (req: Request) => {
         return Response.json({ error: 'Nie możesz zaprosić własnego konta.' }, { status: 400, headers: corsHeaders })
       }
 
-      const { data: membership } = await ctx.supabaseAdmin
+      const { data: existingMembers } = await admin
         .from('organization_members')
-        .select('organization_id, role')
-        .eq('user_id', userId)
-        .in('role', ['owner', 'admin'])
-        .limit(1)
-        .maybeSingle()
+        .select('email')
+        .eq('organization_id', membership.organization_id)
 
-      if (!membership) {
-        return Response.json({ error: 'Brak uprawnień do zapraszania pracowników.' }, { status: 403, headers: corsHeaders })
-      }
-
-      const { data: users } = await ctx.supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-      const memberIds = new Set(
-        (await ctx.supabaseAdmin
-          .from('organization_members')
-          .select('user_id')
-          .eq('organization_id', membership.organization_id)).data?.map((row) => row.user_id) || []
-      )
-
-      if (users?.users?.some((u) => memberIds.has(u.id) && String(u.email || '').toLowerCase() === inviteEmail)) {
+      if ((existingMembers || []).some((row) => String(row.email || '').trim().toLowerCase() === inviteEmail)) {
         return Response.json({ error: 'Ten adres e-mail jest już członkiem firmy.' }, { status: 409, headers: corsHeaders })
       }
 
-      await ctx.supabaseAdmin
+      await admin
         .from('organization_invitations')
         .update({ status: 'expired' })
         .eq('organization_id', membership.organization_id)
@@ -161,7 +148,7 @@ Deno.serve(async (req: Request) => {
         .eq('status', 'pending')
         .lt('expires_at', new Date().toISOString())
 
-      const { data: pending } = await ctx.supabaseAdmin
+      const { data: pending } = await admin
         .from('organization_invitations')
         .select('id')
         .eq('organization_id', membership.organization_id)
@@ -174,7 +161,7 @@ Deno.serve(async (req: Request) => {
         return Response.json({ error: 'Dla tego adresu istnieje już aktywne zaproszenie.' }, { status: 409, headers: corsHeaders })
       }
 
-      const { data: invitation, error: invitationError } = await ctx.supabaseAdmin
+      const { data: invitation, error: invitationError } = await admin
         .from('organization_invitations')
         .insert({
           organization_id: membership.organization_id,
@@ -189,7 +176,7 @@ Deno.serve(async (req: Request) => {
       if (invitationError) throw invitationError
 
       const siteUrl = Deno.env.get('APP_SITE_URL') || 'https://moja-firma.vercel.app'
-      const { error: inviteError } = await ctx.supabaseAdmin.auth.admin.inviteUserByEmail(inviteEmail, {
+      const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(inviteEmail, {
         data: {
           display_name: inviteEmail.split('@')[0],
           invitation_id: invitation.id,
@@ -199,21 +186,11 @@ Deno.serve(async (req: Request) => {
       })
 
       if (inviteError) {
-        const alreadyRegistered = /already.*registered|already.*exists|user.*already/i.test(String(inviteError.message || ''))
-        if (!alreadyRegistered) {
-          await ctx.supabaseAdmin.from('organization_invitations').delete().eq('id', invitation.id)
-          throw inviteError
-        }
-
-        return Response.json({
-          ok: true,
-          invitationId: invitation.id,
-          existingUser: true,
-          message: 'To konto już istnieje. Użytkownik zobaczy zaproszenie po zalogowaniu.',
-        }, { headers: corsHeaders })
+        await admin.from('organization_invitations').delete().eq('id', invitation.id)
+        throw inviteError
       }
 
-      return Response.json({ ok: true, invitationId: invitation.id, existingUser: false }, { headers: corsHeaders })
+      return Response.json({ ok: true, invitationId: invitation.id }, { headers: corsHeaders })
     }
 
     if (action === 'accept') {
@@ -222,7 +199,7 @@ Deno.serve(async (req: Request) => {
         return Response.json({ error: 'Brak identyfikatora zaproszenia.' }, { status: 400, headers: corsHeaders })
       }
 
-      const { data: invitation, error: invitationError } = await ctx.supabaseAdmin
+      const { data: invitation, error: invitationError } = await admin
         .from('organization_invitations')
         .select('id,organization_id,email,role,status,expires_at')
         .eq('id', invitationId)
@@ -232,26 +209,37 @@ Deno.serve(async (req: Request) => {
       if (!invitation) return Response.json({ error: 'Zaproszenie nie istnieje.' }, { status: 404, headers: corsHeaders })
       if (invitation.status !== 'pending') return Response.json({ error: 'Zaproszenie nie jest już aktywne.' }, { status: 409, headers: corsHeaders })
       if (new Date(invitation.expires_at).getTime() < Date.now()) {
-        await ctx.supabaseAdmin.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id)
+        await admin.from('organization_invitations').update({ status: 'expired' }).eq('id', invitation.id)
         return Response.json({ error: 'Zaproszenie wygasło. Poproś administratora o nowe.' }, { status: 410, headers: corsHeaders })
       }
       if (String(invitation.email).trim().toLowerCase() !== email) {
         return Response.json({ error: 'To zaproszenie jest przeznaczone dla innego adresu e-mail.' }, { status: 403, headers: corsHeaders })
       }
 
-      const { error: memberError } = await ctx.supabaseAdmin
+      const { data: currentMembership } = await admin
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle()
+
+      if (currentMembership && currentMembership.organization_id !== invitation.organization_id) {
+        return Response.json({ error: 'To konto należy już do innej firmy.' }, { status: 409, headers: corsHeaders })
+      }
+
+      const { error: memberError } = await admin
         .from('organization_members')
         .upsert({
           organization_id: invitation.organization_id,
           user_id: userId,
           role: invitation.role,
-          display_name: String(ctx.userClaims?.user_metadata?.display_name || email.split('@')[0]),
+          display_name: String(user.user_metadata?.display_name || email.split('@')[0]),
           email,
         }, { onConflict: 'organization_id,user_id' })
 
       if (memberError) throw memberError
 
-      await ctx.supabaseAdmin
+      await admin
         .from('organization_invitations')
         .update({
           status: 'accepted',

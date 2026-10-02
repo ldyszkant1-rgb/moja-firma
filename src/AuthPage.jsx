@@ -88,12 +88,11 @@ export default function AuthPage({ session = null }) {
 
       setLoading(true)
       try {
-        const { error: organizationError } = await supabase.rpc('create_organization', {
-          p_name: cleanCompany,
-          p_slug: slugify(cleanCompany),
-          p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
+        const { data: organizationData, error: organizationError } = await supabase.functions.invoke('organization-invitations', {
+          body: { action: 'create-company', name: cleanCompany, displayName: cleanDisplayName || cleanEmail.split('@')[0] },
         })
         if (organizationError) throw organizationError
+        if (organizationData?.error) throw new Error(organizationData.error)
         window.location.reload()
       } catch (submitError) {
         console.error('Błąd tworzenia firmy:', submitError)
@@ -152,12 +151,11 @@ export default function AuthPage({ session = null }) {
         return
       }
 
-      const { error: organizationError } = await supabase.rpc('create_organization', {
-        p_name: cleanCompany,
-        p_slug: slugify(cleanCompany),
-        p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
+      const { data: organizationData, error: organizationError } = await supabase.functions.invoke('organization-invitations', {
+        body: { action: 'create-company', name: cleanCompany, displayName: cleanDisplayName || cleanEmail.split('@')[0] },
       })
       if (organizationError) throw organizationError
+      if (organizationData?.error) throw new Error(organizationData.error)
 
       window.location.reload()
     } catch (submitError) {

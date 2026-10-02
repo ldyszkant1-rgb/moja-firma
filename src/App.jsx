@@ -10042,15 +10042,15 @@ function SettingsPage({
 
   return (
     <>
-      <div className="page-heading">
+      <div className="page-heading settings-page-heading">
         <div>
           <div className="small-label">MOJA FIRMA</div>
           <h1>Ustawienia</h1>
         </div>
       </div>
 
-      <div className="settings-list">
-        <div className="settings-item settings-item-locked">
+      <div className="settings-list settings-page">
+        <div className="settings-item settings-item-locked settings-section-user">
           <div>
             <span>👤 Użytkownicy</span>
             <div className="settings-locked-info">
@@ -10064,7 +10064,7 @@ function SettingsPage({
         </div>
 
         <div
-          className="settings-item"
+          className="settings-item settings-section-row"
           style={{ cursor: 'pointer' }}
           onClick={() => setShowCompany(!showCompany)}
         >
@@ -10080,7 +10080,7 @@ function SettingsPage({
         </div>
 
         {showCompany && (
-          <div className="detail-card">
+          <div className="detail-card settings-detail-card">
             <div
               style={{
                 display: 'flex',
@@ -10140,7 +10140,7 @@ function SettingsPage({
                   </label>
                 ))}
 
-                <div
+                <div className="settings-form-actions"
                   style={{
                     display: 'flex',
                     gap: '10px',
@@ -10249,7 +10249,7 @@ function SettingsPage({
               Te stawki będą automatycznie podpowiadane przy dodawaniu nowej realizacje.
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
+            <div className="settings-form-actions" style={{ display: 'flex', gap: '10px', marginTop: '14px' }}>
               <button className="save-button" onClick={saveRates}>Zapisz stawki</button>
               <button className="back-button" onClick={cancelRates}>Anuluj</button>
             </div>
@@ -10273,7 +10273,7 @@ function SettingsPage({
         </div>
 
         {showCategories && (
-          <div className="detail-card">
+          <div className="detail-card settings-detail-card">
             <h2>Kategorie kosztów</h2>
 
             <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.6 }}>
@@ -10331,7 +10331,7 @@ function SettingsPage({
         </div>
 
         {showBackup && (
-          <div className="detail-card">
+          <div className="detail-card settings-detail-card">
             <h2>Kopia zapasowa</h2>
 
             <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.6 }}>
@@ -10339,7 +10339,7 @@ function SettingsPage({
               i dokumentach. Same pliki pozostają bezpiecznie w Supabase Storage.
             </div>
 
-            <div
+            <div className="settings-backup-actions"
               style={{
                 display: 'grid',
                 gap: '10px',

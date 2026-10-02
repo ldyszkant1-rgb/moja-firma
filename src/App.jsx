@@ -2984,6 +2984,117 @@ function StartPage({
         </div>
       </section>
 
+      <section className="dashboard-workday-section">
+        <div className="dashboard-workday-header">
+          <div>
+            <div className="small-label">DZIEŃ PRACY</div>
+            <h2>Najważniejsze dzisiaj</h2>
+            <p>Najpierw sprawy, które wymagają działania na aktywnych realizacjach.</p>
+          </div>
+          <button type="button" className="section-link" onClick={() => onJobs('active')}>
+            Wszystkie realizacje →
+          </button>
+        </div>
+
+        {activeJobs.length === 0 ? (
+          <div className="dashboard-workday-empty">
+            <span>✓</span>
+            <div>
+              <strong>Brak aktywnych realizacji</strong>
+              <small>Możesz spokojnie przejść do finansów lub dodać nową realizację.</small>
+            </div>
+          </div>
+        ) : (
+          <div className="dashboard-workday-grid">
+            {[...activeJobs]
+              .map((job) => {
+                const tasks = Array.isArray(job.notes) ? job.notes.filter(Boolean) : []
+                const pendingTasks = tasks.filter((task) => !task.done)
+                const jobInvoices = dashboardInvoicesByJob.get(String(job.id)) || []
+                const overdueInvoice = jobInvoices.find((invoice) => {
+                  const net = Math.max(0, Number(invoice.netAmount || 0))
+                  const paid = Math.min(net, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+                  return net - paid > 0.01 && invoice.dueDate && invoice.dueDate < today
+                })
+                const openInvoice = jobInvoices.find((invoice) => {
+                  const net = Math.max(0, Number(invoice.netAmount || 0))
+                  const paid = Math.min(net, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+                  return net - paid > 0.01
+                })
+                const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
+                const priority =
+                  overdueInvoice ? 3 :
+                  pendingTasks.length > 0 ? 2 :
+                  openInvoice ? 1 :
+                  0
+
+                return {
+                  job,
+                  tasks,
+                  pendingTasks,
+                  overdueInvoice,
+                  openInvoice,
+                  progress,
+                  priority,
+                }
+              })
+              .sort((a, b) => {
+                if (b.priority !== a.priority) return b.priority - a.priority
+                if (b.pendingTasks.length !== a.pendingTasks.length) return b.pendingTasks.length - a.pendingTasks.length
+                return a.progress - b.progress
+              })
+              .slice(0, 5)
+              .map(({ job, pendingTasks, overdueInvoice, openInvoice, progress }) => (
+                <article className="dashboard-workday-card" key={job.id}>
+                  <button type="button" className="dashboard-workday-main" onClick={() => onOpenJob(job)}>
+                    <div className="dashboard-workday-top">
+                      <div>
+                        <strong>{job.name}</strong>
+                        <span>{job.location || 'Brak lokalizacji'}</span>
+                      </div>
+                      <span className="dashboard-workday-progress">{progress}%</span>
+                    </div>
+
+                    <div className="dashboard-workday-progress-track">
+                      <div style={{ width: `${progress}%` }} />
+                    </div>
+
+                    <div className="dashboard-workday-statuses">
+                      {overdueInvoice ? (
+                        <span className="dashboard-workday-status dashboard-workday-status-danger">
+                          ⏰ Faktura po terminie
+                        </span>
+                      ) : openInvoice ? (
+                        <span className="dashboard-workday-status dashboard-workday-status-finance">
+                          🧾 Płatność oczekuje
+                        </span>
+                      ) : (
+                        <span className="dashboard-workday-status dashboard-workday-status-ok">
+                          ✓ Bez zaległej płatności
+                        </span>
+                      )}
+
+                      {pendingTasks.length > 0 ? (
+                        <span className="dashboard-workday-task-count">
+                          🔧 {pendingTasks.length} {pendingTasks.length === 1 ? 'zadanie' : 'zadań'}
+                        </span>
+                      ) : (
+                        <span className="dashboard-workday-task-count dashboard-workday-task-done">
+                          ✓ Zadania wykonane
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  <button type="button" className="dashboard-workday-open" onClick={() => onOpenJob(job)}>
+                    Otwórz realizację <span>→</span>
+                  </button>
+                </article>
+              ))}
+          </div>
+        )}
+      </section>
+
       <section>
         <div className="section-title">
           <h2>W toku</h2>

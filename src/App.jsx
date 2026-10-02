@@ -616,6 +616,31 @@ function App() {
   const [invoiceJobToCreate, setInvoiceJobToCreate] = useState(null)
   const [invoiceToOpen, setInvoiceToOpen] = useState(null)
 
+  // Płatności są potrzebne również na Dashboardzie. FinancePage ma własny stan,
+  // ale Dashboard renderuje się bezpośrednio w App, więc pobieramy je tutaj.
+  const [dashboardJobPayments, setDashboardJobPayments] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadDashboardPayments = async () => {
+      try {
+        const remotePayments = await getAllJobPayments()
+        if (!cancelled) {
+          setDashboardJobPayments(Array.isArray(remotePayments) ? remotePayments : [])
+        }
+      } catch (error) {
+        console.error('Nie udało się wczytać płatności dla Dashboardu:', error)
+      }
+    }
+
+    loadDashboardPayments()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     const loadOffers = async () => {
@@ -2435,7 +2460,7 @@ function App() {
 
             invoices={invoices}
 
-            allJobPayments={allJobPayments}
+            allJobPayments={dashboardJobPayments}
 
             onOpenFinance={() => setActivePage('finance')}
 

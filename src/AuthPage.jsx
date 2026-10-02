@@ -25,6 +25,7 @@ export default function AuthPage({ session = null }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [resetSent, setResetSent] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -80,6 +81,29 @@ export default function AuthPage({ session = null }) {
   const resetMessages = () => {
     setMessage('')
     setError('')
+  }
+
+  const handlePasswordReset = async () => {
+    resetMessages()
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanEmail) {
+      setError('Najpierw podaj adres e-mail.')
+      return
+    }
+    setLoading(true)
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: window.location.origin,
+      })
+      if (resetError) throw resetError
+      setResetSent(true)
+      setMessage('Jeśli konto istnieje, wysłaliśmy instrukcję zmiany hasła na podany adres e-mail.')
+    } catch (resetError) {
+      console.error('Błąd resetu hasła:', resetError)
+      setError('Nie udało się wysłać instrukcji zmiany hasła. Spróbuj ponownie.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -289,6 +313,12 @@ export default function AuthPage({ session = null }) {
           {error && <div style={errorStyle}>{error}</div>}
           {message && <div style={messageStyle}>{message}</div>}
 
+          {mode === 'login' && (
+            <button type="button" onClick={handlePasswordReset} disabled={loading} style={forgotStyle}>
+              Nie pamiętam hasła
+            </button>
+          )}
+
           <button type="submit" disabled={loading} style={{ ...submitStyle, opacity: loading ? 0.65 : 1 }}>
             {loading
               ? 'Przetwarzanie…'
@@ -426,6 +456,17 @@ const inviteBoxStyle = {
   color: '#243451',
   marginBottom: '16px',
   lineHeight: 1.45,
+}
+
+
+const forgotStyle = {
+  border: 'none',
+  background: 'transparent',
+  color: '#68758a',
+  fontWeight: 700,
+  cursor: 'pointer',
+  padding: '4px 0',
+  textAlign: 'left',
 }
 
 const toggleStyle = {

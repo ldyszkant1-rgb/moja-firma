@@ -4927,18 +4927,20 @@ function JobDetails({
 
   const changeStage = async (nextStage) => {
     const today = getTodayString()
+    const isCompleted = nextStage === 'Zakończone'
 
     const updatedJob = {
       ...editedJob,
       status: nextStage,
-      completed: nextStage === 'Zakończone',
-      completedAt: nextStage === 'Zakończone'
+      completed: isCompleted,
+      completedAt: isCompleted
         ? (editedJob.completedAt || today)
         : null,
-    }
-
-    if (nextStage === 'Odbiór' && Number(updatedJob.progress || 0) >= 100) {
-      updatedJob.progress = 100
+      // Zamknięta realizacja musi mieć pełny postęp.
+      // Dzięki temu etap i procent postępu nie mogą się wzajemnie wykluczać.
+      progress: isCompleted
+        ? 100
+        : Math.min(100, Math.max(0, Number(editedJob.progress || 0))),
     }
 
     onUpdate(updatedJob)

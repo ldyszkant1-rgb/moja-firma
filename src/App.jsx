@@ -10299,6 +10299,8 @@ function SettingsPage({
           </div>
         )}
 
+        <TeamSettings authSession={authSession} />
+
         <div
           className="settings-item settings-section-row"
           style={{ cursor: 'pointer' }}
@@ -10627,6 +10629,256 @@ function SettingsPage({
   )
 }
 
+
+function TeamSettings({ authSession }) {
+  const [members, setMembers] = useState([])
+  const [invitations, setInvitations] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState('employee')
+  const [showTeam, setShowTeam] = useState(false)
+
+  const currentUserId = authSession?.user?.id
+
+  const loadTeam = async () => {
+    setLoading(true)
+    try {
+      const [{ data: memberRows, error: memberError }, { data: inviteRows, error: inviteError }] = await Promise.all([
+        supabase.from('organization_members').select('user_id,organization_id,role,display_name,email,created_at').order('created_at', { ascending: true }),
+        supabase.from('organization_invitations').select('id,email,role,status,expires_at,created_at').order('created_at', { ascending: false }),
+      ])
+      if (memberError) throw memberError
+      if (inviteError) throw inviteError
+      setMembers(memberRows || [])
+      setInvitations(inviteRows || [])
+    } catch (error) {
+      console.error('Nie udało się wczytać zespołu:', error)
+      await showCustomAlert('Nie udało się wczytać listy pracowników.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!authSession) return
+    loadTeam()
+  }, [authSession?.user?.id])
+
+  const currentMember = members.find((member) => member.user_id === currentUserId)
+  const canManage = currentMember?.role === 'owner' || currentMember?.role === 'admin'
+
+  const sendInvite = async (event) => {
+    event.preventDefault()
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      await showCustomAlert('Podaj prawidłowy adres e-mail pracownika.')
+      return
+    }
+
+    setSending(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('organization-invitations', {
+        body: { action: 'send', email: cleanEmail, role },
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      setEmail('')
+      await loadTeam()
+      await showCustomAlert('Zaproszenie zostało wysłane.')
+    } catch (error) {
+      console.error('Nie udało się wysłać zaproszenia:', error)
+      await showCustomAlert(error?.message || 'Nie udało się wysłać zaproszenia.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const changeRole = async (member, nextRole) => {
+    if (member.user_id === currentUserId || member.role === 'owner') return
+    try {
+      const { error } = await supabase
+        .from('organization_members')
+        .update({ role: nextRole })
+        .eq('user_id', member.user_id)
+      if (error) throw error
+      await loadTeam()
+    } catch (error) {
+      console.error('Nie udało się zmienić roli:', error)
+      await showCustomAlert('Nie udało się zmienić roli pracownika.')
+    }
+  }
+
+  const removeMember = async (member) => {
+    if (member.user_id === currentUserId || member.role === 'owner') return
+    const confirmed = await showCustomConfirm(
+      `Usunąć użytkownika ${member.email || member.display_name || 'pracownika'} z firmy?`
+    )
+    if (!confirmed) return
+
+    try {
+      const { error } = await supabase
+        .from('organization_members')
+        .delete()
+        .eq('user_id', member.user_id)
+      if (error) throw error
+      await loadTeam()
+    } catch (error) {
+      console.error('Nie udało się usunąć pracownika:', error)
+      await showCustomAlert('Nie udało się usunąć pracownika.')
+    }
+  }
+
+  const revokeInvite = async (invite) => {
+    if (invite.status !== 'pending') return
+    const confirmed = await showCustomConfirm(`Anulować zaproszenie dla ${invite.email}?`)
+    if (!confirmed) return
+
+    try {
+      const { error } = await supabase
+        .from('organization_invitations')
+        .update({ status: 'revoked' })
+        .eq('id', invite.id)
+      if (error) throw error
+      await loadTeam()
+    } catch (error) {
+      console.error('Nie udało się anulować zaproszenia:', error)
+      await showCustomAlert('Nie udało się anulować zaproszenia.')
+    }
+  }
+
+  if (!authSession) return null
+
+  return (
+    <>
+      <div
+        className="settings-item settings-section-row"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setShowTeam(!showTeam)}
+      >
+        <div>
+          <span>👥 Pracownicy i dostęp</span>
+          {!showTeam && (
+            <div style={{ marginTop: '5px', fontSize: '13px', opacity: 0.7 }}>
+              {members.length} {members.length === 1 ? 'użytkownik' : 'użytkowników'}
+            </div>
+          )}
+        </div>
+        <span>{showTeam ? '⌄' : '›'}</span>
+      </div>
+
+      {showTeam && (
+        <div className="detail-card settings-detail-card">
+          <h2>Pracownicy i dostęp</h2>
+          <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.6 }}>
+            Dodawaj pracowników do swojej firmy i określaj, czy mają dostęp administratora, czy tylko dostęp pracownika.
+          </div>
+
+          {canManage && (
+            <form onSubmit={sendInvite} style={{ display: 'grid', gap: '10px', marginTop: '16px' }}>
+              <strong>Dodaj pracownika</strong>
+              <input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                type="email"
+                placeholder="pracownik@firma.pl"
+                style={settingsInputStyle}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
+                <select value={role} onChange={(event) => setRole(event.target.value)} style={settingsInputStyle}>
+                  <option value="employee">Pracownik</option>
+                  <option value="admin">Administrator</option>
+                </select>
+                <button className="save-button" type="submit" disabled={sending}>
+                  {sending ? 'Wysyłanie…' : 'Wyślij zaproszenie'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div style={{ display: 'grid', gap: '10px', marginTop: '18px' }}>
+            <strong>Zespół</strong>
+            {loading && <div style={{ fontSize: '13px', opacity: 0.65 }}>Wczytywanie…</div>}
+            {!loading && members.map((member) => (
+              <div key={member.user_id} style={teamRowStyle}>
+                <div style={{ minWidth: 0 }}>
+                  <strong>{member.display_name || member.email || 'Użytkownik'}</strong>
+                  <div style={{ fontSize: '12px', opacity: 0.65, marginTop: 3 }}>
+                    {member.email || 'Brak e-maila'} · {member.role === 'owner' ? 'Właściciel' : member.role === 'admin' ? 'Administrator' : 'Pracownik'}
+                  </div>
+                </div>
+                {canManage && member.user_id !== currentUserId && member.role !== 'owner' && (
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                    <select
+                      value={member.role}
+                      onChange={(event) => changeRole(member, event.target.value)}
+                      style={{ ...settingsInputStyle, minHeight: '38px', padding: '7px 10px', width: 'auto' }}
+                    >
+                      <option value="employee">Pracownik</option>
+                      <option value="admin">Administrator</option>
+                    </select>
+                    <button type="button" className="back-button" onClick={() => removeMember(member)}>
+                      Usuń
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {canManage && (
+            <div style={{ display: 'grid', gap: '10px', marginTop: '18px' }}>
+              <strong>Zaproszenia</strong>
+              {invitations.length === 0 && (
+                <div style={{ fontSize: '13px', opacity: 0.65 }}>Brak zaproszeń.</div>
+              )}
+              {invitations.map((invite) => (
+                <div key={invite.id} style={teamRowStyle}>
+                  <div>
+                    <strong>{invite.email}</strong>
+                    <div style={{ fontSize: '12px', opacity: 0.65, marginTop: 3 }}>
+                      {invite.role === 'admin' ? 'Administrator' : 'Pracownik'} · {invite.status === 'pending' ? 'Oczekuje' : invite.status === 'accepted' ? 'Zaakceptowane' : invite.status === 'revoked' ? 'Anulowane' : 'Wygasłe'}
+                    </div>
+                  </div>
+                  {invite.status === 'pending' && (
+                    <button type="button" className="back-button" onClick={() => revokeInvite(invite)}>
+                      Anuluj
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop: '14px', fontSize: '12px', opacity: 0.55, lineHeight: 1.5 }}>
+            Właściciel ma pełny dostęp. Administrator zarządza pracownikami, ale nie może przejąć właścicielstwa. Pracownik nie zarządza kontami ani ustawieniami firmy.
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+const settingsInputStyle = {
+  width: '100%',
+  minHeight: '46px',
+  boxSizing: 'border-box',
+  padding: '10px 12px',
+  borderRadius: '12px',
+  border: '1px solid #d7e1eb',
+  background: '#f8fbfe',
+  color: '#12234f',
+  fontSize: '14px',
+}
+
+const teamRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  padding: '12px 0',
+  borderBottom: '1px solid rgba(0,0,0,0.07)',
+}
 
 /* =====================================================
    DOLNE MENU

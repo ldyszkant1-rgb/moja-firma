@@ -2984,6 +2984,98 @@ function StartPage({
         </div>
       </section>
 
+      <section className="dashboard-today-section">
+        <div className="dashboard-today-header">
+          <div>
+            <div className="small-label">DZISIAJ</div>
+            <h2>Do zrobienia</h2>
+          </div>
+          <span className="dashboard-today-count">
+            ${pendingGeneral.length + activeJobs.reduce((sum, job) => sum + (Array.isArray(job.notes) ? job.notes.filter((task) => task && !task.done).length : 0), 0)}
+          </span>
+        </div>
+
+        <div className="dashboard-today-list">
+          {[
+            ...pendingGeneral.map((reminder) => ({
+              id: `general-${reminder.id}`,
+              type: 'general',
+              text: reminder.text,
+              date: reminder.date,
+              overdue: Boolean(reminder.date && reminder.date < today),
+              job: null,
+              taskId: null,
+            })),
+            ...activeJobs.flatMap((job) =>
+              (Array.isArray(job.notes) ? job.notes : [])
+                .filter((task) => task && !task.done)
+                .map((task) => ({
+                  id: `task-${job.id}-${task.id}`,
+                  type: 'job',
+                  text: task.text,
+                  date: task.date,
+                  overdue: Boolean(task.date && task.date < today),
+                  job,
+                  taskId: task.id,
+                }))
+            ),
+          ]
+            .sort((a, b) => {
+              if (a.overdue !== b.overdue) return a.overdue ? -1 : 1
+              if (!a.date && b.date) return 1
+              if (a.date && !b.date) return -1
+              return String(a.date || '').localeCompare(String(b.date || ''))
+            })
+            .slice(0, 8)
+            .map((item) => (
+              <div className={`dashboard-today-row${item.overdue ? ' dashboard-today-row-overdue' : ''}`} key={item.id}>
+                <button
+                  type="button"
+                  className="dashboard-today-check"
+                  onClick={() => {
+                    if (item.type === 'general') {
+                      onToggleGeneralReminder(
+                        pendingGeneral.find((reminder) => String(reminder.id) === String(item.id.replace('general-', '')))
+                      )
+                    } else {
+                      onToggleJobTask?.(item.job, item.taskId)
+                    }
+                  }}
+                  aria-label="Oznacz jako wykonane"
+                >
+                  {item.overdue ? '!' : '✓'}
+                </button>
+
+                <button
+                  type="button"
+                  className="dashboard-today-main"
+                  onClick={() => item.job ? onOpenJob(item.job) : document.querySelector('.general-reminders-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  <strong>{item.text || 'Bez nazwy zadania'}</strong>
+                  <span>
+                    {item.job
+                      ? `🔧 ${item.job.name}`
+                      : '🔔 Ogólne przypomnienie'}
+                    {item.date ? ` • ${item.overdue ? 'zaległe • ' : ''}${formatDate(item.date)}` : ''}
+                  </span>
+                </button>
+
+                <span className={item.type === 'job' ? 'dashboard-today-type dashboard-today-type-job' : 'dashboard-today-type'}>
+                  {item.type === 'job' ? 'REALIZACJA' : 'OGÓLNE'}
+                </span>
+              </div>
+            ))}
+
+          {pendingGeneral.length === 0 && activeJobs.every((job) => !(Array.isArray(job.notes) ? job.notes : []).some((task) => task && !task.done)) && (
+            <div className="dashboard-today-empty">
+              <span>✓</span>
+              <strong>Na dziś wszystko zrobione</strong>
+              <small>Brak otwartych zadań i przypomnień.</small>
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="dashboard-workday-section">
         <div className="dashboard-workday-header">
           <div>

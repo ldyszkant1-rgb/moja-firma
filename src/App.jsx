@@ -9074,7 +9074,7 @@ function FinancePage({
             <span>🧾</span>
             <div><strong>Faktury</strong><small>{invoicesToIssue} do wystawienia</small></div>
           </button>
-          <button type="button" className="finance-quick-action" onClick={() => onOpenJob?.()}>
+          <button type="button" className="finance-quick-action" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-jobs-tab'))}>
             <span>🔧</span>
             <div><strong>Realizacje</strong><small>{partiallyPaidReceivables} częściowo opłaconych</small></div>
           </button>

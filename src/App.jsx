@@ -2796,6 +2796,65 @@ function StartPage({
     <>
       <WeatherCard />
 
+      <section className="dashboard-command-center">
+        <div className="dashboard-command-heading">
+          <div>
+            <div className="small-label">CENTRUM STEROWANIA</div>
+            <h2>Dzisiaj w Aeroinstal</h2>
+          </div>
+          <span className="dashboard-command-date">{new Date().toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}</span>
+        </div>
+
+        <div className="dashboard-command-grid">
+          <button type="button" className="dashboard-command-action dashboard-command-action-primary" onClick={() => onJobs('active')}>
+            <span className="dashboard-command-action-icon">🔧</span>
+            <span><strong>Realizacje</strong><small>{activeJobs.length} w toku</small></span>
+          </button>
+
+          <button type="button" className="dashboard-command-action" onClick={onOpenFinance}>
+            <span className="dashboard-command-action-icon">💰</span>
+            <span><strong>Finanse</strong><small>{formatMoney(dashboardReceivablesNet)} do odzyskania</small></span>
+          </button>
+
+          <button type="button" className="dashboard-command-action" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-invoices'))}>
+            <span className="dashboard-command-action-icon">🧾</span>
+            <span><strong>Faktury</strong><small>{dashboardOpenInvoices} z należnością</small></span>
+          </button>
+
+          <button type="button" className="dashboard-command-action" onClick={onAddGeneralReminder}>
+            <span className="dashboard-command-action-icon">🔔</span>
+            <span><strong>Przypomnienie</strong><small>Dodaj zadanie</small></span>
+          </button>
+        </div>
+      </section>
+
+      <section className="dashboard-attention-section">
+        <div className="dashboard-attention-header">
+          <div>
+            <div className="small-label">WYMAGA UWAGI</div>
+            <h2>Co trzeba zrobić</h2>
+          </div>
+          <span className="dashboard-attention-count">{overdueGeneral.length + dashboardReceivables.filter((item) => item.overdue).length}</span>
+        </div>
+
+        <div className="dashboard-attention-grid">
+          <button type="button" className="dashboard-attention-card" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-finance'))}>
+            <span className="dashboard-attention-icon dashboard-attention-icon-warning">⏰</span>
+            <span><strong>{dashboardReceivables.filter((item) => item.overdue).length}</strong><small>przeterminowanych faktur</small></span>
+          </button>
+
+          <button type="button" className="dashboard-attention-card" onClick={() => onJobs('active')}>
+            <span className="dashboard-attention-icon">🔧</span>
+            <span><strong>{activeJobs.filter((job) => (Array.isArray(job.notes) ? job.notes : []).some((task) => task && !task.done)).length}</strong><small>realizacji z zadaniami</small></span>
+          </button>
+
+          <button type="button" className="dashboard-attention-card" onClick={() => document.querySelector('.general-reminders-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            <span className="dashboard-attention-icon">🔔</span>
+            <span><strong>{overdueGeneral.length}</strong><small>zaległych przypomnień</small></span>
+          </button>
+        </div>
+      </section>
+
       <div className="dashboard-grid">
         <DashboardCard
           icon="📋"

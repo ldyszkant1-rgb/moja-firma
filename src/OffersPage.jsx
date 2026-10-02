@@ -94,7 +94,7 @@ function printOffer(offer, client) {
         <main class="page">
           <div class="header">
             <div>
-              <div class="brand">AEROINSTAL</div>
+              <div class="brand">${escapeHtml(settings?.company?.shortName || settings?.company?.name || "Twoja firma")}</div>
               <div class="muted">Wentylacja • Montaż • Serwis</div>
             </div>
             <div class="meta">

@@ -8464,6 +8464,9 @@ function FinancePage({
   const totalReceivables = receivables.reduce((sum, item) => sum + item.remaining, 0)
   const overdueReceivables = receivables.filter((item) => item.isOverdue).reduce((sum, item) => sum + item.remaining, 0)
 
+  const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
+  const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
+
   const splitAmount = share
 
   // Spływ płatności liczymy w tej samej bazie co należności:
@@ -9060,6 +9063,21 @@ function FinancePage({
             <strong>{formatMoney(splitAmount)}</strong>
             <small>Na osobę</small>
           </div>
+        </div>
+
+        <div className="finance-quick-actions">
+          <button type="button" className="finance-quick-action finance-quick-action-primary" onClick={() => setShowForm(true)}>
+            <span>＋</span>
+            <div><strong>Dodaj koszt</strong><small>Zapisz nowy wydatek</small></div>
+          </button>
+          <button type="button" className="finance-quick-action" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-invoices'))}>
+            <span>🧾</span>
+            <div><strong>Faktury</strong><small>{invoicesToIssue} do wystawienia</small></div>
+          </button>
+          <button type="button" className="finance-quick-action" onClick={() => onOpenJob?.()}>
+            <span>🔧</span>
+            <div><strong>Realizacje</strong><small>{partiallyPaidReceivables} częściowo opłaconych</small></div>
+          </button>
         </div>
 
         <div className="finance-command-grid">

@@ -518,6 +518,9 @@ class JobsErrorBoundary extends React.Component {
 
 function App() {
 
+  const [deviceId] = useState(() => getOrCreateDeviceId())
+  const [deviceUser, setDeviceUser] = useState(() => getLocalDeviceUser())
+  const [deviceLoading, setDeviceLoading] = useState(true)
   const [authSession, setAuthSession] = useState(null)
   const [organizationMembers, setOrganizationMembers] = useState([])
   const [authChecked, setAuthChecked] = useState(false)
@@ -532,7 +535,6 @@ function App() {
       if (!mounted) return
       const session = data.session || null
       setAuthSession(session)
-      if (session) markAuthModeUsed()
       setAuthChecked(true)
       if (session) {
         const { data: membership } = await supabase.from('organization_members').select('organization_id').limit(1).maybeSingle()
@@ -557,7 +559,6 @@ function App() {
       const nextSession = session || null
       setAuthSession(nextSession)
       setAuthRecovery(_event === 'PASSWORD_RECOVERY')
-      if (nextSession) markAuthModeUsed()
       setAuthChecked(true)
 
       if (!nextSession) {
@@ -689,6 +690,62 @@ function App() {
 
 
 
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadDeviceUser = async () => {
+      try {
+        const remoteUser = await getDeviceUserFromSupabase(deviceId)
+        if (cancelled) return
+
+        if (remoteUser && DEVICE_USERS.includes(remoteUser)) {
+          saveLocalDeviceUser(remoteUser)
+          setDeviceUser(remoteUser)
+        } else {
+          try {
+            localStorage.removeItem(DEVICE_USER_KEY)
+          } catch (error) {
+            console.error('Nie udało się wyczyścić lokalnego użytkownika urządzenia:', error)
+          }
+          setDeviceUser(null)
+        }
+      } catch (error) {
+        console.error('Nie udało się sprawdzić przypisania urządzenia:', error)
+      } finally {
+        if (!cancelled) setDeviceLoading(false)
+      }
+    }
+
+    loadDeviceUser()
+    return () => { cancelled = true }
+  }, [deviceId])
+
+  const handleDeviceUserSelect = async (user) => {
+    if (!DEVICE_USERS.includes(user) || !deviceId || deviceLoading) return
+
+    try {
+      setDeviceLoading(true)
+      const assignedUser = await claimDeviceInSupabase(deviceId, user)
+
+      if (!DEVICE_USERS.includes(assignedUser)) {
+        throw new Error('Nieprawidłowe przypisanie użytkownika urządzenia.')
+      }
+
+      saveLocalDeviceUser(assignedUser)
+      setDeviceUser(assignedUser)
+    } catch (error) {
+      console.error('Nie udało się przypisać urządzenia:', error)
+      await showCustomAlert(
+        error?.message
+          ? `Nie udało się przypisać telefonu.\\n\\n${error.message}`
+          : 'Nie udało się przypisać telefonu.'
+      )
+    } finally {
+      setDeviceLoading(false)
+    }
+  }
+
   const [settings, setSettings] =
     useState(() => {
 
@@ -700,7 +757,9 @@ function App() {
           const parsed = JSON.parse(savedSettings)
           return {
             users: {
-              active: '',
+              first: 'Łukasz',
+              second: 'Paweł',
+              active: deviceUser || '',
             },
             rates: parsed.rates || {
               mb: '100',
@@ -729,7 +788,9 @@ function App() {
 
       return {
         users: {
-          active: '',
+          first: 'Łukasz',
+          second: 'Paweł',
+          active: deviceUser || '',
         },
         rates: {
           mb: '100',
@@ -2312,7 +2373,7 @@ function App() {
     return () => { cancelled = true }
   }, [authSession])
 
-  if (!authChecked || !authOrganizationChecked) {
+  if (!authChecked || !authOrganizationChecked || (!authSession && deviceLoading)) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f5f9fd', color: '#68758a' }}>
         Sprawdzam dostęp…
@@ -2320,8 +2381,30 @@ function App() {
     )
   }
 
-  if (!authSession) {
-    return <AuthPage recovery={authRecovery} />
+  if (!authSession && !deviceUser) {
+    return (
+      <div className="device-setup-overlay">
+        <div className="device-setup-card" role="dialog" aria-modal="true">
+          <div className="device-setup-icon">📱</div>
+          <div className="small-label">PIERWSZE URUCHOMIENIE</div>
+          <h2>Kto korzysta z tego telefonu?</h2>
+          <p>
+            Wybierz użytkownika urządzenia. Po wyborze telefon zostanie przypisany i przy kolejnych uruchomieniach aplikacja rozpozna użytkownika automatycznie.
+          </p>
+          <div className="device-setup-buttons">
+            <button type="button" disabled={deviceLoading} onClick={() => handleDeviceUserSelect('Łukasz')}>
+              👤 Łukasz
+            </button>
+            <button type="button" disabled={deviceLoading} onClick={() => handleDeviceUserSelect('Paweł')}>
+              👤 Paweł
+            </button>
+          </div>
+          <div className="device-setup-device">
+            {deviceLoading ? 'Zapisywanie przypisania urządzenia…' : 'Ten wybór zostanie zapisany dla tego urządzenia.'}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (authSession && !authOrganizationId) {

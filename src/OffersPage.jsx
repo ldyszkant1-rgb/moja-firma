@@ -286,7 +286,7 @@ export default function OffersPage({
           </label>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+        <div className="offer-editor-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
           <button type="button" className="save-button" onClick={save}>Zapisz ofertę</button>
           <button type="button" className="back-button" onClick={() => setEditing(null)}>Anuluj</button>
         </div>
@@ -377,7 +377,7 @@ export default function OffersPage({
                 </div>
               </button>
 
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 16px 16px' }}>
+              <div className="offer-card-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 16px 16px' }}>
                 <button type="button" className="edit-button" onClick={() => setEditing(offer)}>Edytuj</button>
                 <button
                   type="button"

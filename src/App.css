@@ -14007,3 +14007,312 @@ section {
     display: none;
   }
 }
+
+
+/* =====================================================
+   OFERTY — spójny widok modułu + mobile
+   ===================================================== */
+.offers-page .page-heading {
+  align-items: center;
+}
+
+.offers-page .page-heading h1 {
+  margin-bottom: 0;
+}
+
+.offers-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.offer-summary-card {
+  border: 1px solid #dfe7ef;
+  background: #fff;
+  border-radius: 15px;
+  padding: 13px 14px;
+  text-align: left;
+  color: #607087;
+  cursor: pointer;
+  box-shadow: 0 5px 16px rgba(20, 52, 86, .045);
+  transition: .15s ease;
+}
+
+.offer-summary-card span {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.offer-summary-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #12234f;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.offer-summary-card.active {
+  border-color: #0786e6;
+  background: #f1f8ff;
+  box-shadow: 0 7px 20px rgba(7, 134, 230, .10);
+}
+
+.offers-page .jobs {
+  display: grid;
+  gap: 10px;
+}
+
+.offers-page .job-card {
+  overflow: hidden;
+}
+
+.offers-page .job-card-main {
+  width: 100%;
+  display: block;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.offers-page .job-card-identity-text strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offers-page .job-card-identity-text > span:not(.job-card-client-name) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offers-page .job-card-client-name {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.offers-page .offer-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 16px 14px;
+}
+
+.offers-page .offer-card-actions button {
+  min-height: 36px;
+}
+
+.offers-page .offer-total-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #d9e9f6;
+  border-radius: 14px;
+  background: #f3f9fe;
+  color: #526174;
+}
+
+.offers-page .offer-total-box strong {
+  color: #0786e6;
+  font-size: 22px;
+}
+
+.offers-page .detail-quantities .quantity-box {
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .offers-page .page-heading {
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .offers-page .page-heading h1 {
+    font-size: 24px;
+  }
+
+  .offers-page .page-heading .edit-button {
+    min-height: 38px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .offers-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .offer-summary-card {
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  .offer-summary-card span {
+    font-size: 9px;
+  }
+
+  .offer-summary-card strong {
+    margin-top: 3px;
+    font-size: 18px;
+  }
+
+  .offers-page .detail-card {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .offers-page .jobs {
+    gap: 7px;
+  }
+
+  .offers-page .job-card {
+    border-radius: 14px;
+  }
+
+  .offers-page .job-card-main {
+    padding: 10px 11px 0;
+  }
+
+  .offers-page .job-card-topline {
+    gap: 8px;
+  }
+
+  .offers-page .job-card-photo {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .offers-page .job-card-identity-text strong {
+    font-size: 13px;
+  }
+
+  .offers-page .job-card-identity-text > span:not(.job-card-client-name) {
+    font-size: 10px;
+  }
+
+  .offers-page .job-card-client-name {
+    font-size: 9px;
+  }
+
+  .offers-page .status {
+    font-size: 8px;
+    padding: 5px 7px;
+  }
+
+  .offers-page .offer-card-actions {
+    gap: 5px;
+    padding: 0 10px 10px;
+  }
+
+  .offers-page .offer-card-actions button {
+    min-height: 32px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    font-size: 10px;
+  }
+
+  .offers-page .offer-total-box {
+    padding: 10px 12px;
+    border-radius: 11px;
+  }
+
+  .offers-page .offer-total-box strong {
+    font-size: 18px;
+  }
+
+  .offers-page .new-job-basic-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  .offers-page .detail-quantities {
+    gap: 6px;
+  }
+
+  .offers-page .quantity-box {
+    padding: 8px !important;
+    border-radius: 11px !important;
+  }
+
+  .offers-page .quantity-box input {
+    min-height: 35px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .offers-page .note-text-input {
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  .offers-page .save-button,
+  .offers-page .back-button {
+    min-height: 39px;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .offers-page > .save-button,
+  .offers-page > .back-button {
+    margin: 0;
+  }
+
+  .offers-page .offer-editor-actions {
+    position: sticky;
+    bottom: 8px;
+    z-index: 15;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    padding: 7px;
+    margin-top: 8px !important;
+    border: 1px solid #dce6ef;
+    border-radius: 13px;
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 10px 25px rgba(22,54,88,.12);
+    backdrop-filter: blur(8px);
+  }
+}
+
+@media (max-width: 380px) {
+  .offers-page .page-heading h1 {
+    font-size: 22px;
+  }
+
+  .offers-page .page-heading .edit-button {
+    font-size: 9px;
+    padding-inline: 8px;
+  }
+
+  .offer-summary-card strong {
+    font-size: 17px;
+  }
+
+  .offers-page .offer-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .offers-page .offer-card-actions .save-button {
+    grid-column: 1 / -1;
+  }
+}

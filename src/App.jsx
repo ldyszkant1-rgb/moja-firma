@@ -8547,11 +8547,23 @@ function FinancePage({
   return (
     <div className="sub-page">
 
-      <div className="page-heading">
+      <div className="page-heading finance-page-heading">
         <div>
           <div className="small-label">{settings?.company?.shortName || 'Aeroinstal'}</div>
           <h1>Finanse</h1>
+          <div className="finance-page-subtitle">Kontrola pieniędzy, należności i kosztów</div>
         </div>
+
+        {!showForm && !editingCostId && (
+          <button
+            type="button"
+            className="finance-header-add-button"
+            onClick={() => setShowForm(true)}
+          >
+            <span aria-hidden="true">+</span>
+            Dodaj koszt
+          </button>
+        )}
       </div>
 
       <section className="detail-card receivables-card">

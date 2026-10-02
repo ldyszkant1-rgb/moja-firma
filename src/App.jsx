@@ -2437,6 +2437,8 @@ function App() {
 
             allJobPayments={allJobPayments}
 
+            onOpenFinance={() => setActivePage('finance')}
+
             clients={clients}
 
             onOpenJob={
@@ -2618,6 +2620,7 @@ function StartPage({
   invoices = [],
   allJobPayments = [],
   onOpenJob,
+  onOpenFinance,
   onJobs,
   generalReminders,
   generalRemindersLoading,
@@ -2656,12 +2659,6 @@ function StartPage({
   )
 
   const today = getTodayString()
-
-  const dashboardInvoiceIds = new Set(
-    invoices
-      .filter((invoice) => invoice.status !== 'Anulowana')
-      .map((invoice) => String(invoice.id))
-  )
 
   const dashboardPaidByInvoice = new Map()
 
@@ -2824,7 +2821,7 @@ function StartPage({
           <button
             type="button"
             className="dashboard-finance-card dashboard-finance-card-primary"
-            onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-finance'))}
+            onClick={onOpenFinance}
           >
             <span className="dashboard-finance-icon">💰</span>
             <span className="dashboard-finance-copy">

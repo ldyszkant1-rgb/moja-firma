@@ -64,7 +64,7 @@ function ClientForm({ value, onChange, onCancel, onSave, saving }) {
   )
 }
 
-export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfirm, onOpenJob }) {
+export default function ClientsPage({ clients, jobs, settings = {}, onRefresh, onAlert, onConfirm, onOpenJob }) {
   const [search, setSearch] = useState('')
   const [editingClient, setEditingClient] = useState(null)
   const [form, setForm] = useState(EMPTY_CLIENT)
@@ -176,7 +176,7 @@ export default function ClientsPage({ clients, jobs, onRefresh, onAlert, onConfi
         <div className="clients-summary-icon">👥</div>
         <div>
           <strong>{clients.length}</strong>
-          <span>klientów w Aeroinstal</span>
+          <span>klientów w {settings?.company?.shortName || 'Twoja firma'}</span>
         </div>
       </div>
 

@@ -297,7 +297,9 @@ export default function AuthPage() {
               ? 'Przetwarzanie…'
               : mode === 'login'
                 ? 'Zaloguj się'
-                : 'Utwórz konto i firmę'}
+                : mode === 'setup'
+                  ? 'Utwórz firmę'
+                  : 'Utwórz konto i firmę'}
           </button>
         </form>
 

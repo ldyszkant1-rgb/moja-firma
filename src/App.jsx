@@ -619,6 +619,7 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [authOrganizationId, setAuthOrganizationId] = useState(null)
   const [authOrganizationChecked, setAuthOrganizationChecked] = useState(false)
+  const [authRecovery, setAuthRecovery] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -651,6 +652,7 @@ function App() {
       if (!mounted) return
       const nextSession = session || null
       setAuthSession(nextSession)
+      setAuthRecovery(_event === 'PASSWORD_RECOVERY')
       if (nextSession) markAuthModeUsed()
       setAuthChecked(true)
 
@@ -2525,11 +2527,11 @@ function App() {
   }
 
   if (!authSession && (!deviceUser || authModeUsed)) {
-    return <AuthPage />
+    return <AuthPage recovery={authRecovery} />
   }
 
   if (authSession && !authOrganizationId) {
-    return <AuthPage session={authSession} />
+    return <AuthPage session={authSession} recovery={authRecovery} />
   }
 
 return (

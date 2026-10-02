@@ -636,10 +636,28 @@ function App() {
       }
     })
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return
-      setAuthSession(session || null)
+      const nextSession = session || null
+      setAuthSession(nextSession)
       setAuthChecked(true)
+
+      if (!nextSession) {
+        setAuthOrganizationId(null)
+        setAuthOrganizationChecked(true)
+        return
+      }
+
+      const { data: membership } = await supabase
+        .from('organization_members')
+        .select('organization_id')
+        .limit(1)
+        .maybeSingle()
+
+      if (mounted) {
+        setAuthOrganizationId(membership?.organization_id || null)
+        setAuthOrganizationChecked(true)
+      }
     })
 
     return () => {

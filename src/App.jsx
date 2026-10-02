@@ -693,9 +693,9 @@ function App() {
     useState(() => {
 
       try {
-        const savedSettings = localStorage.getItem(
-          'aeroinstal_settings'
-        )
+        const savedSettings =
+          localStorage.getItem('moja_firma_settings') ||
+          localStorage.getItem('aeroinstal_settings')
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings)
           return {
@@ -10072,7 +10072,7 @@ function SettingsPage({
       }
 
       localStorage.setItem(
-        'aeroinstal_settings',
+        'moja_firma_settings',
         JSON.stringify(backup.settings)
       )
 

@@ -12687,3 +12687,299 @@ section {
     margin-right: 9px !important;
   }
 }
+
+
+/* =========================================================
+   SZCZEGÓŁ REALIZACJI — HIERARCHIA I MOBILE POLISH
+   ========================================================= */
+
+.sub-page > .small-label + h1 {
+  margin-top: 0;
+}
+
+.sub-page > .job-location {
+  overflow-wrap: anywhere;
+}
+
+.job-stage-card {
+  position: relative;
+}
+
+.job-stage-card .detail-title {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-stage-card .detail-title h2 {
+  margin: 0;
+  text-align: left;
+}
+
+.job-stage-card .job-stage-steps {
+  width: 100%;
+}
+
+.job-stage-card .job-stage-pill {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .sub-page {
+    padding-top: 10px;
+  }
+
+  .details-top {
+    margin: 0 2px 12px !important;
+  }
+
+  .sub-page > .small-label {
+    margin-bottom: 4px !important;
+    font-size: 9px !important;
+    letter-spacing: 1.6px !important;
+  }
+
+  .sub-page > h1 {
+    max-width: 100%;
+    padding: 0 8px;
+    overflow-wrap: anywhere;
+    font-size: 27px !important;
+    line-height: 1.08 !important;
+  }
+
+  .job-location {
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
+    padding: 0 10px;
+    font-size: 14px !important;
+    line-height: 1.25;
+  }
+
+  .job-client-detail {
+    margin-top: 5px !important;
+    margin-bottom: 8px;
+    font-size: 9px !important;
+  }
+
+  .completed-date {
+    margin: 7px auto 9px !important;
+    padding: 5px 10px !important;
+    font-size: 10px !important;
+  }
+
+  .detail-card {
+    margin-bottom: 10px !important;
+    padding: 13px 11px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 14px rgba(30,70,105,.045) !important;
+  }
+
+  .detail-card h2 {
+    margin-bottom: 12px !important;
+    font-size: 18px !important;
+  }
+
+  .job-stage-card .detail-title {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .job-stage-card .detail-title h2 {
+    text-align: left !important;
+    font-size: 17px !important;
+  }
+
+  .job-stage-card .job-stage-pill {
+    min-height: 26px !important;
+    padding: 5px 8px !important;
+    font-size: 9px !important;
+  }
+
+  .job-stage-steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    margin-top: 11px !important;
+  }
+
+  .job-stage-step {
+    padding: 6px 2px !important;
+    border-radius: 9px !important;
+  }
+
+  .job-stage-step span {
+    width: 20px !important;
+    height: 20px !important;
+    margin-bottom: 3px !important;
+    font-size: 9px !important;
+  }
+
+  .job-stage-step strong {
+    font-size: 7px !important;
+    line-height: 1.15 !important;
+  }
+
+  .job-stage-select-label {
+    margin-top: 9px !important;
+  }
+
+  .job-stage-select-label select {
+    min-height: 42px !important;
+    font-size: 13px !important;
+  }
+
+  .detail-card .progress-bar.large-progress,
+  .large-progress {
+    height: 12px !important;
+    margin-top: 9px !important;
+  }
+
+  .detail-title strong {
+    font-size: 27px !important;
+  }
+
+  .detail-quantities {
+    gap: 6px !important;
+  }
+
+  .quantity-box {
+    padding: 10px 5px !important;
+    border-radius: 11px !important;
+  }
+
+  .quantity-box span {
+    font-size: 11px !important;
+  }
+
+  .quantity-box strong {
+    margin-top: 5px !important;
+    font-size: 20px !important;
+  }
+
+  .quantity-box input {
+    padding: 5px 2px !important;
+    border-radius: 7px !important;
+    font-size: 17px !important;
+  }
+
+  .finance-row {
+    min-height: 56px !important;
+    padding: 9px 0 !important;
+    gap: 7px !important;
+  }
+
+  .finance-row > div > strong {
+    font-size: 15px !important;
+  }
+
+  .finance-row small {
+    margin-top: 3px !important;
+    font-size: 10px !important;
+  }
+
+  .finance-row > strong {
+    font-size: 15px !important;
+  }
+
+  .rate-input {
+    width: 70px !important;
+    padding: 7px 6px !important;
+    font-size: 14px !important;
+  }
+
+  .job-footer {
+    margin-top: 3px !important;
+    padding: 12px 0 0 !important;
+  }
+
+  .job-footer span {
+    font-size: 12px !important;
+  }
+
+  .job-footer strong {
+    font-size: 20px !important;
+  }
+
+  .document-row {
+    padding: 11px 0 !important;
+  }
+
+  .document-row strong {
+    font-size: 13px !important;
+  }
+
+  .document-button,
+  .document-open,
+  .document-remove {
+    font-size: 11px !important;
+    padding: 8px 9px !important;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .photo-item {
+    border-radius: 10px !important;
+  }
+
+  .photo-item > div {
+    gap: 4px !important;
+    flex-wrap: wrap;
+  }
+
+  .photo-item .document-button {
+    padding: 6px 5px !important;
+    font-size: 9px !important;
+  }
+
+  .notes-header {
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 11px !important;
+  }
+
+  .notes-header h2 {
+    text-align: left !important;
+    font-size: 17px !important;
+  }
+
+  .note-add-button {
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 10px !important;
+  }
+
+  .note-form-modern {
+    padding: 11px !important;
+    margin-bottom: 11px !important;
+    border-radius: 13px !important;
+  }
+
+  .note-form-modern .note-text-input {
+    min-height: 45px !important;
+    padding: 10px 11px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .sub-page > h1 {
+    font-size: 24px !important;
+  }
+
+  .detail-card {
+    padding: 11px 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .job-stage-step strong {
+    font-size: 6.5px !important;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

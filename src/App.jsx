@@ -2593,6 +2593,21 @@ function App() {
             clients={clients}
             invoices={invoices}
             onOpenJob={setSelectedJob}
+            onOpenJobs={(tab = 'all') => {
+              setSelectedJob(null)
+              setInvoiceJobToCreate(null)
+              setInvoiceToOpen(null)
+              setActivePage('jobs')
+              window.setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('aeroinstal-open-jobs-tab', { detail: tab }))
+              }, 0)
+            }}
+            onOpenInvoices={() => {
+              setSelectedJob(null)
+              setInvoiceJobToCreate(null)
+              setInvoiceToOpen(null)
+              setActivePage('invoices')
+            }}
             onOpenInvoice={(invoiceId) => {
               if (!invoiceId) return
               setSelectedJob(null)
@@ -7568,6 +7583,8 @@ function FinancePage({
   invoices = [],
   onOpenJob,
   onOpenInvoice,
+  onOpenJobs,
+  onOpenInvoices,
 }) {
 
   const categoryOptions =
@@ -8767,11 +8784,11 @@ function FinancePage({
             <span>＋</span>
             <div><strong>Dodaj koszt</strong><small>Zapisz nowy wydatek</small></div>
           </button>
-          <button type="button" className="finance-quick-action" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-invoices'))}>
+          <button type="button" className="finance-quick-action" onClick={() => onOpenInvoices?.()}>
             <span>🧾</span>
             <div><strong>Faktury</strong><small>{invoicesToIssue} do wystawienia</small></div>
           </button>
-          <button type="button" className="finance-quick-action" onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-jobs-tab'))}>
+          <button type="button" className="finance-quick-action" onClick={() => onOpenJobs?.('active')}>
             <span>🔧</span>
             <div><strong>Realizacje</strong><small>{partiallyPaidReceivables} częściowo opłaconych</small></div>
           </button>
@@ -9637,7 +9654,7 @@ function SettingsPage({
   }
 
   const cancelRates = () => {
-    setDraftRates({ ...settings.rates })
+    setDraftRates({ ...currentRates })
     setEditingRates(false)
   }
 
@@ -9648,6 +9665,7 @@ function SettingsPage({
     regon: settings.company?.regon || '385589939',
     address: settings.company?.address || 'ul. Cicha 4A/9, 83-000 Pruszcz Gdański',
     email: settings.company?.email || 'Aeroinstal@wp.pl',
+    bankAccount: settings.company?.bankAccount || '',
   }
 
   const [showCompany, setShowCompany] = useState(false)
@@ -10176,6 +10194,7 @@ function SettingsPage({
                 <div>REGON: {company.regon || '—'}</div>
                 <div>{company.address || '—'}</div>
                 <div>E-mail: {company.email || '—'}</div>
+                <div>Rachunek: {company.bankAccount || '—'}</div>
               </div>
             )}
           </div>

@@ -607,17 +607,33 @@ function App() {
   const [deviceLoading, setDeviceLoading] = useState(true)
   const [authSession, setAuthSession] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [authOrganizationId, setAuthOrganizationId] = useState(null)
+  const [authOrganizationChecked, setAuthOrganizationChecked] = useState(false)
 
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return
-      setAuthSession(data.session || null)
+      const session = data.session || null
+      setAuthSession(session)
       setAuthChecked(true)
+      if (session) {
+        const { data: membership } = await supabase.from('organization_members').select('organization_id').limit(1).maybeSingle()
+        if (mounted) {
+          setAuthOrganizationId(membership?.organization_id || null)
+          setAuthOrganizationChecked(true)
+        }
+      } else {
+        setAuthOrganizationId(null)
+        setAuthOrganizationChecked(true)
+      }
     }).catch((error) => {
       console.error('Nie udało się sprawdzić sesji logowania:', error)
-      if (mounted) setAuthChecked(true)
+      if (mounted) {
+        setAuthChecked(true)
+        setAuthOrganizationChecked(true)
+      }
     })
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -2470,7 +2486,7 @@ function App() {
     return () => { cancelled = true }
   }, [authSession])
 
-  if (!authChecked || (deviceLoading && !authSession)) {
+  if (!authChecked || !authOrganizationChecked || (deviceLoading && !authSession)) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f5f9fd', color: '#68758a' }}>
         Sprawdzam dostęp…
@@ -2480,6 +2496,10 @@ function App() {
 
   if (!authSession && !deviceUser) {
     return <AuthPage />
+  }
+
+  if (authSession && !authOrganizationId) {
+    return <AuthPage session={authSession} />
   }
 
 return (

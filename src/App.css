@@ -10799,3 +10799,19 @@ section {
 .invoice-items-head{grid-template-columns:2.3fr .8fr .7fr 1fr .7fr 1fr 1fr 34px}
 
 .invoice-item-row{grid-template-columns:2.3fr .8fr .7fr 1fr .7fr 1fr 1fr 34px}
+
+.invoice-payment-history{margin-top:16px;padding-top:14px;border-top:1px solid #e5ebf0}
+.invoice-payment-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eef2f5}
+.invoice-payment-history-row>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.invoice-payment-history-row strong{color:#12234f}
+.invoice-payment-history-row span{font-size:12px;color:#718096;overflow-wrap:anywhere}
+.invoice-add-payment{margin-top:16px;padding-top:14px;border-top:1px solid #e5ebf0}
+.invoice-payment-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.invoice-payment-form input{min-height:44px;border:1px solid #d7e1eb;border-radius:12px;padding:0 12px;box-sizing:border-box;background:#fff;color:#12234f}
+.invoice-payment-form input:nth-child(3){grid-column:1/-1}
+.invoice-payment-form button{width:100%;min-height:46px;grid-column:1/-1}
+@media(max-width:700px){
+ .invoice-payment-form{grid-template-columns:1fr}
+ .invoice-payment-form input:nth-child(3){grid-column:auto}
+ .invoice-payment-form button{grid-column:auto}
+}

@@ -1804,8 +1804,8 @@ function App() {
       return
     }
 
-    const confirmed = window.confirm(
-      `Czy przenieść realizację „${jobToDelete.name || ''}” do kosza?\n\nRealizacja zostanie ukryta z listy, ale będzie można ją przywrócić przez 30 dni.`
+    const confirmed = await showCustomConfirm(
+      `Czy przenieść realizację „${jobToDelete.name || ''}” do kosza?\n\nRealizacja zostanie ukryta z listy. Zwykłe realizacje są automatycznie czyszczone po 30 dniach, natomiast realizacje z fakturą lub płatnościami pozostają zachowane.`
     )
 
     if (!confirmed) {
@@ -1886,7 +1886,7 @@ function App() {
       return
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await showCustomConfirm(
       `Przywrócić realizację „${jobToRestore.name || ''}” do aktywnych?`
     )
 
@@ -1961,8 +1961,8 @@ function App() {
       return
     }
 
-    const confirmed = window.confirm(
-      `Usunąć realizację „${jobToDelete.name || ''}” na zawsze?\n\nTej operacji nie będzie można cofnąć.`
+    const confirmed = await showCustomConfirm(
+      `Usunąć realizację „${jobToDelete.name || ''}” na zawsze?\n\nTej operacji nie będzie można cofnąć. Realizacje z fakturą lub historią płatności nie można trwale usunąć.`
     )
 
     if (!confirmed) {
@@ -2136,8 +2136,10 @@ function App() {
       mainPhoto: null,
     }
 
+    let savedJob = null
+
     try {
-      const savedJob = await createSupabaseJob(job)
+      savedJob = await createSupabaseJob(job)
       const savedOffer = await updateOffer({
         ...offer,
         convertedJobId: savedJob.id,
@@ -2147,6 +2149,16 @@ function App() {
       setOffers((current) => current.map((item) => String(item.id) === String(savedOffer.id) ? savedOffer : item))
       showCustomAlert('Oferta została zamieniona na realizację. Realizacja trafiła do realizacji.')
     } catch (error) {
+      // Jeżeli realizacja została utworzona, ale aktualizacja oferty się nie udała,
+      // usuwamy osieroconą realizację. Na tym etapie nie ma jeszcze faktury ani płatności.
+      if (savedJob?.id) {
+        try {
+          await hardDeleteSupabaseJob(savedJob.id)
+        } catch (rollbackError) {
+          console.error('Nie udało się wycofać osieroconej realizacji po błędzie konwersji oferty:', rollbackError)
+        }
+      }
+
       console.error('Nie udało się utworzyć realizacje z oferty:', error)
       showCustomAlert('Nie udało się utworzyć realizacje z oferty. Spróbuj ponownie.')
     }

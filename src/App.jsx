@@ -699,15 +699,25 @@ function App() {
         const remoteUser = await getDeviceUserFromSupabase(deviceId)
         if (cancelled) return
 
+        const localUser = getLocalDeviceUser()
+
         if (remoteUser && DEVICE_USERS.includes(remoteUser)) {
           saveLocalDeviceUser(remoteUser)
           setDeviceUser(remoteUser)
-        } else {
+        } else if (localUser && DEVICE_USERS.includes(localUser)) {
+          // Zachowujemy dotychczasowe przypisanie telefonu. Po odtworzeniu
+          // tabeli device_users nie zmuszamy istniejącego urządzenia do
+          // ponownego wyboru użytkownika.
+          setDeviceUser(localUser)
+
           try {
-            localStorage.removeItem(DEVICE_USER_KEY)
+            await supabase
+              .from('device_users')
+              .upsert({ device_id: deviceId, user_name: localUser }, { onConflict: 'device_id' })
           } catch (error) {
-            console.error('Nie udało się wyczyścić lokalnego użytkownika urządzenia:', error)
+            console.error('Nie udało się odtworzyć przypisania urządzenia:', error)
           }
+        } else {
           setDeviceUser(null)
         }
       } catch (error) {

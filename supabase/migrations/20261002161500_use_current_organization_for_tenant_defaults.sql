@@ -1,0 +1,9 @@
+alter table public.jobs alter column organization_id set default private.current_organization_id();
+alter table public.finance alter column organization_id set default private.current_organization_id();
+alter table public.general_reminders alter column organization_id set default private.current_organization_id();
+alter table public.job_payments alter column organization_id set default private.current_organization_id();
+alter table public.partner_settlements alter column organization_id set default private.current_organization_id();
+alter table public.partner_transfers alter column organization_id set default private.current_organization_id();
+alter table public.clients alter column organization_id set default private.current_organization_id();
+alter table public.offers alter column organization_id set default private.current_organization_id();
+alter table public.invoices alter column organization_id set default private.current_organization_id();

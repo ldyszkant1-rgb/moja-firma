@@ -10052,7 +10052,7 @@ function SettingsPage({
 
       const offerRows = (backup.offers || []).map((offer) => ({
         id: offer.id,
-        organization_id: offer.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        organization_id: offer.organizationId || authOrganizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
         client_id: offer.clientId || null,
         offer_number: offer.offerNumber || null,
         name: offer.name || '',
@@ -10084,7 +10084,7 @@ function SettingsPage({
 
       const clientRows = (backup.clients || []).map((item) => ({
         id: item.id,
-        organization_id: item.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        organization_id: item.organizationId || authOrganizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
         name: item.name || '',
         nip: item.nip || null,
         address: item.address || null,
@@ -10106,7 +10106,7 @@ function SettingsPage({
 
       const invoiceRows = (backup.invoices || []).map((item) => ({
         id: item.id,
-        organization_id: item.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        organization_id: item.organizationId || authOrganizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
         job_id: item.jobId || null,
         client_id: item.clientId || null,
         invoice_number: item.invoiceNumber || '',

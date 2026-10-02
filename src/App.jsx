@@ -2991,7 +2991,7 @@ function StartPage({
             <h2>Do zrobienia</h2>
           </div>
           <span className="dashboard-today-count">
-            ${pendingGeneral.length + activeJobs.reduce((sum, job) => sum + (Array.isArray(job.notes) ? job.notes.filter((task) => task && !task.done).length : 0), 0)}
+            {pendingGeneral.length + activeJobs.reduce((sum, job) => sum + (Array.isArray(job.notes) ? job.notes.filter((task) => task && !task.done).length : 0), 0)}
           </span>
         </div>
 

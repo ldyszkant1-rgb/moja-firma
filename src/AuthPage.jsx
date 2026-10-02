@@ -301,37 +301,37 @@ export default function AuthPage() {
           </button>
         </form>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '18px',
-            paddingTop: '18px',
-            borderTop: '1px solid #e8eef5',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              resetMessages()
-              setMode((current) => (current === 'login' ? 'register' : 'login'))
-            }}
+        {mode !== 'setup' && (
+          <div
             style={{
-              border: 'none',
-              background: 'transparent',
-              color: '#087fce',
-              fontWeight: 800,
-              cursor: 'pointer',
-              padding: '8px',
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: '18px',
+              paddingTop: '18px',
+              borderTop: '1px solid #e8eef5',
             }}
           >
-            {mode === 'login'
-              ? 'Nie masz konta? Utwórz firmę'
-              : mode === 'setup'
-                ? ''
+            <button
+              type="button"
+              onClick={() => {
+                resetMessages()
+                setMode((current) => (current === 'login' ? 'register' : 'login'))
+              }}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: '#087fce',
+                fontWeight: 800,
+                cursor: 'pointer',
+                padding: '8px',
+              }}
+            >
+              {mode === 'login'
+                ? 'Nie masz konta? Utwórz firmę'
                 : 'Masz już konto? Zaloguj się'}
-          </button>
-        </div>
+            </button>
+          </div>
+        )}
       </section>
     </main>
   )

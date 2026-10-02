@@ -10612,6 +10612,136 @@ section {
 }
 
 
+
+/* =========================================================
+   FINANSE — NAGŁÓWEK I SZYBKIE AKCJE
+   ========================================================= */
+
+.finance-page-heading {
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.finance-page-subtitle {
+  margin-top: 5px;
+  color: #718099;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.finance-header-add-button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(110deg, #087ddd 0%, #0998ed 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 850;
+  box-shadow: 0 8px 20px rgba(7, 135, 232, .17);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+.finance-header-add-button:hover {
+  filter: brightness(1.03);
+  box-shadow: 0 11px 25px rgba(7, 135, 232, .22);
+  transform: translateY(-1px);
+}
+
+.finance-header-add-button:active {
+  transform: translateY(1px);
+}
+
+.finance-header-add-button span {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(255,255,255,.18);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.finance-kpi-card {
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.finance-kpi-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(28, 66, 105, .09);
+}
+
+.finance-command-card,
+.finance-year-summary,
+.finance-partner-card,
+.finance-cost-card,
+.receivables-card {
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+.finance-command-card:hover,
+.finance-year-summary:hover,
+.finance-partner-card:hover,
+.finance-cost-card:hover,
+.receivables-card:hover {
+  border-color: #d7e4ed;
+  box-shadow: 0 12px 30px rgba(28, 66, 105, .075);
+}
+
+@media (max-width: 600px) {
+  .finance-page-heading {
+    align-items: stretch;
+  }
+
+  .finance-page-heading > div:first-child {
+    min-width: 0;
+  }
+
+  .finance-page-subtitle {
+    font-size: 12px;
+  }
+
+  .finance-header-add-button {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .finance-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .finance-kpi-card strong {
+    font-size: clamp(17px, 5.2vw, 20px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .finance-payment-row {
+    align-items: flex-start;
+  }
+
+  .finance-payment-row strong {
+    font-size: 14px;
+  }
+
+  .finance-partner-mini-grid > div {
+    min-width: 0;
+  }
+
+  .finance-partner-mini-grid strong {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* =========================================================
    FAKTURY — EDYTOR W STYLU NOWOCZESNEJ APLIKACJI FAKTUROWEJ
    ========================================================= */

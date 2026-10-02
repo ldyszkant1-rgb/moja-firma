@@ -8941,7 +8941,7 @@ function FinancePage({
           <div><span>Otrzymane</span><strong>{formatMoney(yearRevenue)}</strong></div>
           <div><span>Koszty</span><strong>{formatMoney(yearCosts)}</strong></div>
           <div><span>Zysk</span><strong className={yearProfit >= 0 ? 'finance-year-positive' : 'finance-year-negative'}>{formatMoney(yearProfit)}</strong></div>
-          <div><span>Do odzyskania netto</span><strong className={totalReceivables > 0.01 ? 'finance-year-warning' : 'finance-year-positive'}>{formatMoney(totalReceivables)}</strong></div>
+          <div><span>Należności do zapłaty</span><strong className={totalReceivables > 0.01 ? 'finance-year-warning' : 'finance-year-positive'}>{formatMoney(totalReceivables)}</strong></div>
         </div>
       </section>
 

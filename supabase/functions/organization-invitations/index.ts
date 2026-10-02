@@ -87,6 +87,37 @@ Deno.serve(async (req: Request) => {
       return Response.json({ ok: true, organizationId: organization.id }, { headers: corsHeaders })
     }
 
+    if (action === 'list-my-invitations') {
+      const { data: rows, error: listError } = await ctx.supabaseAdmin
+        .from('organization_invitations')
+        .select('id,organization_id,email,role,status,expires_at,created_at')
+        .eq('email', email)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+
+      if (listError) throw listError
+
+      const organizationIds = [...new Set((rows || []).map((row) => row.organization_id))]
+      let organizations = []
+      if (organizationIds.length) {
+        const { data: orgRows } = await ctx.supabaseAdmin
+          .from('organizations')
+          .select('id,name,short_name')
+          .in('id', organizationIds)
+        organizations = orgRows || []
+      }
+
+      return Response.json({
+        invitations: (rows || []).map((row) => ({
+          ...row,
+          organization_name: organizations.find((org) => org.id === row.organization_id)?.short_name
+            || organizations.find((org) => org.id === row.organization_id)?.name
+            || 'Firma',
+        })),
+      }, { headers: corsHeaders })
+    }
+
     if (action === 'send') {
       const inviteEmail = String(body?.email || '').trim().toLowerCase()
       const role = body?.role === 'admin' ? 'admin' : 'employee'
@@ -168,11 +199,21 @@ Deno.serve(async (req: Request) => {
       })
 
       if (inviteError) {
-        await ctx.supabaseAdmin.from('organization_invitations').delete().eq('id', invitation.id)
-        throw inviteError
+        const alreadyRegistered = /already.*registered|already.*exists|user.*already/i.test(String(inviteError.message || ''))
+        if (!alreadyRegistered) {
+          await ctx.supabaseAdmin.from('organization_invitations').delete().eq('id', invitation.id)
+          throw inviteError
+        }
+
+        return Response.json({
+          ok: true,
+          invitationId: invitation.id,
+          existingUser: true,
+          message: 'To konto już istnieje. Użytkownik zobaczy zaproszenie po zalogowaniu.',
+        }, { headers: corsHeaders })
       }
 
-      return Response.json({ ok: true, invitationId: invitation.id }, { headers: corsHeaders })
+      return Response.json({ ok: true, invitationId: invitation.id, existingUser: false }, { headers: corsHeaders })
     }
 
     if (action === 'accept') {

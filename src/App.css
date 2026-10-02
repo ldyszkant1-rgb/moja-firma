@@ -11220,3 +11220,241 @@ section {
     padding: 15px;
   }
 }
+
+
+/* =========================================================
+   DASHBOARD — DZIEŃ PRACY
+   ========================================================= */
+
+.dashboard-workday-section {
+  margin-top: 24px;
+}
+
+.dashboard-workday-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.dashboard-workday-header h2 {
+  margin: 3px 0 0;
+  color: #12234f;
+}
+
+.dashboard-workday-header p {
+  margin: 5px 0 0;
+  color: #718096;
+  font-size: 12px;
+}
+
+.dashboard-workday-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-workday-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe7ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 7px 22px rgba(17, 39, 71, .055);
+}
+
+.dashboard-workday-card:hover {
+  border-color: #c9dbe9;
+  box-shadow: 0 11px 28px rgba(17, 39, 71, .08);
+}
+
+.dashboard-workday-main {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 16px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.dashboard-workday-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-workday-top > div {
+  min-width: 0;
+}
+
+.dashboard-workday-top strong,
+.dashboard-workday-top span {
+  display: block;
+}
+
+.dashboard-workday-top strong {
+  color: #12234f;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.dashboard-workday-top span:not(.dashboard-workday-progress) {
+  margin-top: 3px;
+  color: #718096;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-workday-progress {
+  flex: 0 0 auto;
+  color: #087fce;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.dashboard-workday-progress-track {
+  height: 7px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eaf0f5;
+}
+
+.dashboard-workday-progress-track > div {
+  height: 100%;
+  border-radius: inherit;
+  background: #168fe5;
+}
+
+.dashboard-workday-statuses {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.dashboard-workday-status,
+.dashboard-workday-task-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.dashboard-workday-status-danger {
+  color: #b23b3b;
+  background: #fff1f1;
+  border: 1px solid #f2d2d2;
+}
+
+.dashboard-workday-status-finance {
+  color: #a46a08;
+  background: #fff7e7;
+  border: 1px solid #f1dfb9;
+}
+
+.dashboard-workday-status-ok {
+  color: #168a4b;
+  background: #eefaf3;
+  border: 1px solid #d0eadb;
+}
+
+.dashboard-workday-task-count {
+  color: #36526d;
+  background: #f2f7fb;
+  border: 1px solid #dce7ef;
+}
+
+.dashboard-workday-task-done {
+  color: #168a4b;
+  background: #f2faf5;
+  border-color: #d9ebdf;
+}
+
+.dashboard-workday-open {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-top: 1px solid #edf1f5;
+  background: #fbfdfe;
+  color: #168fe5;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.dashboard-workday-open span {
+  margin-left: 5px;
+}
+
+.dashboard-workday-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #dce8e1;
+  border-radius: 18px;
+  background: #f8fcf9;
+}
+
+.dashboard-workday-empty > span {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #e7f6ec;
+  color: #168a4b;
+  font-weight: 900;
+}
+
+.dashboard-workday-empty strong,
+.dashboard-workday-empty small {
+  display: block;
+}
+
+.dashboard-workday-empty strong {
+  color: #173d2a;
+  font-size: 14px;
+}
+
+.dashboard-workday-empty small {
+  margin-top: 3px;
+  color: #718477;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .dashboard-workday-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-workday-header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-workday-header {
+    display: block;
+  }
+
+  .dashboard-workday-header .section-link {
+    display: inline-block;
+    margin-top: 8px;
+  }
+
+  .dashboard-workday-main {
+    padding: 15px;
+  }
+}

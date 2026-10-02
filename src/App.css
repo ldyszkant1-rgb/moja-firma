@@ -14484,3 +14484,13 @@ section {
     font-size: 22px;
   }
 }
+
+
+@media (max-width: 700px) {
+  .settings-detail-card form > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .settings-detail-card form > div[style*="grid-template-columns"] .save-button {
+    width: 100%;
+  }
+}

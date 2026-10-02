@@ -67,7 +67,7 @@ function printOffer(offer, client) {
     <html lang="pl">
       <head>
         <meta charset="utf-8">
-        <title>${escapeHtml(offer.offerNumber || 'Oferta')} - Aeroinstal</title>
+        <title>${escapeHtml(offer.offerNumber || 'Oferta')} - ${escapeHtml(settings?.company?.shortName || settings?.company?.name || 'Twoja firma')}</title>
         <style>
           * { box-sizing: border-box; }
           body { margin: 0; font-family: Arial, sans-serif; color: #1f2937; background: #fff; }
@@ -142,8 +142,8 @@ function printOffer(offer, client) {
           ${notes ? `<h2>Uwagi</h2><div class="text">${notes}</div>` : ''}
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:45px;margin-top:55px;">
-            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? 'Zleceniodawca' : 'Aeroinstal'}<br><span class="muted">podpis i data</span></div>
-            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? 'Aeroinstal – Wykonawca' : 'Klient / Zleceniodawca'}<br><span class="muted">podpis i data</span></div>
+            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? 'Zleceniodawca' : (settings?.company?.shortName || settings?.company?.name || 'Twoja firma')}<br><span class="muted">podpis i data</span></div>
+            <div style="text-align:center;padding-top:38px;border-top:1px solid #1f2937;">${offer.documentType === 'Zlecenie od klienta' ? `\${settings?.company?.shortName || settings?.company?.name || 'Twoja firma'} – Wykonawca` : 'Klient / Zleceniodawca'}<br><span class="muted">podpis i data</span></div>
           </div>
           <div class="footer">
             Dokument wygenerowany z aplikacji Moja Firma.

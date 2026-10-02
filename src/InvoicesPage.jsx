@@ -150,9 +150,18 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  }
 
  const remove=async x=>{
-  const hasPayments=Number(x?.paidAmount||0)>0
-  const warning=hasPayments?' Faktura ma już zarejestrowane wpłaty — usunięcie faktury nie usunie historii wpłat przypisanych do realizacji.':''
-  if(!(await onConfirm?.('Usunąć fakturę '+x.invoiceNumber+'?'+warning)))return
+  let linkedPayments=[]
+  if(x?.jobId){
+   try{
+    const rows=await getJobPayments(x.jobId)
+    linkedPayments=rows.filter(p=>String(p.invoiceId||'')===String(x.id))
+   }catch(e){console.error('Nie udało się sprawdzić płatności faktury:',e);onAlert?.('Nie można bezpiecznie usunąć faktury — nie udało się sprawdzić historii płatności.');return}
+  }
+  if(linkedPayments.length){
+   onAlert?.('Nie można usunąć faktury, która ma zarejestrowane płatności. Najpierw usuń jej płatności z historii rozliczenia.')
+   return
+  }
+  if(!(await onConfirm?.('Usunąć fakturę '+x.invoiceNumber+'?')))return
   try{await deleteInvoice(x.id);window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:{deletedId:x.id}}))}
   catch(e){console.error(e);onAlert?.('Nie udało się usunąć faktury.')}
  }
@@ -257,7 +266,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
     <div className="invoice-editor-section">
      <div className="invoice-editor-section-head"><div className="invoice-editor-section-title">Realizacja</div></div>
-     <select className="invoice-editor-full-select" value={edit.jobId||''} onChange={e=>{const j=jm.get(e.target.value);const it=items(j);recalc(it,{jobId:e.target.value,clientId:j?.clientId||edit.clientId})}}>
+     <select className="invoice-editor-full-select" value={edit.jobId||''} disabled={edit.id&&payments.some(p=>String(p.invoiceId||'')===String(edit.id))} onChange={e=>{const hasPayments=payments.some(p=>String(p.invoiceId||'')===String(edit.id));if(hasPayments){onAlert?.('Nie można zmienić realizacji faktury, która ma zarejestrowane płatności.');return}const j=jm.get(e.target.value);const it=items(j);recalc(it,{jobId:e.target.value,clientId:j?.clientId||edit.clientId})}}>
       <option value="">Bez powiązania z realizacją</option>
       {jobs.map(j=><option key={j.id} value={j.id}>{j.name||'Bez nazwy'}{j.location?' • '+j.location:''}</option>)}
      </select>

@@ -40,3 +40,6 @@ drop policy if exists device_users_insert on public.device_users;
 drop policy if exists device_users_select on public.device_users;
 
 revoke all on table public.device_users from anon, authenticated;
+
+-- Stare przypisanie telefonu nie jest już częścią modelu SaaS.
+drop table if exists public.device_users;

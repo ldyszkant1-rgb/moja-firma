@@ -10815,3 +10815,98 @@ section {
  .invoice-payment-form input:nth-child(3){grid-column:auto}
  .invoice-payment-form button{grid-column:auto}
 }
+
+/* =====================================================
+   DASHBOARD — FINANSE
+   ===================================================== */
+
+.dashboard-finance-section {
+  margin-top: 22px;
+}
+
+.dashboard-finance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-finance-card {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e3eaf2;
+  border-radius: 18px;
+  background: #fff;
+  padding: 17px;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  text-align: left;
+  box-shadow: 0 7px 22px rgba(17, 39, 71, 0.06);
+  cursor: pointer;
+  color: inherit;
+}
+
+.dashboard-finance-card:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard-finance-card-primary {
+  border-color: #cfe5f8;
+  background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+}
+
+.dashboard-finance-card-warning {
+  border-color: #f1dfb9;
+  background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+}
+
+.dashboard-finance-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: #eef6fd;
+  font-size: 19px;
+}
+
+.dashboard-finance-card-warning .dashboard-finance-icon {
+  background: #fff1d6;
+}
+
+.dashboard-finance-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dashboard-finance-copy small {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dashboard-finance-copy strong {
+  color: #12234f;
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.dashboard-finance-copy em {
+  color: #94a3b8;
+  font-size: 11px;
+  font-style: normal;
+}
+
+@media (max-width: 760px) {
+  .dashboard-finance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-finance-card {
+    padding: 15px;
+  }
+}

@@ -486,6 +486,7 @@ function AppDialogHost() {
 
 const DEVICE_ID_KEY = 'aeroinstal_device_id'
 const DEVICE_USER_KEY = 'aeroinstal_device_user'
+const AUTH_MODE_USED_KEY = 'moja_firma_auth_mode_used'
 const DEVICE_USERS = ['Łukasz', 'Paweł']
 
 function getOrCreateDeviceId() {
@@ -504,6 +505,14 @@ function getOrCreateDeviceId() {
     console.error('Nie udało się zapisać identyfikatora urządzenia:', error)
     return `temporary-${Date.now()}`
   }
+}
+
+function getAuthModeUsed() {
+  try { return localStorage.getItem(AUTH_MODE_USED_KEY) === '1' } catch { return false }
+}
+
+function markAuthModeUsed() {
+  try { localStorage.setItem(AUTH_MODE_USED_KEY, '1') } catch {}
 }
 
 function getLocalDeviceUser() {
@@ -604,6 +613,7 @@ function App() {
 
   const [deviceId] = useState(() => getOrCreateDeviceId())
   const [deviceUser, setDeviceUser] = useState(() => getLocalDeviceUser())
+  const [authModeUsed] = useState(() => getAuthModeUsed())
   const [deviceLoading, setDeviceLoading] = useState(true)
   const [authSession, setAuthSession] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
@@ -617,6 +627,7 @@ function App() {
       if (!mounted) return
       const session = data.session || null
       setAuthSession(session)
+      if (session) markAuthModeUsed()
       setAuthChecked(true)
       if (session) {
         const { data: membership } = await supabase.from('organization_members').select('organization_id').limit(1).maybeSingle()
@@ -640,6 +651,7 @@ function App() {
       if (!mounted) return
       const nextSession = session || null
       setAuthSession(nextSession)
+      if (nextSession) markAuthModeUsed()
       setAuthChecked(true)
 
       if (!nextSession) {
@@ -2512,7 +2524,7 @@ function App() {
     )
   }
 
-  if (!authSession && !deviceUser) {
+  if (!authSession && (!deviceUser || authModeUsed)) {
     return <AuthPage />
   }
 

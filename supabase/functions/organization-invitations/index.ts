@@ -140,6 +140,54 @@ Deno.serve(async (req: Request) => {
         return Response.json({ error: 'Ten adres e-mail jest już członkiem firmy.' }, { status: 409, headers: corsHeaders })
       }
 
+      const { data: authUsers, error: authUsersError } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      })
+      if (authUsersError) throw authUsersError
+
+      const existingAuthUser = (authUsers?.users || []).find(
+        (candidate) => String(candidate.email || '').trim().toLowerCase() === inviteEmail,
+      )
+
+      // Jeżeli konto już istnieje, nie próbujemy ponownie wysyłać
+      // zaproszenia Auth. Dodajemy istniejącego użytkownika bezpośrednio
+      // do bieżącej firmy. Użytkownik zachowuje swoje konto i logowanie.
+      if (existingAuthUser) {
+        const { data: existingMembership } = await admin
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', existingAuthUser.id)
+          .limit(1)
+          .maybeSingle()
+
+        if (existingMembership && existingMembership.organization_id !== membership.organization_id) {
+          return Response.json(
+            { error: 'To konto należy już do innej firmy.' },
+            { status: 409, headers: corsHeaders },
+          )
+        }
+
+        if (!existingMembership) {
+          const { error: memberError } = await admin
+            .from('organization_members')
+            .insert({
+              organization_id: membership.organization_id,
+              user_id: existingAuthUser.id,
+              role,
+              display_name: String(existingAuthUser.user_metadata?.display_name || inviteEmail.split('@')[0]),
+              email: inviteEmail,
+            })
+
+          if (memberError) throw memberError
+        }
+
+        return Response.json(
+          { ok: true, existingUser: true, userId: existingAuthUser.id },
+          { headers: corsHeaders },
+        )
+      }
+
       await admin
         .from('organization_invitations')
         .update({ status: 'expired' })

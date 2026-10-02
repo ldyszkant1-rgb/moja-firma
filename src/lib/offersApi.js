@@ -40,7 +40,7 @@ function mapRow(row) {
 
 function payload(offer) {
   return {
-    organization_id: offer.organizationId || 'c6565617-8988-41aa-899a-e0c21327d8fe',
+        organization_id: offer.organizationId || undefined,
     client_id: offer.clientId || null,
     document_type: offer.documentType || 'Oferta dla klienta',
     offer_number: offer.offerNumber || null,

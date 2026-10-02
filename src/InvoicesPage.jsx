@@ -147,8 +147,19 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
   }
   setSaving(true)
   try{
+   let confirmedPaid=paid
+   if(edit.id && edit.jobId){
+    const rows=await getJobPayments(edit.jobId)
+    confirmedPaid=rows
+      .filter(p=>String(p.invoiceId||'')===String(edit.id))
+      .reduce((sum,p)=>sum+Number(p.amount||0),0)
+    if(confirmedPaid + vatSettled > calculated.gross + 0.01){
+     onAlert?.('Nie można obniżyć wartości faktury poniżej już otrzymanych wpłat i rozliczonego VAT.')
+     return
+    }
+   }
    const vatLimit=Math.max(0,Number(calculated.vat||0))
-   const normalizedEdit={...edit,netAmount:calculated.net,vatAmount:calculated.vat,grossAmount:calculated.gross,vatSettledAmount:Math.min(Math.max(0,Number(edit.vatSettledAmount||0)),vatLimit)}
+   const normalizedEdit={...edit,netAmount:calculated.net,vatAmount:calculated.vat,grossAmount:calculated.gross,paidAmount:confirmedPaid,vatSettledAmount:Math.min(Math.max(0,Number(edit.vatSettledAmount||0)),vatLimit)}
    const x=edit.id?await updateInvoice(normalizedEdit):await createInvoice(normalizedEdit)
    setEdit(null)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}))

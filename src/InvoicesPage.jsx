@@ -302,9 +302,9 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
       <div className="invoice-remaining-box"><span>Pozostało do zapłaty</span><strong>{money(remaining)}</strong></div>
       <div className="invoice-payment-history">
        <div className="invoice-editor-section-title">Historia płatności</div>
-       {payments.filter(p=>!edit.id||String(p.invoiceId||'')===String(edit.id)).length===0
+       {payments.filter(p=>edit.id?String(p.invoiceId||'')===String(edit.id):!p.invoiceId).length===0
         ? <div className="invoice-finance-note">Brak płatności przypisanych do tej faktury.</div>
-        : payments.filter(p=>!edit.id||String(p.invoiceId||'')===String(edit.id)).map(p=>
+        : payments.filter(p=>edit.id?String(p.invoiceId||'')===String(edit.id):!p.invoiceId).map(p=>
           <div className="invoice-payment-history-row" key={p.id}>
            <div><strong>{money(p.amount)}</strong><span>{formatDate(p.paidAt)}{p.note?' · '+p.note:''}</span></div>
            <button type="button" className="invoice-remove-item" onClick={()=>removePayment(p)}>×</button>

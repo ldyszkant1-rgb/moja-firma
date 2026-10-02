@@ -212,9 +212,10 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
       <button type="button" className="invoice-add-button" onClick={()=>recalc([...(edit.items||[]),blankItem()])}>+ Nowa pozycja</button>
      </div>
      <div className="invoice-items-table">
-      <div className="invoice-items-head"><span>Opis</span><span>Ilość</span><span>J.m.</span><span>Cena netto</span><span>VAT</span><span>Wartość netto</span><span></span></div>
+      <div className="invoice-items-head"><span>Opis</span><span>Ilość</span><span>J.m.</span><span>Cena netto</span><span>VAT</span><span>Wartość netto</span><span>Wartość brutto</span><span></span></div>
       {(edit.items||[]).map((x,i)=>{
        const lineNet=Number(x.quantity||0)*Number(x.netUnit||0)
+       const lineGross=lineNet*(1+Number(x.vatRate||0)/100)
        return <div className="invoice-item-row" key={i}>
         <input value={x.name||''} placeholder="Nazwa usługi / towaru" onChange={e=>{const it=[...edit.items];it[i]={...it[i],name:e.target.value};setEdit({...edit,items:it})}}/>
         <input type="number" min="0" step="0.01" value={x.quantity??0} onChange={e=>{const it=[...edit.items];it[i]={...it[i],quantity:Number(e.target.value)};recalc(it)}}/>
@@ -222,6 +223,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
         <input type="number" min="0" step="0.01" value={x.netUnit??0} onChange={e=>{const it=[...edit.items];it[i]={...it[i],netUnit:Number(e.target.value)};recalc(it)}}/>
         <select value={x.vatRate??23} onChange={e=>{const it=[...edit.items];it[i]={...it[i],vatRate:Number(e.target.value)};recalc(it)}}>{[23,8,5,0].map(v=><option key={v} value={v}>{v}%</option>)}</select>
         <strong>{money(lineNet)}</strong>
+        <strong>{money(lineGross)}</strong>
         <button type="button" className="invoice-remove-item" onClick={()=>recalc((edit.items||[]).filter((_,idx)=>idx!==i))}>×</button>
        </div>
       })}
@@ -229,6 +231,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      <div className="invoice-totals">
       <div><span>Netto</span><strong>{money(a.net)}</strong></div>
       <div><span>VAT</span><strong>{money(a.vat)}</strong></div>
+      <div><span>Brutto</span><strong>{money(a.gross)}</strong></div>
       <div className="invoice-total-main"><span>Do zapłaty</span><strong>{money(a.gross)}</strong></div>
      </div>
     </div>

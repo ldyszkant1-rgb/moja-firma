@@ -11,15 +11,16 @@ function slugify(value) {
     .slice(0, 50)
 }
 
-export default function AuthPage({ session = null }) {
+export default function AuthPage({ session = null, recovery = false }) {
   const [invitationId, setInvitationId] = useState(session?.user?.user_metadata?.invitation_id || null)
   const [pendingInvitations, setPendingInvitations] = useState([])
   const invitedEmail = session?.user?.email || ''
   const hasInvitation = Boolean(invitationId)
 
-  const [mode, setMode] = useState(session ? (hasInvitation ? 'accept' : 'setup') : 'login')
+  const [mode, setMode] = useState(recovery ? 'reset' : session ? (hasInvitation ? 'accept' : 'setup') : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [displayName, setDisplayName] = useState(session?.user?.user_metadata?.display_name || '')
   const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,6 +66,7 @@ export default function AuthPage({ session = null }) {
   }, [session])
 
   const title = useMemo(() => {
+    if (mode === 'reset') return 'Ustaw nowe hasło'
     if (mode === 'login') return 'Zaloguj się'
     if (mode === 'accept') return 'Dołącz do firmy'
     if (mode === 'setup') return 'Utwórz swoją firmę'
@@ -72,6 +74,7 @@ export default function AuthPage({ session = null }) {
   }, [mode])
 
   const subtitle = useMemo(() => {
+    if (mode === 'reset') return 'Ustaw nowe hasło do swojego konta.'
     if (mode === 'login') return 'Zaloguj się do swojej przestrzeni firmy.'
     if (mode === 'accept') return 'Otrzymałeś zaproszenie. Po akceptacji uzyskasz dostęp do przestrzeni tej firmy.'
     if (mode === 'setup') return 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
@@ -113,6 +116,26 @@ export default function AuthPage({ session = null }) {
     const cleanEmail = email.trim().toLowerCase()
     const cleanCompany = companyName.trim()
     const cleanDisplayName = displayName.trim()
+
+    if (mode === 'reset') {
+      if (newPassword.length < 8) {
+        setError('Hasło musi mieć co najmniej 8 znaków.')
+        return
+      }
+      setLoading(true)
+      try {
+        const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+        if (updateError) throw updateError
+        setMessage('Hasło zostało zmienione. Możesz korzystać z aplikacji.')
+        window.location.reload()
+      } catch (updateError) {
+        console.error('Błąd zmiany hasła:', updateError)
+        setError('Nie udało się zmienić hasła. Spróbuj ponownie.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
 
     if (mode === 'accept') {
       setLoading(true)
@@ -233,6 +256,7 @@ export default function AuthPage({ session = null }) {
   }
 
   const showAccountFields = mode === 'login' || mode === 'register'
+  const showResetField = mode === 'reset'
   const showCompanyFields = mode === 'register' || mode === 'setup'
 
   return (
@@ -282,6 +306,20 @@ export default function AuthPage({ session = null }) {
             </>
           )}
 
+          {showResetField && (
+            <label style={labelStyle}>
+              <strong style={labelTextStyle}>Nowe hasło</strong>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="Minimum 8 znaków"
+                autoComplete="new-password"
+                style={inputStyle}
+              />
+            </label>
+          )}
+
           {showAccountFields && (
             <>
               <label style={labelStyle}>
@@ -324,15 +362,17 @@ export default function AuthPage({ session = null }) {
               ? 'Przetwarzanie…'
               : mode === 'login'
                 ? 'Zaloguj się'
-                : mode === 'accept'
-                  ? 'Dołącz do firmy'
+  : mode === 'reset'
+                  ? 'Zapisz nowe hasło'
+                  : mode === 'accept'
+                    ? 'Dołącz do firmy'
                   : mode === 'setup'
                     ? 'Utwórz firmę'
                     : 'Utwórz konto i firmę'}
           </button>
         </form>
 
-        {mode !== 'setup' && mode !== 'accept' && (
+        {mode !== 'setup' && mode !== 'accept' && mode !== 'reset' && (
           <div style={toggleStyle}>
             <button
               type="button"

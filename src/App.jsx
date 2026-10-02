@@ -7539,6 +7539,7 @@ function FinancePage({
             const incoming = {
               id: payload.new.id,
               jobId: payload.new.job_id,
+              invoiceId: payload.new.invoice_id || null,
               amount: Number(payload.new.amount || 0),
               paidAt: payload.new.paid_at || null,
               note: payload.new.note || '',
@@ -7874,11 +7875,22 @@ function FinancePage({
 
   const allocatedPaymentsByInvoice = new Map()
 
+  invoices.forEach((invoice) => {
+    const assignedPaid = allJobPayments
+      .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+    allocatedPaymentsByInvoice.set(String(invoice.id), Math.max(0, assignedPaid))
+  })
+
   invoicesByJob.forEach((jobInvoices, jobId) => {
-    const payments = allJobPayments
-      .filter((payment) => String(payment.jobId) === String(jobId))
+    const unassignedPayments = allJobPayments
+      .filter((payment) =>
+        String(payment.jobId) === String(jobId) &&
+        !payment.invoiceId
+      )
       .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
-    let remainingPayments = payments.reduce(
+
+    let remainingPayments = unassignedPayments.reduce(
       (sum, payment) => sum + Number(payment.amount || 0),
       0
     )
@@ -7891,9 +7903,17 @@ function FinancePage({
 
     sortedInvoices.forEach((invoice) => {
       const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const allocated = Math.min(gross, Math.max(0, remainingPayments))
-      allocatedPaymentsByInvoice.set(String(invoice.id), allocated)
-      remainingPayments = Math.max(0, remainingPayments - allocated)
+      const alreadyAssigned = Math.min(
+        gross,
+        Math.max(0, Number(allocatedPaymentsByInvoice.get(String(invoice.id)) || 0))
+      )
+      const available = Math.max(0, gross - alreadyAssigned)
+      const legacyAllocated = Math.min(available, Math.max(0, remainingPayments))
+      allocatedPaymentsByInvoice.set(
+        String(invoice.id),
+        alreadyAssigned + legacyAllocated
+      )
+      remainingPayments = Math.max(0, remainingPayments - legacyAllocated)
     })
   })
 
@@ -9738,6 +9758,7 @@ function SettingsPage({
       const paymentRows = (backup.jobPayments || []).map((item) => ({
         id: item.id,
         job_id: item.jobId,
+        invoice_id: item.invoiceId || null,
         amount: Number(item.amount || 0),
         paid_at: item.paidAt || getTodayString(),
         note: item.note || null,

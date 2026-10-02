@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabase'
 
 function slugify(value) {
@@ -11,15 +11,40 @@ function slugify(value) {
     .slice(0, 50)
 }
 
-export default function AuthPage() {
-  const [mode, setMode] = useState('login')
+export default function AuthPage({ session = null }) {
+  const invitationId = session?.user?.user_metadata?.invitation_id || null
+  const invitedEmail = session?.user?.email || ''
+  const hasInvitation = Boolean(invitationId)
+
+  const [mode, setMode] = useState(session ? (hasInvitation ? 'accept' : 'setup') : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
+  const [displayName, setDisplayName] = useState(session?.user?.user_metadata?.display_name || '')
   const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!session) return
+    setEmail(session.user?.email || '')
+    setDisplayName(session.user?.user_metadata?.display_name || session.user?.email?.split('@')[0] || '')
+    setMode(invitationId ? 'accept' : 'setup')
+  }, [session, invitationId])
+
+  const title = useMemo(() => {
+    if (mode === 'login') return 'Zaloguj się'
+    if (mode === 'accept') return 'Dołącz do firmy'
+    if (mode === 'setup') return 'Utwórz swoją firmę'
+    return 'Utwórz swoje konto'
+  }, [mode])
+
+  const subtitle = useMemo(() => {
+    if (mode === 'login') return 'Zaloguj się do swojej przestrzeni firmy.'
+    if (mode === 'accept') return 'Otrzymałeś zaproszenie. Po akceptacji uzyskasz dostęp do przestrzeni tej firmy.'
+    if (mode === 'setup') return 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
+    return 'Załóż konto, utwórz firmę i później dodawaj swoich pracowników.'
+  }, [mode])
 
   const resetMessages = () => {
     setMessage('')
@@ -34,6 +59,54 @@ export default function AuthPage() {
     const cleanCompany = companyName.trim()
     const cleanDisplayName = displayName.trim()
 
+    if (mode === 'accept') {
+      setLoading(true)
+      try {
+        const { data, error: acceptError } = await supabase.functions.invoke('organization-invitations', {
+          body: {
+            action: 'accept',
+            invitationId,
+          },
+        })
+        if (acceptError) throw acceptError
+        if (data?.error) throw new Error(data.error)
+        window.location.reload()
+      } catch (submitError) {
+        console.error('Błąd akceptacji zaproszenia:', submitError)
+        setError(submitError?.message || 'Nie udało się zaakceptować zaproszenia.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    if (mode === 'setup' && session) {
+      if (!cleanCompany) {
+        setError('Podaj nazwę swojej firmy.')
+        return
+      }
+
+      setLoading(true)
+      try {
+        const { error: organizationError } = await supabase.rpc('create_organization', {
+          p_name: cleanCompany,
+          p_slug: slugify(cleanCompany),
+          p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
+        })
+        if (organizationError) throw organizationError
+        window.location.reload()
+      } catch (submitError) {
+        console.error('Błąd tworzenia firmy:', submitError)
+        const code = submitError?.code || ''
+        setError(code === 'ORGANIZATION_SLUG_TAKEN'
+          ? 'Taka nazwa firmy jest już zajęta. Wybierz inną nazwę.'
+          : submitError?.message || 'Nie udało się utworzyć firmy.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     if (!cleanEmail || !password) {
       setError('Podaj adres e-mail i hasło.')
       return
@@ -44,7 +117,7 @@ export default function AuthPage() {
       return
     }
 
-    if ((mode === 'register' || mode === 'setup') && !cleanCompany) {
+    if (mode === 'register' && !cleanCompany) {
       setError('Podaj nazwę swojej firmy.')
       return
     }
@@ -57,35 +130,7 @@ export default function AuthPage() {
           email: cleanEmail,
           password,
         })
-
         if (signInError) throw signInError
-
-        const { data: membership, error: membershipError } = await supabase
-          .from('organization_members')
-          .select('organization_id')
-          .limit(1)
-
-        if (membershipError) throw membershipError
-
-        if (!membership?.length) {
-          setMessage('Konto jest aktywne. Dokończ teraz tworzenie swojej firmy.')
-          setMode('setup')
-          return
-        }
-
-        window.location.reload()
-        return
-      }
-
-      if (mode === 'setup') {
-        const { error: organizationError } = await supabase.rpc('create_organization', {
-          p_name: cleanCompany,
-          p_slug: slugify(cleanCompany),
-          p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
-        })
-
-        if (organizationError) throw organizationError
-
         window.location.reload()
         return
       }
@@ -99,13 +144,10 @@ export default function AuthPage() {
           },
         },
       })
-
       if (signUpError) throw signUpError
 
       if (!data.session) {
-        setMessage(
-          'Konto zostało utworzone. Sprawdź skrzynkę e-mail i potwierdź adres. Następnie zaloguj się do aplikacji.'
-        )
+        setMessage('Konto zostało utworzone. Sprawdź skrzynkę e-mail i potwierdź adres. Następnie zaloguj się do aplikacji.')
         setMode('login')
         return
       }
@@ -115,13 +157,11 @@ export default function AuthPage() {
         p_slug: slugify(cleanCompany),
         p_display_name: cleanDisplayName || cleanEmail.split('@')[0],
       })
-
       if (organizationError) throw organizationError
 
       window.location.reload()
     } catch (submitError) {
       console.error('Błąd logowania/rejestracji:', submitError)
-
       const code = submitError?.code || ''
       if (code === 'invalid_credentials') {
         setError('Nieprawidłowy e-mail lub hasło.')
@@ -139,69 +179,32 @@ export default function AuthPage() {
     }
   }
 
+  const showAccountFields = mode === 'login' || mode === 'register'
+  const showCompanyFields = mode === 'register' || mode === 'setup'
+
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 16px',
-        boxSizing: 'border-box',
-        background: 'linear-gradient(180deg, #f5f9fd 0%, #eef4fa 100%)',
-      }}
-    >
-      <section
-        style={{
-          width: '100%',
-          maxWidth: '460px',
-          background: '#ffffff',
-          border: '1px solid rgba(15, 48, 90, 0.08)',
-          borderRadius: '28px',
-          padding: '30px',
-          boxSizing: 'border-box',
-          boxShadow: '0 24px 70px rgba(18, 35, 79, 0.12)',
-        }}
-      >
+    <main style={pageStyle}>
+      <section style={cardStyle}>
         <div style={{ marginBottom: '26px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              padding: '8px 12px',
-              borderRadius: '999px',
-              background: '#eaf5ff',
-              color: '#087fce',
-              fontSize: '12px',
-              fontWeight: 800,
-              letterSpacing: '0.08em',
-            }}
-          >
-            MOJA FIRMA
-          </div>
-          <h1
-            style={{
-              margin: '16px 0 8px',
-              color: '#12234f',
-              fontSize: '30px',
-              lineHeight: 1.15,
-            }}
-          >
-            {mode === 'login' ? 'Zaloguj się' : mode === 'setup' ? 'Dokończ konfigurację' : 'Utwórz swoją firmę'}
-          </h1>
-          <p style={{ margin: 0, color: '#68758a', lineHeight: 1.5 }}>
-            {mode === 'login'
-              ? 'Zaloguj się do swojej przestrzeni firmy.'
-              : mode === 'setup'
-                ? 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
-                : 'Załóż konto, utwórz firmę i później dodawaj swoich pracowników.'}
-          </p>
+          <div style={badgeStyle}>MOJA FIRMA</div>
+          <h1 style={titleStyle}>{title}</h1>
+          <p style={{ margin: 0, color: '#68758a', lineHeight: 1.5 }}>{subtitle}</p>
         </div>
 
+        {mode === 'accept' && (
+          <div style={inviteBoxStyle}>
+            <strong>Zaproszenie do firmy</strong>
+            <div style={{ marginTop: 6, color: '#53647b' }}>
+              Zaproszenie zostało wysłane na <strong>{invitedEmail}</strong>.
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '14px' }}>
-          {(mode === 'register' || mode === 'setup') && (
+          {showCompanyFields && (
             <>
-              <label style={{ display: 'grid', gap: '6px' }}>
-                <strong style={{ color: '#243451' }}>Twoje imię</strong>
+              <label style={labelStyle}>
+                <strong style={labelTextStyle}>Twoje imię</strong>
                 <input
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
@@ -211,8 +214,8 @@ export default function AuthPage() {
                 />
               </label>
 
-              <label style={{ display: 'grid', gap: '6px' }}>
-                <strong style={{ color: '#243451' }}>Nazwa firmy</strong>
+              <label style={labelStyle}>
+                <strong style={labelTextStyle}>Nazwa firmy</strong>
                 <input
                   value={companyName}
                   onChange={(event) => setCompanyName(event.target.value)}
@@ -224,119 +227,121 @@ export default function AuthPage() {
             </>
           )}
 
-          <label style={{ display: 'grid', gap: '6px' }}>
-            <strong style={{ color: '#243451' }}>E-mail</strong>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="ty@firma.pl"
-              autoComplete="email"
-              style={inputStyle}
-            />
-          </label>
+          {showAccountFields && (
+            <>
+              <label style={labelStyle}>
+                <strong style={labelTextStyle}>E-mail</strong>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="ty@firma.pl"
+                  autoComplete="email"
+                  style={inputStyle}
+                />
+              </label>
 
-          <label style={{ display: 'grid', gap: '6px' }}>
-            <strong style={{ color: '#243451' }}>Hasło</strong>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Minimum 8 znaków"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              style={inputStyle}
-            />
-          </label>
-
-          {error && (
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                background: '#fff4f4',
-                color: '#b52d3a',
-                border: '1px solid #f1c8cd',
-                lineHeight: 1.45,
-              }}
-            >
-              {error}
-            </div>
+              <label style={labelStyle}>
+                <strong style={labelTextStyle}>Hasło</strong>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Minimum 8 znaków"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  style={inputStyle}
+                />
+              </label>
+            </>
           )}
 
-          {message && (
-            <div
-              style={{
-                padding: '12px 14px',
-                borderRadius: '14px',
-                background: '#effaf4',
-                color: '#177447',
-                border: '1px solid #c8ead6',
-                lineHeight: 1.45,
-              }}
-            >
-              {message}
-            </div>
-          )}
+          {error && <div style={errorStyle}>{error}</div>}
+          {message && <div style={messageStyle}>{message}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              minHeight: '52px',
-              marginTop: '4px',
-              border: 'none',
-              borderRadius: '15px',
-              background: loading ? '#8ebfe3' : '#168fe5',
-              color: '#ffffff',
-              fontSize: '16px',
-              fontWeight: 800,
-              cursor: loading ? 'wait' : 'pointer',
-            }}
-          >
+          <button type="submit" disabled={loading} style={{ ...submitStyle, opacity: loading ? 0.65 : 1 }}>
             {loading
               ? 'Przetwarzanie…'
               : mode === 'login'
                 ? 'Zaloguj się'
-                : mode === 'setup'
-                  ? 'Utwórz firmę'
-                  : 'Utwórz konto i firmę'}
+                : mode === 'accept'
+                  ? 'Dołącz do firmy'
+                  : mode === 'setup'
+                    ? 'Utwórz firmę'
+                    : 'Utwórz konto i firmę'}
           </button>
         </form>
 
-        {mode !== 'setup' && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '18px',
-              paddingTop: '18px',
-              borderTop: '1px solid #e8eef5',
-            }}
-          >
+        {mode !== 'setup' && mode !== 'accept' && (
+          <div style={toggleStyle}>
             <button
               type="button"
               onClick={() => {
                 resetMessages()
                 setMode((current) => (current === 'login' ? 'register' : 'login'))
               }}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                color: '#087fce',
-                fontWeight: 800,
-                cursor: 'pointer',
-                padding: '8px',
-              }}
+              style={toggleButtonStyle}
             >
-              {mode === 'login'
-                ? 'Nie masz konta? Utwórz firmę'
-                : 'Masz już konto? Zaloguj się'}
+              {mode === 'login' ? 'Nie masz konta? Utwórz firmę' : 'Masz już konto? Zaloguj się'}
             </button>
+          </div>
+        )}
+
+        {mode === 'setup' && (
+          <div style={hintStyle}>
+            To konto nie ma jeszcze firmy. Po utworzeniu zostaniesz jej właścicielem.
           </div>
         )}
       </section>
     </main>
   )
+}
+
+const pageStyle = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px 16px',
+  boxSizing: 'border-box',
+  background: 'linear-gradient(180deg, #f5f9fd 0%, #eef4fa 100%)',
+}
+
+const cardStyle = {
+  width: '100%',
+  maxWidth: '460px',
+  background: '#ffffff',
+  border: '1px solid rgba(15, 48, 90, 0.08)',
+  borderRadius: '28px',
+  padding: '30px',
+  boxSizing: 'border-box',
+  boxShadow: '0 24px 70px rgba(18, 35, 79, 0.12)',
+}
+
+const badgeStyle = {
+  display: 'inline-flex',
+  padding: '8px 12px',
+  borderRadius: '999px',
+  background: '#eaf5ff',
+  color: '#087fce',
+  fontSize: '12px',
+  fontWeight: 800,
+  letterSpacing: '0.08em',
+}
+
+const titleStyle = {
+  margin: '16px 0 8px',
+  color: '#12234f',
+  fontSize: '30px',
+  lineHeight: 1.15,
+}
+
+const labelStyle = {
+  display: 'grid',
+  gap: '6px',
+}
+
+const labelTextStyle = {
+  color: '#243451',
 }
 
 const inputStyle = {
@@ -350,4 +355,71 @@ const inputStyle = {
   color: '#12234f',
   fontSize: '16px',
   outline: 'none',
+}
+
+const submitStyle = {
+  minHeight: '52px',
+  marginTop: '4px',
+  border: 'none',
+  borderRadius: '15px',
+  background: '#168fe5',
+  color: '#ffffff',
+  fontSize: '16px',
+  fontWeight: 800,
+  cursor: 'pointer',
+}
+
+const errorStyle = {
+  padding: '12px 14px',
+  borderRadius: '14px',
+  background: '#fff4f4',
+  color: '#b52d3a',
+  border: '1px solid #f1c8cd',
+  lineHeight: 1.45,
+}
+
+const messageStyle = {
+  padding: '12px 14px',
+  borderRadius: '14px',
+  background: '#effaf4',
+  color: '#177447',
+  border: '1px solid #c8ead6',
+  lineHeight: 1.45,
+}
+
+const inviteBoxStyle = {
+  padding: '14px 16px',
+  borderRadius: '16px',
+  background: '#eef7ff',
+  border: '1px solid #cfe6f8',
+  color: '#243451',
+  marginBottom: '16px',
+  lineHeight: 1.45,
+}
+
+const toggleStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  marginTop: '18px',
+  paddingTop: '18px',
+  borderTop: '1px solid #e8eef5',
+}
+
+const toggleButtonStyle = {
+  border: 'none',
+  background: 'transparent',
+  color: '#087fce',
+  fontWeight: 800,
+  cursor: 'pointer',
+  padding: '8px',
+}
+
+const hintStyle = {
+  marginTop: '16px',
+  padding: '12px 14px',
+  borderRadius: '14px',
+  background: '#f7f9fc',
+  color: '#68758a',
+  fontSize: '13px',
+  lineHeight: 1.45,
 }

@@ -12126,3 +12126,308 @@ section {
     flex-basis: 33px !important;
   }
 }
+
+
+/* =========================================================
+   FINANSE — DOPRACOWANIE MOBILE
+   ========================================================= */
+@media (max-width: 600px) {
+  .finance-page-heading {
+    align-items: flex-start !important;
+    margin-bottom: 12px !important;
+  }
+
+  .finance-page-heading h1 {
+    font-size: 27px !important;
+  }
+
+  .finance-page-subtitle {
+    font-size: 11px !important;
+  }
+
+  .finance-header-add-button {
+    padding: 9px 11px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Należności są najważniejszym elementem finansowym — mocniejsza karta. */
+  .receivables-card {
+    padding: 15px !important;
+    border-radius: 18px !important;
+    border-color: #cfe4f5 !important;
+    box-shadow: 0 7px 22px rgba(28, 78, 117, .07) !important;
+  }
+
+  .receivables-header h2 {
+    font-size: 20px !important;
+  }
+
+  .receivables-total {
+    font-size: 21px !important;
+    color: #b4770b !important;
+  }
+
+  .receivables-summary {
+    margin-top: 6px !important;
+    font-size: 10px !important;
+    gap: 4px !important;
+  }
+
+  .receivables-list {
+    margin-top: 9px !important;
+    gap: 6px !important;
+  }
+
+  .receivable-row {
+    grid-template-columns: minmax(0, 1fr) auto 10px !important;
+    gap: 7px !important;
+    padding: 10px !important;
+    border-radius: 13px !important;
+  }
+
+  .receivable-main strong {
+    font-size: 12px !important;
+  }
+
+  .receivable-main span {
+    font-size: 9px !important;
+  }
+
+  .receivable-amount strong {
+    font-size: 13px !important;
+  }
+
+  .receivable-amount span {
+    font-size: 8px !important;
+  }
+
+  /* Nawigator miesiąca. */
+  .finance-month-selector,
+  .finance-month-card {
+    border-radius: 15px !important;
+  }
+
+  /* Główne KPI — dokładnie 2 × 2. */
+  .finance-command-center {
+    gap: 9px !important;
+    margin-bottom: 13px !important;
+  }
+
+  .finance-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .finance-kpi-card {
+    min-height: 82px !important;
+    padding: 11px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 15px rgba(30,70,105,.045) !important;
+  }
+
+  .finance-kpi-card span {
+    font-size: 8.5px !important;
+    letter-spacing: .9px !important;
+  }
+
+  .finance-kpi-card strong {
+    margin-top: 5px !important;
+    font-size: 19px !important;
+  }
+
+  .finance-kpi-card small {
+    margin-top: 4px !important;
+    font-size: 8.5px !important;
+  }
+
+  /* Szybkie akcje — jeden poziomy pasek zamiast trzech dużych bloków. */
+  .finance-quick-actions {
+    display: flex !important;
+    gap: 7px !important;
+    margin-bottom: 5px !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px !important;
+    scrollbar-width: none !important;
+  }
+
+  .finance-quick-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .finance-quick-action {
+    flex: 0 0 142px !important;
+    min-height: 58px !important;
+    padding: 8px !important;
+    border-radius: 13px !important;
+    gap: 7px !important;
+  }
+
+  .finance-quick-action > span {
+    width: 30px !important;
+    height: 30px !important;
+    flex-basis: 30px !important;
+    border-radius: 9px !important;
+    font-size: 15px !important;
+  }
+
+  .finance-quick-action strong {
+    font-size: 10px !important;
+  }
+
+  .finance-quick-action small {
+    margin-top: 2px !important;
+    font-size: 8px !important;
+  }
+
+  /* Karty płatności / wspólników. */
+  .finance-command-grid {
+    gap: 8px !important;
+  }
+
+  .finance-command-card {
+    padding: 13px !important;
+    border-radius: 16px !important;
+  }
+
+  .finance-command-card-header {
+    margin-bottom: 10px !important;
+  }
+
+  .finance-command-card-header h2 {
+    font-size: 16px !important;
+  }
+
+  .finance-overview-label {
+    font-size: 9px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .finance-command-icon {
+    width: 34px !important;
+    height: 34px !important;
+    flex-basis: 34px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+  }
+
+  .finance-payment-row {
+    padding: 8px 0 !important;
+  }
+
+  .finance-payment-row span {
+    font-size: 11px !important;
+  }
+
+  .finance-payment-row strong {
+    font-size: 13px !important;
+  }
+
+  .finance-payment-progress {
+    margin-top: 9px !important;
+    padding-top: 9px !important;
+  }
+
+  .finance-partner-mini-grid > div {
+    padding: 9px !important;
+    border-radius: 11px !important;
+  }
+
+  .finance-partner-mini-grid strong {
+    font-size: 16px !important;
+  }
+
+  /* Trend — bardziej kompaktowy na telefonie. */
+  .finance-trend-chart {
+    height: 125px !important;
+  }
+
+  .finance-trend-bars {
+    height: 95px !important;
+  }
+
+  .finance-trend-bar {
+    width: 11px !important;
+  }
+
+  .finance-trend-legend {
+    margin-top: 7px !important;
+    font-size: 9px !important;
+  }
+
+  /* Alerty finansowe. */
+  .finance-alert-item {
+    padding: 9px !important;
+    border-radius: 11px !important;
+  }
+
+  .finance-alert-item strong {
+    font-size: 11px !important;
+  }
+
+  .finance-alert-item small {
+    font-size: 9px !important;
+  }
+
+  /* Podsumowanie roku — 2 × 2, tak jak reszta dashboardu. */
+  .finance-year-summary {
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+
+  .finance-year-summary-header {
+    margin-bottom: 10px !important;
+  }
+
+  .finance-year-summary-header h2 {
+    font-size: 18px !important;
+  }
+
+  .finance-year-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .finance-year-summary-grid > div {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .finance-year-summary-grid span {
+    font-size: 9px !important;
+  }
+
+  .finance-year-summary-grid strong {
+    margin-top: 4px !important;
+    font-size: 15px !important;
+  }
+
+  .finance-year-summary-badge {
+    padding: 6px 8px !important;
+    font-size: 9px !important;
+  }
+
+  /* Rozliczenie wspólników — spójne z pozostałymi kartami. */
+  .finance-partner-card {
+    border-radius: 17px !important;
+  }
+
+  .finance-balance-box {
+    border-radius: 13px !important;
+  }
+
+  .finance-settlement-actions {
+    gap: 7px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .finance-kpi-card strong {
+    font-size: 17px !important;
+  }
+
+  .finance-quick-action {
+    flex-basis: 135px !important;
+  }
+}

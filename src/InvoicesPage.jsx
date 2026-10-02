@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import logo from './assets/logo.png'
 import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
+import {getJobPayments,createJobPayment,deleteJobPayment} from './lib/jobPaymentsApi'
 
 const money=v=>Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł'
 const today=()=>new Date().toISOString().slice(0,10)
@@ -47,6 +48,7 @@ const polishAmountInWords=value=>{
 
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={},prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
  const [edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
+ const [payments,setPayments]=useState([]),[paymentForm,setPaymentForm]=useState({amount:'',paidAt:today(),note:''}),[paymentSaving,setPaymentSaving]=useState(false)
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients])
  const jm=useMemo(()=>new Map(jobs.map(j=>[String(j.id),j])),[jobs])
  const company=settings?.company||{}
@@ -68,6 +70,53 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
    status:'Do wystawienia',paymentMethod:'Przelew',items:it,
    netAmount:t,vatAmount:t*.23,grossAmount:t*1.23,paidAmount:0,vatSettledAmount:0,notes:''
   })
+ }
+
+ const refreshPayments=async(jobId)=>{
+  if(!jobId){setPayments([]);return}
+  try{
+   const rows=await getJobPayments(jobId)
+   setPayments(rows)
+   const paid=rows.filter(p=>!edit?.id||String(p.invoiceId||'')===String(edit.id)).reduce((s,p)=>s+Number(p.amount||0),0)
+   if(edit?.id)setEdit(prev=>prev?{...prev,paidAmount:paid}:prev)
+  }catch(error){console.error('Nie udało się wczytać płatności faktury:',error);setPayments([])}
+ }
+
+ useEffect(()=>{
+  if(!edit?.jobId){setPayments([]);return}
+  getJobPayments(edit.jobId).then(rows=>{
+   setPayments(rows)
+   if(edit.id){
+    const paid=rows.filter(p=>String(p.invoiceId||'')===String(edit.id)).reduce((s,p)=>s+Number(p.amount||0),0)
+    setEdit(prev=>prev?{...prev,paidAmount:paid}:prev)
+   }
+  }).catch(error=>console.error('Nie udało się wczytać płatności faktury:',error))
+ },[edit?.id,edit?.jobId])
+
+ const addPayment=async()=>{
+  if(!edit?.id||!edit?.jobId){onAlert?.('Najpierw zapisz fakturę, aby dodać płatność.');return}
+  const amount=Number(paymentForm.amount||0)
+  const remaining=Math.max(0,Number(edit.grossAmount||0)-Number(edit.paidAmount||0)-Number(edit.vatSettledAmount||0))
+  if(!Number.isFinite(amount)||amount<=0){onAlert?.('Podaj prawidłową kwotę płatności.');return}
+  if(amount>remaining+0.01){onAlert?.('Kwota płatności jest większa niż pozostała należność.');return}
+  try{
+   setPaymentSaving(true)
+   await createJobPayment({jobId:edit.jobId,invoiceId:edit.id,amount,paidAt:paymentForm.paidAt||today(),note:paymentForm.note})
+   setPaymentForm({amount:'',paidAt:today(),note:''})
+   await refreshPayments(edit.jobId)
+   window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed'))
+  }catch(error){console.error('Nie udało się zapisać płatności:',error);onAlert?.('Nie udało się zapisać płatności.')}
+  finally{setPaymentSaving(false)}
+ }
+
+ const removePayment=async(payment)=>{
+  const confirmed=await onConfirm?.(`Usunąć płatność ${money(payment.amount)} z dnia ${formatDate(payment.paidAt)}?`)
+  if(!confirmed)return
+  try{
+   await deleteJobPayment(payment.id)
+   await refreshPayments(edit.jobId)
+   window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed'))
+  }catch(error){console.error('Nie udało się usunąć płatności:',error);onAlert?.('Nie udało się usunąć płatności.')}
  }
 
  useEffect(()=>{if(!prefillJobId||edit)return;const j=jm.get(String(prefillJobId));if(!j)return;open(j);onPrefillConsumed?.()},[prefillJobId,jm,edit])
@@ -247,10 +296,31 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
     <div className="invoice-editor-finance-grid">
      <div className="invoice-editor-section invoice-payment-card">
       <div className="invoice-editor-section-title">Rozliczenie</div>
-      <div className="invoice-finance-row"><span>Zapłacono z płatności realizacji</span><strong>{money(paid)}</strong></div>
+      <div className="invoice-finance-row"><span>Zapłacono</span><strong>{money(paid)}</strong></div>
       <label className="invoice-field"><span>VAT zapłacony wcześniej</span><input type="number" min="0" max={a.vat} step="0.01" value={vatSettled} onChange={e=>setEdit({...edit,vatSettledAmount:Math.max(0,Math.min(a.vat,Number(e.target.value)||0))})}/></label>
-      <div className="invoice-finance-note">Ta kwota zmniejsza należność kontrahenta, ale nie tworzy sztucznej wpłaty w historii płatności.</div>
+      <div className="invoice-finance-note">VAT rozliczony wcześniej zmniejsza należność, ale nie tworzy płatności klienta.</div>
       <div className="invoice-remaining-box"><span>Pozostało do zapłaty</span><strong>{money(remaining)}</strong></div>
+      <div className="invoice-payment-history">
+       <div className="invoice-editor-section-title">Historia płatności</div>
+       {payments.filter(p=>!edit.id||String(p.invoiceId||'')===String(edit.id)).length===0
+        ? <div className="invoice-finance-note">Brak płatności przypisanych do tej faktury.</div>
+        : payments.filter(p=>!edit.id||String(p.invoiceId||'')===String(edit.id)).map(p=>
+          <div className="invoice-payment-history-row" key={p.id}>
+           <div><strong>{money(p.amount)}</strong><span>{formatDate(p.paidAt)}{p.note?' · '+p.note:''}</span></div>
+           <button type="button" className="invoice-remove-item" onClick={()=>removePayment(p)}>×</button>
+          </div>
+         )}
+      </div>
+      {edit.id&&edit.jobId&&Number(edit.grossAmount||0)-Number(edit.paidAmount||0)-Number(edit.vatSettledAmount||0)>0.01&&
+       <div className="invoice-add-payment">
+        <div className="invoice-editor-section-title">Dodaj płatność</div>
+        <div className="invoice-payment-form">
+         <input type="number" min="0.01" step="0.01" placeholder="Kwota" value={paymentForm.amount} onChange={e=>setPaymentForm({...paymentForm,amount:e.target.value})}/>
+         <input type="date" value={paymentForm.paidAt} onChange={e=>setPaymentForm({...paymentForm,paidAt:e.target.value})}/>
+         <input type="text" placeholder="Opis płatności (opcjonalnie)" value={paymentForm.note} onChange={e=>setPaymentForm({...paymentForm,note:e.target.value})}/>
+         <button type="button" className="invoice-save-button" disabled={paymentSaving} onClick={addPayment}>{paymentSaving?'Zapisywanie…':'+ Dodaj płatność'}</button>
+        </div>
+       </div>}
      </div>
      <div className="invoice-editor-section">
       <div className="invoice-editor-section-title">Uwagi</div>

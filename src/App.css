@@ -12983,3 +12983,421 @@ section {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+
+/* =========================================================
+   FAKTURY — DASHBOARD I MOBILE POLISH
+   ========================================================= */
+
+.invoice-list-tools {
+  padding: 13px !important;
+}
+
+.invoice-list-tools > input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d8e3ee;
+  border-radius: 12px;
+  background: #f8fbfe;
+  color: #12234f;
+  font-size: 14px;
+  outline: none;
+}
+
+.invoice-filter-row {
+  display: flex;
+  gap: 7px;
+  margin-top: 9px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.invoice-filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.invoice-filter-row button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #d8e3ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #526174;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.invoice-filter-row button.active {
+  border-color: #168fe5;
+  background: #eaf5ff;
+  color: #0879c8;
+}
+
+.invoice-list-card {
+  position: relative;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.invoice-list-main {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 52px 14px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.invoice-list-main > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-list-main > div > strong {
+  color: #12234f;
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.invoice-list-main > div > span {
+  margin-top: 3px;
+  color: #40536c;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-list-main > div > small {
+  margin-top: 5px;
+  color: #7a8a9d;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.invoice-list-main > strong {
+  flex: 0 0 auto;
+  color: #12234f;
+  font-size: 15px;
+}
+
+.invoice-list-delete {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 31px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: #fff0f1;
+  color: #c53b46;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .invoice-list-tools {
+    margin-bottom: 10px !important;
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  .invoice-list-tools > input {
+    min-height: 42px !important;
+    border-radius: 11px !important;
+    font-size: 13px !important;
+  }
+
+  .invoice-filter-row {
+    margin-top: 7px !important;
+    gap: 6px !important;
+  }
+
+  .invoice-filter-row button {
+    min-height: 33px !important;
+    padding: 6px 9px !important;
+    border-radius: 9px !important;
+    font-size: 9px !important;
+  }
+
+  /* KPI faktur — czytelne 2 × 2, bez zajmowania połowy ekranu. */
+  .sub-page .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .sub-page .dashboard-grid .dashboard-card {
+    min-height: 66px !important;
+    padding: 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .sub-page .dashboard-grid .dashboard-icon {
+    width: 32px !important;
+    height: 32px !important;
+    flex-basis: 32px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+  }
+
+  .sub-page .dashboard-grid .dashboard-card span {
+    font-size: 8px !important;
+    letter-spacing: .5px !important;
+  }
+
+  .sub-page .dashboard-grid .dashboard-card strong {
+    margin-top: 3px !important;
+    font-size: 19px !important;
+  }
+
+  .invoice-list-card {
+    margin-bottom: 0 !important;
+    border-radius: 14px !important;
+  }
+
+  .invoice-list-main {
+    min-height: 78px !important;
+    padding: 11px 48px 11px 11px !important;
+    gap: 7px !important;
+  }
+
+  .invoice-list-main > div > strong {
+    font-size: 13px !important;
+  }
+
+  .invoice-list-main > div > span {
+    margin-top: 2px !important;
+    font-size: 9px !important;
+  }
+
+  .invoice-list-main > div > small {
+    margin-top: 4px !important;
+    font-size: 8px !important;
+  }
+
+  .invoice-list-main > strong {
+    font-size: 12px !important;
+  }
+
+  .invoice-list-delete {
+    right: 7px !important;
+    top: 7px !important;
+    transform: none !important;
+    min-height: 25px !important;
+    padding: 4px 6px !important;
+    border-radius: 7px !important;
+    font-size: 8px !important;
+  }
+
+  /* Edycja faktury — formularz bez poziomego ścisku. */
+  .invoice-editor-page {
+    padding-bottom: 105px !important;
+  }
+
+  .invoice-editor-top {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .invoice-editor-top h1 {
+    font-size: 24px !important;
+  }
+
+  .invoice-editor-number {
+    font-size: 9px !important;
+    padding: 6px 7px !important;
+    border-radius: 8px !important;
+  }
+
+  .invoice-editor-card {
+    border-radius: 17px !important;
+    padding: 11px !important;
+  }
+
+  .invoice-editor-section {
+    padding: 11px !important;
+    border-radius: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .invoice-editor-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .invoice-editor-parties {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .invoice-party {
+    padding: 11px !important;
+    border-radius: 12px !important;
+  }
+
+  .invoice-party strong {
+    font-size: 13px !important;
+  }
+
+  .invoice-party span {
+    font-size: 9px !important;
+  }
+
+  .invoice-items-table {
+    overflow: visible !important;
+  }
+
+  .invoice-items-head {
+    display: none !important;
+  }
+
+  .invoice-item-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 7px !important;
+    padding: 9px !important;
+    margin-bottom: 7px !important;
+    border: 1px solid #e1e9f0;
+    border-radius: 12px;
+    background: #f9fbfd;
+  }
+
+  .invoice-item-row input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .invoice-item-row strong {
+    align-self: center;
+    padding: 0 3px;
+    font-size: 11px !important;
+  }
+
+  .invoice-item-row .invoice-remove-item {
+    min-height: 34px !important;
+    justify-self: end;
+  }
+
+  .invoice-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  .invoice-totals > div {
+    padding: 9px !important;
+    border-radius: 10px !important;
+  }
+
+  .invoice-totals .invoice-total-main {
+    grid-column: 1 / -1 !important;
+  }
+
+  .invoice-totals strong {
+    font-size: 14px !important;
+  }
+
+  .invoice-editor-finance-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .invoice-payment-form {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .invoice-payment-form input:last-of-type,
+  .invoice-payment-form button {
+    grid-column: 1 / -1 !important;
+  }
+
+  .invoice-editor-actions {
+    position: sticky !important;
+    bottom: 8px !important;
+    z-index: 20 !important;
+    display: grid !important;
+    grid-template-columns: .8fr .9fr 1.3fr !important;
+    gap: 6px !important;
+    padding: 7px !important;
+    margin: 7px 0 0 !important;
+    border: 1px solid #dce6ef !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.94) !important;
+    box-shadow: 0 10px 25px rgba(22,54,88,.12) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  .invoice-editor-actions button {
+    min-height: 43px !important;
+    padding: 6px !important;
+    border-radius: 10px !important;
+    font-size: 10px !important;
+  }
+
+  .invoice-save-button {
+    background: #159447 !important;
+  }
+
+  .invoice-cancel-button {
+    background: #fff0f1 !important;
+    color: #c53b46 !important;
+  }
+
+  .invoice-preview-button {
+    background: #eef5fb !important;
+    color: #25638d !important;
+  }
+
+  .invoice-document-parties {
+    grid-template-columns: 1fr !important;
+  }
+
+  .invoice-document-table {
+    overflow-x: auto !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .sub-page .dashboard-grid .dashboard-card {
+    min-height: 61px !important;
+    padding: 7px !important;
+  }
+
+  .sub-page .dashboard-grid .dashboard-icon {
+    width: 29px !important;
+    height: 29px !important;
+    flex-basis: 29px !important;
+  }
+
+  .invoice-list-main {
+    padding-left: 9px !important;
+    padding-right: 45px !important;
+  }
+
+  .invoice-list-main > strong {
+    font-size: 11px !important;
+  }
+
+  .invoice-editor-actions {
+    grid-template-columns: .75fr .85fr 1.4fr !important;
+  }
+
+  .invoice-editor-actions button {
+    font-size: 9px !important;
+  }
+}

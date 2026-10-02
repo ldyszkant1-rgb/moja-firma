@@ -2391,33 +2391,12 @@ function App() {
     )
   }
 
-  if (!authSession && !deviceUser) {
-    return (
-      <div className="device-setup-overlay">
-        <div className="device-setup-card" role="dialog" aria-modal="true">
-          <div className="device-setup-icon">📱</div>
-          <div className="small-label">PIERWSZE URUCHOMIENIE</div>
-          <h2>Kto korzysta z tego telefonu?</h2>
-          <p>
-            Wybierz użytkownika urządzenia. Po wyborze telefon zostanie przypisany i przy kolejnych uruchomieniach aplikacja rozpozna użytkownika automatycznie.
-          </p>
-          <div className="device-setup-buttons">
-            <button type="button" disabled={deviceLoading} onClick={() => handleDeviceUserSelect('Łukasz')}>
-              👤 Łukasz
-            </button>
-            <button type="button" disabled={deviceLoading} onClick={() => handleDeviceUserSelect('Paweł')}>
-              👤 Paweł
-            </button>
-          </div>
-          <div className="device-setup-device">
-            {deviceLoading ? 'Zapisywanie przypisania urządzenia…' : 'Ten wybór zostanie zapisany dla tego urządzenia.'}
-          </div>
-        </div>
-      </div>
-    )
-  }
+if (!authSession && !deviceUser) {
+  return <AuthPage />
+}
 
-  if (authSession && !authOrganizationId) {
+if (authSession && !authOrganizationId) {
+
     return <AuthPage session={authSession} recovery={authRecovery} />
   }
 

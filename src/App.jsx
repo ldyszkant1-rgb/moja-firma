@@ -2435,6 +2435,8 @@ function App() {
 
             invoices={invoices}
 
+            allJobPayments={allJobPayments}
+
             clients={clients}
 
             onOpenJob={
@@ -2614,6 +2616,7 @@ function App() {
 function StartPage({
   jobs,
   invoices = [],
+  allJobPayments = [],
   onOpenJob,
   onJobs,
   generalReminders,
@@ -2653,6 +2656,106 @@ function StartPage({
   )
 
   const today = getTodayString()
+
+  const dashboardInvoiceIds = new Set(
+    invoices
+      .filter((invoice) => invoice.status !== 'Anulowana')
+      .map((invoice) => String(invoice.id))
+  )
+
+  const dashboardPaidByInvoice = new Map()
+
+  invoices.forEach((invoice) => {
+    const assigned = allJobPayments
+      .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+    dashboardPaidByInvoice.set(String(invoice.id), Math.max(0, assigned))
+  })
+
+  const dashboardInvoicesByJob = new Map()
+  invoices.forEach((invoice) => {
+    if (!invoice.jobId || invoice.status === 'Anulowana') return
+    const key = String(invoice.jobId)
+    const current = dashboardInvoicesByJob.get(key) || []
+    current.push(invoice)
+    dashboardInvoicesByJob.set(key, current)
+  })
+
+  dashboardInvoicesByJob.forEach((jobInvoices, jobId) => {
+    const unassigned = allJobPayments
+      .filter((payment) =>
+        String(payment.jobId) === String(jobId) &&
+        !payment.invoiceId
+      )
+      .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
+
+    let remaining = unassigned.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    )
+
+    const sorted = [...jobInvoices].sort((a, b) => {
+      const dateCompare = String(a.issueDate || '').localeCompare(String(b.issueDate || ''))
+      if (dateCompare !== 0) return dateCompare
+      return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+    })
+
+    sorted.forEach((invoice) => {
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const already = Math.min(
+        gross,
+        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+      )
+      const legacy = Math.min(
+        Math.max(0, gross - already),
+        Math.max(0, remaining)
+      )
+      dashboardPaidByInvoice.set(String(invoice.id), already + legacy)
+      remaining = Math.max(0, remaining - legacy)
+    })
+  })
+
+  const dashboardReceivables = invoices
+    .filter((invoice) =>
+      invoice.status !== 'Anulowana' &&
+      invoice.status !== 'Do wystawienia' &&
+      invoice.issueDate
+    )
+    .map((invoice) => {
+      const net = Math.max(0, Number(invoice.netAmount || 0))
+      const paid = Math.min(
+        net,
+        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+      )
+      const remaining = Math.max(0, net - paid)
+      return {
+        invoice,
+        remaining,
+        overdue: Boolean(
+          remaining > 0.01 &&
+          invoice.dueDate &&
+          invoice.dueDate < today
+        ),
+      }
+    })
+    .filter((item) => item.remaining > 0.01)
+
+  const dashboardReceivablesNet = dashboardReceivables.reduce(
+    (sum, item) => sum + item.remaining,
+    0
+  )
+
+  const dashboardOverdueNet = dashboardReceivables
+    .filter((item) => item.overdue)
+    .reduce((sum, item) => sum + item.remaining, 0)
+
+  const dashboardMonthPrefix = today.slice(0, 7)
+  const dashboardMonthReceived = allJobPayments
+    .filter((payment) => payment.paidAt?.startsWith(dashboardMonthPrefix))
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+  const dashboardOpenInvoices = dashboardReceivables.length
 
   const pendingGeneral = (generalReminders || []).filter(
     (item) => !item.done
@@ -2708,6 +2811,56 @@ function StartPage({
           </div>
         </div>
       </div>
+
+      <section className="dashboard-finance-section">
+        <div className="section-title">
+          <div>
+            <div className="small-label">FINANSE</div>
+            <h2>Najważniejsze</h2>
+          </div>
+        </div>
+
+        <div className="dashboard-finance-grid">
+          <button
+            type="button"
+            className="dashboard-finance-card dashboard-finance-card-primary"
+            onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-finance'))}
+          >
+            <span className="dashboard-finance-icon">💰</span>
+            <span className="dashboard-finance-copy">
+              <small>Do odzyskania netto</small>
+              <strong>{formatMoney(dashboardReceivablesNet)}</strong>
+              <em>{dashboardOpenInvoices} {dashboardOpenInvoices === 1 ? 'faktura' : 'faktur'} z należnością</em>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="dashboard-finance-card"
+            onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-finance'))}
+          >
+            <span className="dashboard-finance-icon">📥</span>
+            <span className="dashboard-finance-copy">
+              <small>Otrzymano w tym miesiącu</small>
+              <strong>{formatMoney(dashboardMonthReceived)}</strong>
+              <em>Płatności zaksięgowane</em>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="dashboard-finance-card dashboard-finance-card-warning"
+            onClick={() => window.dispatchEvent(new CustomEvent('aeroinstal-open-finance'))}
+          >
+            <span className="dashboard-finance-icon">⏰</span>
+            <span className="dashboard-finance-copy">
+              <small>Przeterminowane</small>
+              <strong>{formatMoney(dashboardOverdueNet)}</strong>
+              <em>Należności po terminie</em>
+            </span>
+          </button>
+        </div>
+      </section>
 
       <section>
         <div className="section-title">

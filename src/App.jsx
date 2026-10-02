@@ -7929,8 +7929,7 @@ function FinancePage({
     .filter((cost) => cost.paidBy === partnerTwo)
     .reduce((sum, cost) => sum + Number(cost.amount || 0), 0)
 
-  // Każdy wspólnik ponosi połowę każdego kosztu. Jeśli Łukasz zapłacił 2000 zł,
-  // Paweł powinien wyrównać Łukaszowi 1000 zł, a nie całe 2000 zł.
+  // Każdy z dwóch rozliczanych wspólników ponosi połowę każdego kosztu.
   const currentCostBalance = (partnerOneCosts - partnerTwoCosts) / 2
 
   const selectedMonthEnd = `${selectedMonthKey}-31`
@@ -8315,8 +8314,8 @@ function FinancePage({
       return
     }
 
-    const fromPerson = partnerCostBalance > 0 ? 'Paweł' : 'Łukasz'
-    const toPerson = partnerCostBalance > 0 ? 'Łukasz' : 'Paweł'
+    const fromPerson = partnerCostBalance > 0 ? partnerTwo : partnerOne
+    const toPerson = partnerCostBalance > 0 ? partnerOne : partnerTwo
 
     if (safeAmount > Math.abs(partnerCostBalance) + 0.01) {
       await showCustomAlert(
@@ -8449,7 +8448,7 @@ function FinancePage({
     setEditCost({
       category: cost.category || 'ZUS',
       amount: String(cost.amount ?? ''),
-      paidBy: cost.paidBy || 'Łukasz',
+      paidBy: cost.paidBy || partnerOne,
       description: cost.description || '',
       date: cost.month || getTodayString(),
     })
@@ -8999,7 +8998,7 @@ function FinancePage({
           <span>Jak to działa?</span>
           <p>
             Każdy koszt dzielimy po 50/50. Jeśli jedna osoba zapłaci więcej, druga oddaje jej tylko swoją połowę tego kosztu.
-            Przykład: przy koszcie 2000 zł zapłaconym przez Łukasza, Paweł oddaje 1000 zł. Nierozliczone saldo przechodzi dalej.
+            Przykład: przy koszcie 2000 zł zapłaconym przez jednego wspólnika, drugi oddaje 1000 zł. Nierozliczone saldo przechodzi dalej.
           </p>
         </div>
       </div>

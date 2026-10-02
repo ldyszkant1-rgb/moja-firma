@@ -12067,3 +12067,62 @@ section {
     font-size: 8px !important;
   }
 }
+
+
+/* Wymaga uwagi — ten sam kafelkowy język co Centrum Sterowania. */
+@media (max-width: 600px) {
+  .dashboard-attention-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-attention-card {
+    min-height: 86px !important;
+    padding: 11px 10px !important;
+    border-radius: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+  }
+
+  .dashboard-attention-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .dashboard-attention-icon {
+    width: 36px !important;
+    height: 36px !important;
+    flex: 0 0 36px !important;
+    border-radius: 11px !important;
+    font-size: 17px !important;
+  }
+
+  .dashboard-attention-card strong {
+    font-size: 17px !important;
+    line-height: 1.1 !important;
+  }
+
+  .dashboard-attention-card small {
+    margin-top: 3px !important;
+    font-size: 9.5px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .dashboard-attention-grid {
+    gap: 7px !important;
+  }
+
+  .dashboard-attention-card {
+    min-height: 80px !important;
+    padding: 9px !important;
+  }
+
+  .dashboard-attention-icon {
+    width: 33px !important;
+    height: 33px !important;
+    flex-basis: 33px !important;
+  }
+}

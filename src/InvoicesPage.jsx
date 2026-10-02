@@ -138,10 +138,17 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
   if(edit.items.some(x=>!String(x.name||'').trim())){onAlert?.('Każda pozycja musi mieć opis.');return}
   if(edit.items.some(x=>Number(x.quantity||0)<=0)){onAlert?.('Ilość każdej pozycji musi być większa od zera.');return}
   if(edit.items.some(x=>Number(x.netUnit||0)<0)){onAlert?.('Cena netto nie może być ujemna.');return}
+  const calculated=amounts(edit.items)
+  const paid=Number(edit.paidAmount||0)
+  const vatSettled=Math.min(Math.max(0,Number(edit.vatSettledAmount||0)),Math.max(0,Number(calculated.vat||0)))
+  if(edit.id && paid + vatSettled > calculated.gross + 0.01){
+   onAlert?.('Nie można obniżyć wartości faktury poniżej już otrzymanych wpłat i rozliczonego VAT.')
+   return
+  }
   setSaving(true)
   try{
-   const vatLimit=Math.max(0,Number(edit.vatAmount||0))
-   const normalizedEdit={...edit,vatSettledAmount:Math.min(Math.max(0,Number(edit.vatSettledAmount||0)),vatLimit)}
+   const vatLimit=Math.max(0,Number(calculated.vat||0))
+   const normalizedEdit={...edit,netAmount:calculated.net,vatAmount:calculated.vat,grossAmount:calculated.gross,vatSettledAmount:Math.min(Math.max(0,Number(edit.vatSettledAmount||0)),vatLimit)}
    const x=edit.id?await updateInvoice(normalizedEdit):await createInvoice(normalizedEdit)
    setEdit(null)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}))

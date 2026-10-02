@@ -80,7 +80,13 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
  const save=async()=>{
   if(!edit.clientId){onAlert?.('Wybierz klienta.');return}
+  if(!edit.issueDate){onAlert?.('Podaj datę wystawienia.');return}
+  if(!edit.dueDate){onAlert?.('Podaj termin płatności.');return}
+  if(new Date(edit.dueDate+'T23:59:59')<new Date(edit.issueDate+'T00:00:00')){onAlert?.('Termin płatności nie może być wcześniejszy niż data wystawienia.');return}
   if(!edit.items?.length){onAlert?.('Dodaj co najmniej jedną pozycję.');return}
+  if(edit.items.some(x=>!String(x.name||'').trim())){onAlert?.('Każda pozycja musi mieć opis.');return}
+  if(edit.items.some(x=>Number(x.quantity||0)<=0)){onAlert?.('Ilość każdej pozycji musi być większa od zera.');return}
+  if(edit.items.some(x=>Number(x.netUnit||0)<0)){onAlert?.('Cena netto nie może być ujemna.');return}
   setSaving(true)
   try{
    const vatLimit=Math.max(0,Number(edit.vatAmount||0))

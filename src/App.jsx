@@ -1018,13 +1018,14 @@ function App() {
 
     }
 
+    if (!dataAccessReady) return () => { cancelled = true }
     loadJobsFromSupabase()
 
     return () => {
       cancelled = true
     }
 
-  }, [])
+  }, [dataAccessReady])
 
 
   /*
@@ -1055,6 +1056,7 @@ function App() {
       }
     }
 
+    if (!dataAccessReady) return () => { cancelled = true }
     loadGeneralReminders()
 
     const channel = supabase
@@ -1365,7 +1367,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [dataAccessReady])
 
 
   /*
@@ -2383,7 +2385,7 @@ function App() {
 
 
   useEffect(() => {
-    if (!authSession) return
+    if (!dataAccessReady) return
 
     let cancelled = false
 
@@ -2432,7 +2434,7 @@ function App() {
     loadOrganizationMembers()
 
     return () => { cancelled = true }
-  }, [authSession])
+  }, [dataAccessReady, authSession])
 
   if (!authChecked || !authOrganizationChecked || (!authSession && deviceLoading)) {
     return (
@@ -7951,7 +7953,7 @@ function FinancePage({
     })
 
     return unsubscribe
-  }, [])
+  }, [dataAccessReady])
 
 
   const [allJobPayments, setAllJobPayments] = useState([])

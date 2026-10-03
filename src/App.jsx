@@ -48,6 +48,14 @@ import {
 } from './lib/partnerSettlementApi'
 import { supabase } from './lib/supabase'
 import { getInvoices, subscribeToInvoices } from './lib/invoicesApi'
+import {
+  DEVICE_USERS,
+  getOrCreateDeviceId,
+  getLocalDeviceUser,
+  saveLocalDeviceUser,
+  getDeviceUserFromSupabase,
+  claimDeviceInSupabase,
+} from './lib/deviceAuth'
 
 
 /* =====================================================

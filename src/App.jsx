@@ -2407,7 +2407,7 @@ function App() {
             nip: data.nip || '',
             regon: data.regon || '',
             address: data.address || '',
-            email: data.email || authSession.user?.email || '',
+            email: data.email || authSession?.user?.email || '',
             bankAccount: data.bank_account || '',
           },
         }))

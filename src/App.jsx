@@ -2702,6 +2702,7 @@ return (
           <FinancePage
             jobs={jobs}
             organizationMembers={organizationMembers}
+            dataAccessReady={dataAccessReady}
             settings={settings}
             clients={clients}
             invoices={invoices}
@@ -7854,6 +7855,7 @@ function DocumentRow({
 function FinancePage({
   jobs,
   organizationMembers = [],
+  dataAccessReady = false,
   settings,
   clients = [],
   invoices = [],

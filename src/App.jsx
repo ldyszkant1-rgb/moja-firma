@@ -654,7 +654,7 @@ function App() {
       getOffers().then((fresh) => setOffers(fresh)).catch((error) => console.error('Nie udało się odświeżyć ofert:', error))
     })
     return () => { cancelled = true; unsubscribe() }
-  }, [])
+  }, [dataAccessReady])
 
   useEffect(() => {
     let cancelled = false
@@ -1101,7 +1101,7 @@ function App() {
       cancelled = true
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [dataAccessReady])
 
 
   const addGeneralReminder = async ({ text, date }) => {
@@ -1731,7 +1731,7 @@ function App() {
 
     }
 
-  }, [])
+  }, [dataAccessReady])
 
   /*
    * Nowa realizacja.
@@ -8081,7 +8081,7 @@ function FinancePage({
       supabase.removeChannel(unsubscribePayments)
       unsubscribeSettlements()
     }
-  }, [])
+  }, [dataAccessReady])
 
   const [showForm, setShowForm] = useState(false)
   const [showMonthPicker, setShowMonthPicker] = useState(false)

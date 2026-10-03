@@ -530,6 +530,7 @@ function App() {
   const [deviceId] = useState(() => getOrCreateDeviceId())
   const [deviceUser, setDeviceUser] = useState(() => getLocalDeviceUser())
   const [deviceLoading, setDeviceLoading] = useState(true)
+  const [deviceAuthError, setDeviceAuthError] = useState(null)
   const [authSession, setAuthSession] = useState(null)
   const [organizationMembers, setOrganizationMembers] = useState([])
   const [authChecked, setAuthChecked] = useState(false)
@@ -720,9 +721,11 @@ function App() {
         if (cancelled) return
 
         saveLocalDeviceUser(assignedUser)
+        setDeviceAuthError(null)
         setDeviceUser(assignedUser)
       } catch (error) {
         console.error('Nie udało się uwierzytelnić urządzenia Aeroinstal:', error)
+        if (!cancelled) setDeviceAuthError(error?.message || 'Nie udało się zweryfikować tego urządzenia.')
 
         try {
           const { data } = await supabase.auth.getSession()
@@ -744,6 +747,22 @@ function App() {
     loadDeviceUser()
     return () => { cancelled = true }
   }, [deviceId])
+
+  const retryLegacyDeviceAuthentication = async () => {
+    setDeviceAuthError(null)
+    setDeviceLoading(true)
+    try {
+      const localUser = getLocalDeviceUser()
+      if (!localUser) throw new Error('Brak zapisanego użytkownika starego urządzenia.')
+      const assignedUser = await claimDeviceInSupabase(deviceId, localUser)
+      saveLocalDeviceUser(assignedUser)
+      setDeviceUser(assignedUser)
+    } catch (error) {
+      setDeviceAuthError(error?.message || 'Nie udało się zweryfikować tego urządzenia.')
+    } finally {
+      setDeviceLoading(false)
+    }
+  }
 
   const handleDeviceUserSelect = async (user) => {
     if (!DEVICE_USERS.includes(user) || !deviceId || deviceLoading) return
@@ -2405,9 +2424,24 @@ function App() {
     )
   }
 
-if (!authSession && !deviceUser) {
-  return <AuthPage />
-}
+if (!authSession && !deviceUser && deviceAuthError && getLocalDeviceUser()) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: '#f4f8fc' }}>
+        <div style={{ width: '100%', maxWidth: '520px', background: '#fff', borderRadius: '24px', padding: '28px', boxShadow: '0 18px 55px rgba(15, 48, 90, 0.12)', border: '1px solid #e4ebf2' }}>
+          <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.08em', color: '#168fe5', marginBottom: '8px' }}>AEROINSTAL</div>
+          <h2 style={{ margin: '0 0 10px', color: '#12234f' }}>Przywracanie starego urządzenia</h2>
+          <p style={{ color: '#64748b', lineHeight: 1.55, marginTop: 0 }}>Telefon ma zapisany dostęp Łukasza, ale serwer nie rozpoznał jego identyfikatora.</p>
+          <div style={{ margin: '18px 0', padding: '14px', borderRadius: '14px', background: '#f6f9fc', border: '1px solid #dce6ef', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '13px', color: '#334155' }}>{deviceId}</div>
+          <div style={{ marginBottom: '18px', padding: '13px 14px', borderRadius: '12px', background: '#fff7ed', color: '#9a3412', fontSize: '14px', lineHeight: 1.45 }}>{deviceAuthError}</div>
+          <button type="button" onClick={retryLegacyDeviceAuthentication} disabled={deviceLoading} style={{ width: '100%', minHeight: '50px', border: 'none', borderRadius: '14px', background: '#168fe5', color: '#fff', fontWeight: 800, fontSize: '16px' }}>{deviceLoading ? 'Sprawdzam…' : 'Spróbuj ponownie'}</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!authSession && !deviceUser) {
+    return <AuthPage />
+  }
 
 if (authSession && !authOrganizationId) {
 

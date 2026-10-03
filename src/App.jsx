@@ -532,7 +532,14 @@ function App() {
   const [deviceLoading, setDeviceLoading] = useState(true)
   const [deviceAuthError, setDeviceAuthError] = useState(null)
   const [authSession, setAuthSession] = useState(null)
-  const dataAccessReady = Boolean(authSession || deviceUser)
+  // Dane aplikacji mogą być pobierane dopiero po zakończeniu weryfikacji
+  // sesji oraz starego przypisania urządzenia. Wcześniej deviceUser może być
+  // odczytany z localStorage, ale sesja Supabase nie jest jeszcze gotowa,
+  // więc RLS zwróci pustą listę. To powodowało wyzerowanie Start/Realizacje.
+  const dataAccessReady =
+    authChecked &&
+    authOrganizationChecked &&
+    (Boolean(authSession) || (!deviceLoading && Boolean(deviceUser)))
   const [organizationMembers, setOrganizationMembers] = useState([])
   const [authChecked, setAuthChecked] = useState(false)
   const [authOrganizationId, setAuthOrganizationId] = useState(null)
@@ -616,6 +623,7 @@ function App() {
     let cancelled = false
 
     const loadDashboardPayments = async () => {
+      if (!dataAccessReady) return
       try {
         const remotePayments = await getAllJobPayments()
         if (!cancelled) {

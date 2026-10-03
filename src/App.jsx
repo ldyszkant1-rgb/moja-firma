@@ -9075,7 +9075,6 @@ function FinancePage({
               </strong>
             </div>
           </div>
-        </div>
 
           )}
 

@@ -9929,6 +9929,45 @@ function SettingsPage({
     kg: 0,
   }
 
+  const [accessDiagnostic, setAccessDiagnostic] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const runAccessDiagnostic = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError) throw userError
+
+        const { data: memberships, error: membershipError } = await supabase
+          .from('organization_members')
+          .select('organization_id,role,display_name')
+
+        const { count: jobsCount, error: jobsError } = await supabase
+          .from('jobs')
+          .select('id', { count: 'exact', head: true })
+
+        if (!cancelled) {
+          setAccessDiagnostic({
+            userId: userData?.user?.id || null,
+            email: userData?.user?.email || null,
+            anonymous: Boolean(userData?.user?.is_anonymous),
+            memberships: memberships || [],
+            membershipError: membershipError?.message || null,
+            jobsCount: jobsCount ?? null,
+            jobsError: jobsError?.message || null,
+          })
+        }
+      } catch (error) {
+        if (!cancelled) setAccessDiagnostic({ error: error?.message || String(error) })
+      }
+    }
+
+    if (authSession) runAccessDiagnostic()
+
+    return () => { cancelled = true }
+  }, [authSession?.user?.id])
+
   const [draftRates, setDraftRates] = useState({
     mb: currentRates.mb ?? 0,
     m2: currentRates.m2 ?? 0,
@@ -10416,6 +10455,27 @@ function SettingsPage({
       </div>
 
       <div className="settings-list settings-page">
+        {authSession && (
+          <div className="detail-card settings-detail-card" style={{ border: '1px solid #d7e7f5', background: '#f8fbff' }}>
+            <h2 style={{ marginTop: 0 }}>Diagnostyka dostępu</h2>
+            {!accessDiagnostic && <div style={{ fontSize: '13px', opacity: 0.7 }}>Sprawdzam sesję i dostęp do danych…</div>}
+            {accessDiagnostic?.error && <pre style={{ whiteSpace: 'pre-wrap', color: '#a22', fontSize: '12px' }}>{accessDiagnostic.error}</pre>}
+            {accessDiagnostic && !accessDiagnostic.error && (
+              <div style={{ fontSize: '12px', lineHeight: 1.7, wordBreak: 'break-word' }}>
+                <div><strong>user id:</strong> {accessDiagnostic.userId || 'brak'}</div>
+                <div><strong>email:</strong> {accessDiagnostic.email || 'brak'}</div>
+                <div><strong>anonymous:</strong> {String(accessDiagnostic.anonymous)}</div>
+                <div><strong>organizacje:</strong> {accessDiagnostic.memberships.length}</div>
+                <div><strong>jobs widoczne:</strong> {accessDiagnostic.jobsCount ?? 'brak'}</div>
+                {accessDiagnostic.membershipError && <div style={{ color: '#a22' }}><strong>membership error:</strong> {accessDiagnostic.membershipError}</div>}
+                {accessDiagnostic.jobsError && <div style={{ color: '#a22' }}><strong>jobs error:</strong> {accessDiagnostic.jobsError}</div>}
+                {accessDiagnostic.memberships.map((item, index) => (
+                  <div key={index}>{item.organization_id} · {item.role} · {item.display_name || ''}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="settings-item settings-item-locked settings-section-user">
           <div>
             <span>👤 Użytkownik</span>

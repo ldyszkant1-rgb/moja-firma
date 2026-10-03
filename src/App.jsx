@@ -532,6 +532,7 @@ function App() {
   const [deviceLoading, setDeviceLoading] = useState(true)
   const [deviceAuthError, setDeviceAuthError] = useState(null)
   const [authSession, setAuthSession] = useState(null)
+  const dataAccessReady = Boolean(authSession || deviceUser)
   const [organizationMembers, setOrganizationMembers] = useState([])
   const [authChecked, setAuthChecked] = useState(false)
   const [authOrganizationId, setAuthOrganizationId] = useState(null)
@@ -630,7 +631,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [dataAccessReady])
 
   useEffect(() => {
     let cancelled = false
@@ -642,6 +643,7 @@ function App() {
         console.error('Nie udało się wczytać ofert:', error)
       }
     }
+    if (!dataAccessReady) return () => { cancelled = true }
     loadOffers()
     const unsubscribe = subscribeToOffers((payload) => {
       if (payload.eventType === 'DELETE' && payload.old?.id) {
@@ -664,6 +666,7 @@ function App() {
         console.error('Nie udało się wczytać faktur:', error)
       }
     }
+    if (!dataAccessReady) return () => { cancelled = true }
     loadInvoices()
     const unsubscribe = subscribeToInvoices((payload) => {
       if (payload.eventType === 'DELETE' && payload.old?.id) {
@@ -679,7 +682,7 @@ function App() {
       unsubscribe()
       window.removeEventListener('aeroinstal-invoices-changed', handleLocalChange)
     }
-  }, [])
+  }, [dataAccessReady])
 
   const loadClients = async () => {
     try {
@@ -887,6 +890,8 @@ function App() {
   useEffect(() => {
     let cancelled = false
 
+    if (!dataAccessReady) return () => { cancelled = true }
+
     const load = async () => {
       try {
         const remoteClients = await getClients()
@@ -931,7 +936,7 @@ function App() {
       cancelled = true
       unsubscribe()
     }
-  }, [])
+  }, [dataAccessReady])
 
 
   /*
@@ -968,6 +973,7 @@ function App() {
   useEffect(() => {
 
     let cancelled = false
+    if (!dataAccessReady) return () => { cancelled = true }
 
     const loadJobsFromSupabase = async () => {
 
@@ -7895,14 +7901,16 @@ function FinancePage({
       }
     }
 
+    if (!dataAccessReady) return () => { cancelled = true }
     loadFinance()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [dataAccessReady])
 
   useEffect(() => {
+    if (!dataAccessReady) return undefined
     const unsubscribe = subscribeToFinance((payload) => {
       if (!payload) return
 
@@ -7983,6 +7991,7 @@ function FinancePage({
       }
     }
 
+    if (!dataAccessReady) return () => { cancelled = true }
     loadPaymentAndSettlementData()
 
     const unsubscribePayments = supabase

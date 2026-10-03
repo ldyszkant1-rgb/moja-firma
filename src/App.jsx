@@ -532,6 +532,12 @@ function App() {
   const [deviceLoading, setDeviceLoading] = useState(true)
   const [deviceAuthError, setDeviceAuthError] = useState(null)
   const [authSession, setAuthSession] = useState(null)
+  const [organizationMembers, setOrganizationMembers] = useState([])
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authOrganizationId, setAuthOrganizationId] = useState(null)
+  const [authOrganizationChecked, setAuthOrganizationChecked] = useState(false)
+  const [authRecovery, setAuthRecovery] = useState(false)
+
   // Dane aplikacji mogą być pobierane dopiero po zakończeniu weryfikacji
   // sesji oraz starego przypisania urządzenia. Wcześniej deviceUser może być
   // odczytany z localStorage, ale sesja Supabase nie jest jeszcze gotowa,
@@ -540,11 +546,6 @@ function App() {
     authChecked &&
     authOrganizationChecked &&
     (Boolean(authSession) || (!deviceLoading && Boolean(deviceUser)))
-  const [organizationMembers, setOrganizationMembers] = useState([])
-  const [authChecked, setAuthChecked] = useState(false)
-  const [authOrganizationId, setAuthOrganizationId] = useState(null)
-  const [authOrganizationChecked, setAuthOrganizationChecked] = useState(false)
-  const [authRecovery, setAuthRecovery] = useState(false)
 
   useEffect(() => {
     let mounted = true

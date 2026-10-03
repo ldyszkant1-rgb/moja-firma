@@ -723,6 +723,18 @@ function App() {
         saveLocalDeviceUser(assignedUser)
         setDeviceAuthError(null)
         setDeviceUser(assignedUser)
+
+        // Pierwsze uwierzytelnienie anonimowego urządzenia musi zakończyć się
+        // pełnym ponownym startem aplikacji, aby wszystkie zapytania danych
+        // wystartowały już z poprawnym kontekstem RLS organizacji Aeroinstal.
+        if (typeof window !== 'undefined') {
+          const reloadKey = 'aeroinstal_legacy_auth_reload_done'
+          if (!window.sessionStorage.getItem(reloadKey)) {
+            window.sessionStorage.setItem(reloadKey, '1')
+            window.location.reload()
+            return
+          }
+        }
       } catch (error) {
         console.error('Nie udało się uwierzytelnić urządzenia Aeroinstal:', error)
         if (!cancelled) setDeviceAuthError(error?.message || 'Nie udało się zweryfikować tego urządzenia.')

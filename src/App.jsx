@@ -736,6 +736,19 @@ function App() {
         setDeviceAuthError(null)
         setDeviceUser(assignedUser)
 
+        // Po udanym przypisaniu urządzenia wymuś pierwszy odczyt Realizacji
+        // z aktywną sesją Supabase. Nie czekamy tutaj na kolejność renderów
+        // ani na zmianę flagi dataAccessReady — to eliminuje sytuację,
+        // w której ekran Start/Realizacje zostaje pusty po pierwszym wejściu.
+        try {
+          const initialJobs = await getJobs()
+          if (!cancelled && Array.isArray(initialJobs)) {
+            setJobs(initialJobs)
+          }
+        } catch (jobsError) {
+          console.error('Nie udało się od razu wczytać realizacji po autoryzacji:', jobsError)
+        }
+
         // Pierwsze uwierzytelnienie anonimowego urządzenia musi zakończyć się
         // pełnym ponownym startem aplikacji, aby wszystkie zapytania danych
         // wystartowały już z poprawnym kontekstem RLS organizacji Aeroinstal.

@@ -9077,6 +9077,7 @@ function FinancePage({
           </div>
 
           )}
+        </div>
 
         <div className="finance-command-grid finance-command-grid-bottom">
           <div className="finance-command-card">

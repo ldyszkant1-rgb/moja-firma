@@ -53,7 +53,8 @@ import {
   getOrCreateDeviceId,
   getLocalDeviceUser,
   saveLocalDeviceUser,
-  getDeviceUserFromSupabase,
+  isAnonymousSession,
+  ensureLegacyAnonymousSession,
   claimDeviceInSupabase,
 } from './lib/deviceAuth'
 
@@ -539,52 +540,53 @@ function App() {
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!mounted) return
-      const session = data.session || null
-      setAuthSession(session)
-      setAuthChecked(true)
-      if (session) {
-        const { data: membership } = await supabase.from('organization_members').select('organization_id').limit(1).maybeSingle()
-        if (mounted) {
-          setAuthOrganizationId(membership?.organization_id || null)
-          setAuthOrganizationChecked(true)
-        }
-      } else {
-        setAuthOrganizationId(null)
-        setAuthOrganizationChecked(true)
-      }
-    }).catch((error) => {
-      console.error('Nie udało się sprawdzić sesji logowania:', error)
-      if (mounted) {
-        setAuthChecked(true)
-        setAuthOrganizationChecked(true)
-      }
-    })
+    const applySession = async (session, recovery = false) => {
+      const permanentSession = session && !isAnonymousSession(session) ? session : null
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!mounted) return
-      const nextSession = session || null
-      setAuthSession(nextSession)
-      setAuthRecovery(_event === 'PASSWORD_RECOVERY')
+      setAuthSession(permanentSession)
+      setAuthRecovery(recovery)
       setAuthChecked(true)
 
-      if (!nextSession) {
+      if (!permanentSession) {
         setAuthOrganizationId(null)
         setAuthOrganizationChecked(true)
         return
       }
 
-      const { data: membership } = await supabase
+      const { data: membership, error } = await supabase
         .from('organization_members')
         .select('organization_id')
         .limit(1)
         .maybeSingle()
 
-      if (mounted) {
-        setAuthOrganizationId(membership?.organization_id || null)
-        setAuthOrganizationChecked(true)
+      if (!mounted) return
+
+      if (error) {
+        console.error('Nie udało się pobrać firmy użytkownika:', error)
       }
+
+      setAuthOrganizationId(membership?.organization_id || null)
+      setAuthOrganizationChecked(true)
+    }
+
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (!mounted) return
+        return applySession(data.session || null, false)
+      })
+      .catch((error) => {
+        console.error('Nie udało się sprawdzić sesji logowania:', error)
+        if (mounted) {
+          setAuthSession(null)
+          setAuthChecked(true)
+          setAuthOrganizationId(null)
+          setAuthOrganizationChecked(true)
+        }
+      })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+      void applySession(session || null, _event === 'PASSWORD_RECOVERY')
     })
 
     return () => {
@@ -703,33 +705,37 @@ function App() {
     let cancelled = false
 
     const loadDeviceUser = async () => {
+      const localUser = getLocalDeviceUser()
+
       try {
-        const remoteUser = await getDeviceUserFromSupabase(deviceId)
+        if (!localUser || !DEVICE_USERS.includes(localUser)) {
+          setDeviceUser(null)
+          return
+        }
+
+        await ensureLegacyAnonymousSession()
+
+        const assignedUser = await claimDeviceInSupabase(deviceId, localUser)
+
         if (cancelled) return
 
-        const localUser = getLocalDeviceUser()
+        saveLocalDeviceUser(assignedUser)
+        setDeviceUser(assignedUser)
+      } catch (error) {
+        console.error('Nie udało się uwierzytelnić urządzenia Aeroinstal:', error)
 
-        if (remoteUser && DEVICE_USERS.includes(remoteUser)) {
-          saveLocalDeviceUser(remoteUser)
-          setDeviceUser(remoteUser)
-        } else if (localUser && DEVICE_USERS.includes(localUser)) {
-          // Zachowujemy dotychczasowe przypisanie telefonu. Po odtworzeniu
-          // tabeli device_users nie zmuszamy istniejącego urządzenia do
-          // ponownego wyboru użytkownika.
-          setDeviceUser(localUser)
-
-          try {
-            await supabase
-              .from('device_users')
-              .upsert({ device_id: deviceId, user_name: localUser }, { onConflict: 'device_id' })
-          } catch (error) {
-            console.error('Nie udało się odtworzyć przypisania urządzenia:', error)
+        try {
+          const { data } = await supabase.auth.getSession()
+          if (isAnonymousSession(data?.session)) {
+            await supabase.auth.signOut()
           }
-        } else {
+        } catch (signOutError) {
+          console.error('Nie udało się wyczyścić sesji urządzenia:', signOutError)
+        }
+
+        if (!cancelled) {
           setDeviceUser(null)
         }
-      } catch (error) {
-        console.error('Nie udało się sprawdzić przypisania urządzenia:', error)
       } finally {
         if (!cancelled) setDeviceLoading(false)
       }

@@ -2859,8 +2859,7 @@ function StartPage({
   ].slice(0, 5)
 
   return (
-
-
+    <>
       <section>
         <div className="section-title">
           <h2>Wartość robót</h2>

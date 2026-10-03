@@ -51,47 +51,46 @@ export function saveLocalDeviceUser(user) {
   setStorageValue(DEVICE_USER_KEYS, user)
 }
 
-export async function getDeviceUserFromSupabase(deviceId) {
-  if (!deviceId) return null
+export function isAnonymousSession(session) {
+  return Boolean(session?.user?.is_anonymous)
+}
 
-  const { data, error } = await supabase
-    .from('device_users')
-    .select('user_name')
-    .eq('device_id', deviceId)
-    .maybeSingle()
+export async function ensureLegacyAnonymousSession() {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) throw sessionError
 
+  if (sessionData?.session) {
+    if (!isAnonymousSession(sessionData.session)) {
+      throw new Error('Na tym urządzeniu jest aktywne konto firmowe. Wyloguj je przed użyciem trybu Aeroinstal.')
+    }
+    return sessionData.session
+  }
+
+  const { data, error } = await supabase.auth.signInAnonymously()
   if (error) throw error
-  return DEVICE_USERS.includes(data?.user_name) ? data.user_name : null
+  if (!data?.session) {
+    throw new Error('Supabase nie zwrócił sesji urządzenia.')
+  }
+
+  return data.session
 }
 
 export async function claimDeviceInSupabase(deviceId, user) {
   if (!deviceId) throw new Error('Brak identyfikatora urządzenia.')
   if (!DEVICE_USERS.includes(user)) throw new Error('Nieprawidłowy użytkownik urządzenia.')
 
-  const { data: existing, error: readError } = await supabase
-    .from('device_users')
-    .select('user_name')
-    .eq('device_id', deviceId)
-    .maybeSingle()
+  await ensureLegacyAnonymousSession()
 
-  if (readError) throw readError
-
-  if (existing?.user_name) {
-    if (!DEVICE_USERS.includes(existing.user_name)) {
-      throw new Error('Urządzenie ma nieprawidłowe przypisanie.')
-    }
-    if (existing.user_name !== user) {
-      throw new Error('To urządzenie jest już przypisane do innego użytkownika.')
-    }
-    return existing.user_name
-  }
-
-  const { data, error } = await supabase
-    .from('device_users')
-    .upsert({ device_id: deviceId, user_name: user }, { onConflict: 'device_id' })
-    .select('user_name')
-    .single()
+  const { data, error } = await supabase.rpc('claim_legacy_device', {
+    p_device_id: deviceId,
+    p_user_name: user,
+  })
 
   if (error) throw error
-  return data?.user_name || user
+
+  if (!DEVICE_USERS.includes(data)) {
+    throw new Error('Nieprawidłowe przypisanie użytkownika urządzenia.')
+  }
+
+  return data
 }

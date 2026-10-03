@@ -2701,6 +2701,166 @@ return (
    START
    ===================================================== */
 
+function StartPage({
+  jobs,
+  invoices = [],
+  allJobPayments = [],
+  onOpenJob,
+  onJobs,
+  generalReminders,
+  generalRemindersLoading,
+  onAddGeneralReminder,
+  onToggleGeneralReminder,
+  onDeleteGeneralReminder,
+  onToggleJobTask,
+}) {
+
+  const activeJobs = jobs.filter((job) => normalizeJobStage(job) === 'W toku')
+  const completedJobs = jobs.filter((job) => normalizeJobStage(job) === 'Zakończone')
+
+  const averageProgress =
+    activeJobs.length > 0
+      ? Math.round(
+          activeJobs.reduce(
+            (sum, job) => sum + Number(job.progress || 0),
+            0
+          ) / activeJobs.length
+        )
+      : 0
+
+  const totalValue = jobs.reduce(
+    (sum, job) => sum + calculateTotal(job),
+    0
+  )
+
+  const activeValue = activeJobs.reduce(
+    (sum, job) => sum + calculateTotal(job),
+    0
+  )
+
+  const completedValue = completedJobs.reduce(
+    (sum, job) => sum + calculateTotal(job),
+    0
+  )
+
+  const today = getTodayString()
+
+  const dashboardInvoiceIds = new Set(
+    invoices
+      .filter((invoice) => invoice.status !== 'Anulowana')
+      .map((invoice) => String(invoice.id))
+  )
+
+  const dashboardPaidByInvoice = new Map()
+
+  invoices.forEach((invoice) => {
+    const assigned = allJobPayments
+      .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+    dashboardPaidByInvoice.set(String(invoice.id), Math.max(0, assigned))
+  })
+
+  const dashboardInvoicesByJob = new Map()
+  invoices.forEach((invoice) => {
+    if (!invoice.jobId || invoice.status === 'Anulowana') return
+    const key = String(invoice.jobId)
+    const current = dashboardInvoicesByJob.get(key) || []
+    current.push(invoice)
+    dashboardInvoicesByJob.set(key, current)
+  })
+
+  dashboardInvoicesByJob.forEach((jobInvoices, jobId) => {
+    const unassigned = allJobPayments
+      .filter((payment) =>
+        String(payment.jobId) === String(jobId) &&
+        !payment.invoiceId
+      )
+      .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
+
+    let remaining = unassigned.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    )
+
+    const sorted = [...jobInvoices].sort((a, b) => {
+      const dateCompare = String(a.issueDate || '').localeCompare(String(b.issueDate || ''))
+      if (dateCompare !== 0) return dateCompare
+      return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+    })
+
+    sorted.forEach((invoice) => {
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const already = Math.min(
+        gross,
+        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+      )
+      const legacy = Math.min(
+        Math.max(0, gross - already),
+        Math.max(0, remaining)
+      )
+      dashboardPaidByInvoice.set(String(invoice.id), already + legacy)
+      remaining = Math.max(0, remaining - legacy)
+    })
+  })
+
+  const dashboardReceivables = invoices
+    .filter((invoice) =>
+      invoice.status !== 'Anulowana' &&
+      invoice.status !== 'Do wystawienia' &&
+      invoice.issueDate
+    )
+    .map((invoice) => {
+      const net = Math.max(0, Number(invoice.netAmount || 0))
+      const paid = Math.min(
+        net,
+        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+      )
+      const remaining = Math.max(0, net - paid)
+      return {
+        invoice,
+        remaining,
+        overdue: Boolean(
+          remaining > 0.01 &&
+          invoice.dueDate &&
+          invoice.dueDate < today
+        ),
+      }
+    })
+    .filter((item) => item.remaining > 0.01)
+
+  const dashboardReceivablesNet = dashboardReceivables.reduce(
+    (sum, item) => sum + item.remaining,
+    0
+  )
+
+  const dashboardOverdueNet = dashboardReceivables
+    .filter((item) => item.overdue)
+    .reduce((sum, item) => sum + item.remaining, 0)
+
+  const dashboardMonthPrefix = today.slice(0, 7)
+  const dashboardMonthReceived = allJobPayments
+    .filter((payment) => payment.paidAt?.startsWith(dashboardMonthPrefix))
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+  const dashboardOpenInvoices = dashboardReceivables.length
+
+  const pendingGeneral = (generalReminders || []).filter(
+    (item) => !item.done
+  )
+
+  const overdueGeneral = pendingGeneral.filter(
+    (item) => item.date && item.date < today
+  )
+
+  const visibleGeneral = [
+    ...pendingGeneral,
+    ...(generalReminders || []).filter((item) => item.done),
+  ].slice(0, 5)
+
+  return (
+
+
       <section>
         <div className="section-title">
           <h2>Wartość robót</h2>

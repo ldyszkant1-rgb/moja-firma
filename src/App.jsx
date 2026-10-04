@@ -5258,8 +5258,19 @@ function JobDetails({
     if (!confirmed) return
     try {
       if (!entry.endedAt) await stopJobTimer(entry)
-      await deleteJobTimeEntry(entry.id)
-      setJobTimeEntries((current) => current.filter((item) => String(item.id) !== String(entry.id)))
+
+      // Usuwamy bezpośrednio z Supabase w tym samym komponencie,
+      // żeby historia nie zależała od starego cache/importu API.
+      const { error: deleteError } = await supabase
+        .from('job_time_entries')
+        .delete()
+        .eq('id', entry.id)
+        .eq('job_id', editedJob.id)
+
+      if (deleteError) throw deleteError
+
+      const refreshedEntries = await getJobTimeEntries(editedJob.id)
+      setJobTimeEntries(refreshedEntries)
       setTimeTick(Date.now())
     } catch (error) {
       console.error('Nie udało się usunąć wpisu czasu:', error)

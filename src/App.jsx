@@ -2415,19 +2415,25 @@ function App() {
         if (error) throw error
         if (cancelled || !data) return
 
-        setSettings((current) => ({
-          ...current,
-          company: {
-            ...current.company,
-            shortName: data.short_name || data.name || '',
-            name: data.name || '',
-            nip: data.nip || '',
-            regon: data.regon || '',
-            address: data.address || '',
-            email: data.email || authSession?.user?.email || '',
-            bankAccount: data.bank_account || '',
-          },
-        }))
+        setSettings((current) => {
+          const localCompany = current.company || {}
+          const restoredCompany = {
+            shortName: data.short_name || data.name || localCompany.shortName || '',
+            name: data.name || localCompany.name || '',
+            nip: data.nip || localCompany.nip || '',
+            regon: data.regon || localCompany.regon || '',
+            address: data.address || localCompany.address || '',
+            email: data.email || localCompany.email || authSession?.user?.email || '',
+            bankAccount: data.bank_account || localCompany.bankAccount || '',
+          }
+
+          // Jeżeli migracja organizacji nie przeniosła jeszcze któregoś pola,
+          // zachowujemy istniejące dane z lokalnych ustawień zamiast je wyzerować.
+          return {
+            ...current,
+            company: restoredCompany,
+          }
+        })
       } catch (error) {
         console.error('Nie udało się wczytać firmy zalogowanego użytkownika:', error)
       }

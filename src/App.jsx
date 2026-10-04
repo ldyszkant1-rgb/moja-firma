@@ -2655,6 +2655,10 @@ return (
         )}
 
 
+        {activePage === 'calendar' && (
+          <CalendarPage jobs={jobs} onOpenJob={setSelectedJob} />
+        )}
+
         {activePage === 'jobs' && (
 
           <JobsErrorBoundary>
@@ -6738,6 +6742,31 @@ function JobDetails({
             <option value="high">🟠 Wysoki priorytet</option>
             <option value="urgent">🔴 Pilny priorytet</option>
           </select>
+
+          <div style={{
+            marginTop: '4px',
+            padding: '14px',
+            borderRadius: '14px',
+            background: '#f7faff',
+            border: '1px solid #dce7f1',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '9px', textTransform: 'uppercase' }}>
+              📅 Planowanie realizacji
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#35516f' }}>
+                Start
+                <input type="date" value={editedJob.plannedStartDate || ''} onChange={(e) => setEditedJob({ ...editedJob, plannedStartDate: e.target.value || null })} style={{ ...settingsInputStyle, marginTop: '5px' }} />
+              </label>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#35516f' }}>
+                Koniec
+                <input type="date" value={editedJob.plannedEndDate || ''} min={editedJob.plannedStartDate || undefined} onChange={(e) => setEditedJob({ ...editedJob, plannedEndDate: e.target.value || null })} style={{ ...settingsInputStyle, marginTop: '5px' }} />
+              </label>
+            </div>
+            <div style={{ marginTop: '7px', fontSize: '12px', color: '#718096' }}>
+              Terminarz pokaże tę realizację w zaplanowanym okresie.
+            </div>
+          </div>
 
           <div style={{
             marginTop: '4px',
@@ -12813,6 +12842,96 @@ const teamRowStyle = {
 }
 
 /* =====================================================
+   TERMINARZ
+   ===================================================== */
+
+function CalendarPage({ jobs = [], onOpenJob }) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const plannedJobs = jobs
+    .filter((job) => job.plannedStartDate || job.plannedEndDate)
+    .sort((a, b) => String(a.plannedStartDate || a.plannedEndDate).localeCompare(String(b.plannedStartDate || b.plannedEndDate)))
+
+  const dateDiff = (a, b) => Math.round((a.getTime() - b.getTime()) / 86400000)
+  const getDays = (job) => {
+    const start = new Date((job.plannedStartDate || job.plannedEndDate) + 'T00:00:00')
+    const end = new Date((job.plannedEndDate || job.plannedStartDate) + 'T00:00:00')
+    return { start, end }
+  }
+
+  const upcoming = plannedJobs.filter((job) => getDays(job).end >= today)
+
+  return (
+    <div>
+      <div className="small-label">TERMINARZ</div>
+      <h1 style={{ marginBottom: '6px' }}>Planowanie robót</h1>
+      <div style={{ color: '#718096', fontSize: '13px', marginBottom: '16px' }}>
+        Zaplanowane realizacje i przypisane ekipy.
+      </div>
+
+      {upcoming.length === 0 ? (
+        <div className="detail-card" style={{ textAlign: 'center', padding: '28px 18px' }}>
+          <div style={{ fontSize: '30px' }}>📅</div>
+          <strong style={{ display: 'block', marginTop: '8px' }}>Brak zaplanowanych robót</strong>
+          <div style={{ fontSize: '13px', color: '#718096', marginTop: '6px' }}>
+            Wejdź w realizację → Edytuj i ustaw datę rozpoczęcia oraz zakończenia.
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '10px' }}>
+          {upcoming.map((job) => {
+            const { start, end } = getDays(job)
+            const days = Math.max(1, dateDiff(end, start) + 1)
+            const isToday = start <= today && end >= today
+            const assigned = (job.assignedEmployeeIds || []).length
+            return (
+              <button
+                key={job.id}
+                type="button"
+                onClick={() => onOpenJob(job)}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  border: isToday ? '1px solid #65a9e8' : '1px solid #dce7f1',
+                  background: isToday ? '#f3f9ff' : '#fff',
+                  borderRadius: '14px',
+                  padding: '14px',
+                  cursor: 'pointer',
+                  color: '#12234f',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <strong style={{ fontSize: '15px' }}>{job.name}</strong>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: isToday ? '#1670c5' : '#64748b' }}>
+                    {isToday ? 'DZISIAJ' : days + ' ' + (days === 1 ? 'dzień' : 'dni')}
+                  </span>
+                </div>
+                <div style={{ marginTop: '5px', fontSize: '13px', color: '#64748b' }}>
+                  📍 {job.location || 'Brak lokalizacji'}
+                </div>
+                <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
+                    📅 {formatDate(job.plannedStartDate || job.plannedEndDate)}
+                    {job.plannedEndDate && job.plannedEndDate !== job.plannedStartDate ? ' → ' + formatDate(job.plannedEndDate) : ''}
+                  </span>
+                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
+                    👥 {assigned || 2} {assigned === 1 ? 'osoba' : 'osoby'}
+                  </span>
+                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
+                    {normalizeJobStage(job)}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* =====================================================
    DOLNE MENU
    ===================================================== */
 
@@ -12843,6 +12962,13 @@ function BottomNavigation({
 
       />
 
+
+      <NavButton
+        icon="📅"
+        label="Terminarz"
+        active={activePage === 'calendar'}
+        onClick={() => onChange('calendar')}
+      />
 
       <NavButton
 

@@ -153,6 +153,19 @@ function formatDisplayMoney(value) {
   return formatDisplayNumber(value, { maximumFractionDigits: 2 }) + ' zł'
 }
 
+function capitalizeWordsForSave(value) {
+  return String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .map((word) =>
+      word.replace(
+        /[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/,
+        (char) => char.toUpperCase()
+      )
+    )
+    .join(' ')
+}
+
 function capitalizeDisplay(value) {
   const text = String(value ?? '').trim()
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
@@ -2328,10 +2341,10 @@ function App() {
       id: Date.now(),
 
       name:
-        newJob.name.trim(),
+        capitalizeWordsForSave(newJob.name),
 
       location:
-        newJob.location.trim() ||
+        capitalizeWordsForSave(newJob.location) ||
         'Brak lokalizacji',
 
       clientId:
@@ -2987,6 +3000,26 @@ function StartPage({
     .filter((item) => item.remaining > 0.01)
 
   const dashboardReceivablesGross = dashboardReceivables.reduce((sum, item) => sum + item.remaining, 0)
+
+  useEffect(() => {
+    console.table(
+      dashboardReceivables.map(({ invoice, remaining }) => {
+        const payments = allJobPayments
+          .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
+          .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+        return {
+          numer: invoice.invoiceNumber || '(brak numeru)',
+          status: invoice.status || '',
+          brutto: Number(invoice.grossAmount || 0),
+          wpłaty: payments,
+          'pozostało': remaining,
+          realizacja: jobs.find((job) => String(job.id) === String(invoice.jobId))?.name || '',
+        }
+      })
+    )
+  }, [dashboardReceivablesGross, invoices, allJobPayments, jobs])
+
   const pendingGeneral = (generalReminders || []).filter((item) => !item.done)
 
   const todayItems = [
@@ -3855,7 +3888,11 @@ function JobCard({
             </span>
           )}
 
-          {job.plannedEndDate && <span className="job-deadline">{formatDeadlineShort(job.plannedEndDate)}</span>}
+          {job.plannedEndDate && (
+  <span className={job.plannedEndDate < today ? 'job-deadline overdue' : 'job-deadline'}>
+    {job.plannedEndDate < today ? 'po terminie' : formatDeadlineShort(job.plannedEndDate)}
+  </span>
+)}
         </div>
 
         <div className="job-card-progress">
@@ -3881,31 +3918,26 @@ function JobCard({
           </div>
         </div>
 
-        <div className="job-card-invoice-summary">
-          {linkedInvoice ? (
-            <>
-              <div className="job-card-invoice-row">
-                <strong className="job-card-invoice-number">{linkedInvoice.invoiceNumber || 'Faktura'}</strong>
-                <strong className="job-card-invoice-gross">{formatMoney(invoiceGross)} <small>brutto</small></strong>
-              </div>
-              <div className="job-card-invoice-row">
-                <span className={invoiceRemaining > 0.01 ? 'invoice-status-unpaid' : 'invoice-status-paid'}>
-                  {invoiceStatusLabel}
-                </span>
-                {invoiceStatusLabel === 'Częściowo zapłacona' ? (
-                  <small className="invoice-remaining">Pozostało: {formatMoney(invoiceRemaining)}</small>
-                ) : (
-                  <span />
-                )}
-              </div>
-            </>
-          ) : (
+        {linkedInvoice ? (
+          <div className="job-card-invoice-summary">
             <div className="job-card-invoice-row">
-              <span className="job-card-no-invoice">Brak faktury</span>
-              <span />
+              <strong className="job-card-invoice-number">{linkedInvoice.invoiceNumber || 'Faktura'}</strong>
+              <strong className="job-card-invoice-gross">{formatMoney(invoiceGross)} <small>brutto</small></strong>
             </div>
-          )}
-        </div>
+            <div className="job-card-invoice-row">
+              <span className={invoiceRemaining > 0.01 ? 'invoice-status-unpaid' : 'invoice-status-paid'}>
+                {invoiceStatusLabel}
+              </span>
+              {invoiceStatusLabel === 'Częściowo zapłacona' ? (
+                <small className="invoice-remaining">Pozostało: {formatMoney(invoiceRemaining)}</small>
+              ) : (
+                <span />
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="job-card-no-invoice">Brak faktury</div>
+        )}
       </div>
 
       {tasks.length === 0 ? (
@@ -5469,10 +5501,10 @@ function JobDetails({
       ...editedJob,
 
       name:
-        editedJob.name.trim(),
+        capitalizeWordsForSave(editedJob.name),
 
       location:
-        editedJob.location.trim() ||
+        capitalizeWordsForSave(editedJob.location) ||
         'Brak lokalizacji',
 
       progress:

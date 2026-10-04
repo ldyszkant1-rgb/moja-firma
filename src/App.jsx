@@ -10011,6 +10011,13 @@ function FinancePage({
 
   const hasTrendData = trendMonths.some((item) => item.revenue > 0 || item.costs > 0)
 
+  const formatTrendValue = (value) => {
+    const amount = Number(value || 0)
+    if (amount >= 1000000) return formatDisplayNumber(amount / 1000000, { maximumFractionDigits: 1 }) + ' mln'
+    if (amount >= 1000) return formatDisplayNumber(amount / 1000, { maximumFractionDigits: 1 }) + ' tys.'
+    return formatDisplayNumber(amount, { maximumFractionDigits: 0 }) + ' zł'
+  }
+
   const recordPartnerTransfer = async (amount) => {
     const safeAmount = Number(amount || 0)
 
@@ -10572,11 +10579,11 @@ function FinancePage({
               ) : (
                 trendMonths.map((item) => (
                   <div className={`finance-trend-column${item.key === selectedMonthKey ? ' is-current' : ''}`} key={item.key}>
-                    <div className="finance-trend-value">{formatMoney(item.revenue)}</div>
+                    {item.revenue > 0 && <div className="finance-trend-value">{formatTrendValue(item.revenue)}</div>}
                     <div className="finance-trend-bars">
                       <div
                         className="finance-trend-bar finance-trend-bar-revenue"
-                        style={{ height: `${Math.max(6, (item.revenue / trendMax) * 100)}%` }}
+                        style={{ height: item.revenue > 0 ? `${Math.max(6, (item.revenue / trendMax) * 100)}%` : '1px' }}
                         title={`Otrzymane: ${formatMoney(item.revenue)}`}
                       />
                     </div>
@@ -11054,8 +11061,8 @@ function FinancePage({
                     {job.location}
                   </div>
                 </div>
-                <strong style={{ whiteSpace: 'nowrap' }}>
-                  {formatMoney(calculateTotal(job))}
+                <strong className="finance-completed-amount">
+                  {formatMoney(calculateTotal(job))} <small>netto</small>
                 </strong>
               </div>
             ))}

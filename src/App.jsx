@@ -2656,7 +2656,7 @@ return (
 
 
         {activePage === 'calendar' && (
-          <CalendarPage jobs={jobs} onOpenJob={setSelectedJob} onUpdateJob={updateJob} />
+          <CalendarPage jobs={jobs} organizationId={authOrganizationId} organizationMembers={organizationMembers} onOpenJob={setSelectedJob} onUpdateJob={updateJob} />
         )}
 
         {activePage === 'jobs' && (
@@ -12846,281 +12846,290 @@ const teamRowStyle = {
    ===================================================== */
 
 
-function CalendarPage({ jobs = [], onOpenJob, onUpdateJob }) {
+function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onOpenJob, onUpdateJob }) {
   const makeDate = (value) => new Date(String(value) + 'T00:00:00')
   const toDateString = (date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return year + '-' + month + '-' + day
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return y + '-' + m + '-' + d
   }
-
   const addDays = (date, amount) => {
     const next = new Date(date)
     next.setDate(next.getDate() + amount)
     return next
   }
-
-  const diffDays = (a, b) =>
-    Math.round((a.getTime() - b.getTime()) / 86400000)
-
-  const getJobRange = (job) => {
-    const startValue = job.plannedStartDate || job.plannedEndDate
-    const endValue = job.plannedEndDate || job.plannedStartDate
-    if (!startValue || !endValue) return null
-
-    const start = makeDate(startValue)
-    const end = makeDate(endValue)
-    return start <= end
-      ? { start, end }
-      : { start: end, end: start }
-  }
-
   const getMonday = (date) => {
     const result = new Date(date)
     result.setHours(0, 0, 0, 0)
     const day = result.getDay()
-    const mondayOffset = day === 0 ? -6 : 1 - day
-    result.setDate(result.getDate() + mondayOffset)
+    result.setDate(result.getDate() + (day === 0 ? -6 : 1 - day))
     return result
+  }
+  const getRange = (job) => {
+    const startValue = job.plannedStartDate || job.plannedEndDate
+    const endValue = job.plannedEndDate || job.plannedStartDate
+    if (!startValue || !endValue) return null
+    const start = makeDate(startValue)
+    const end = makeDate(endValue)
+    return start <= end ? { start, end } : { start: end, end: start }
   }
 
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
+  const [plans, setPlans] = useState([])
+  const [showForm, setShowForm] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [type, setType] = useState('job')
+  const [jobId, setJobId] = useState('')
+  const [userId, setUserId] = useState('')
+  const [startDate, setStartDate] = useState(toDateString(new Date()))
+  const [endDate, setEndDate] = useState(toDateString(new Date()))
+  const [title, setTitle] = useState('')
+  const [note, setNote] = useState('')
   const [draggedJobId, setDraggedJobId] = useState(null)
   const [movingJobId, setMovingJobId] = useState(null)
 
-  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index))
-  const weekEnd = weekDays[6]
-  const todayString = toDateString(new Date())
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  const weekEnd = days[6]
+  const today = toDateString(new Date())
 
-  const plannedJobs = jobs
-    .filter((job) => getJobRange(job))
-    .sort((a, b) => getJobRange(a).start.getTime() - getJobRange(b).start.getTime())
-
-  const jobsInWeek = plannedJobs.filter((job) => {
-    const range = getJobRange(job)
-    return range.start <= weekEnd && range.end >= weekStart
-  })
-
-  const getAssignedIds = (job) =>
-    Array.isArray(job.assignedEmployeeIds)
-      ? job.assignedEmployeeIds.map((id) => String(id))
-      : []
-
-  const jobsConflict = (a, b) => {
-    if (String(a.id) === String(b.id)) return false
-
-    const rangeA = getJobRange(a)
-    const rangeB = getJobRange(b)
-    if (!rangeA || !rangeB) return false
-    if (rangeA.start > rangeB.end || rangeB.start > rangeA.end) return false
-
-    if (a.assignedTeamId && b.assignedTeamId) {
-      return String(a.assignedTeamId) === String(b.assignedTeamId)
+  const loadPlans = async () => {
+    if (!organizationId) return
+    const { data, error } = await supabase
+      .from('calendar_plans')
+      .select('id,user_id,job_id,plan_type,plan_date,title,note')
+      .eq('organization_id', organizationId)
+      .gte('plan_date', toDateString(weekStart))
+      .lte('plan_date', toDateString(weekEnd))
+      .order('plan_date')
+    if (error) {
+      console.error('Nie udało się wczytać terminarza:', error)
+      return
     }
-
-    const idsA = getAssignedIds(a)
-    const idsB = getAssignedIds(b)
-    if (!idsA.length || !idsB.length) return false
-
-    return idsA.some((id) => idsB.includes(id))
+    setPlans(data || [])
   }
 
-  const conflictingJobIds = new Set()
-  jobsInWeek.forEach((job) => {
-    if (jobsInWeek.some((other) => jobsConflict(job, other))) {
-      conflictingJobIds.add(String(job.id))
-    }
-  })
+  useEffect(() => { loadPlans() }, [organizationId, weekStart.getTime()])
 
-  const conflictPairs = []
-  for (let i = 0; i < jobsInWeek.length; i += 1) {
-    for (let j = i + 1; j < jobsInWeek.length; j += 1) {
-      if (jobsConflict(jobsInWeek[i], jobsInWeek[j])) {
-        conflictPairs.push([jobsInWeek[i], jobsInWeek[j]])
-      }
+  const getMemberName = (id) => {
+    if (!id) return 'Cała ekipa'
+    const member = organizationMembers.find((item) => String(item.user_id) === String(id))
+    return member?.display_name || member?.email || 'Pracownik'
+  }
+
+  const planIcon = {
+    job: '🏗️',
+    vacation: '🏖️',
+    sick: '🤒',
+    day_off: '🛌',
+    delegation: '🚗',
+    other: '📌',
+  }
+
+  const savePlan = async (event) => {
+    event.preventDefault()
+    if (!organizationId || !startDate || !endDate) return
+    const start = makeDate(startDate)
+    const end = makeDate(endDate)
+    if (start > end) {
+      await showCustomAlert('Data końcowa nie może być wcześniejsza od początkowej.')
+      return
+    }
+    if (type === 'job' && !jobId) {
+      await showCustomAlert('Wybierz robotę.')
+      return
+    }
+    if (type !== 'job' && !userId) {
+      await showCustomAlert('Wybierz pracownika.')
+      return
+    }
+
+    const selectedJob = jobs.find((job) => String(job.id) === String(jobId))
+    const finalTitle = type === 'job'
+      ? (selectedJob?.name || 'Robota')
+      : (title.trim() || ({
+          vacation: 'Urlop',
+          sick: 'Chorobowe',
+          day_off: 'Dzień wolny',
+          delegation: 'Delegacja',
+          other: 'Inne',
+        }[type] || 'Plan'))
+
+    const rows = []
+    for (let date = new Date(start); date <= end; date = addDays(date, 1)) {
+      rows.push({
+        organization_id: organizationId,
+        user_id: userId || null,
+        job_id: type === 'job' ? jobId : null,
+        plan_type: type,
+        plan_date: toDateString(date),
+        title: finalTitle,
+        note: note.trim() || null,
+      })
+    }
+
+    setSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('calendar_plans')
+        .insert(rows)
+        .select('id,user_id,job_id,plan_type,plan_date,title,note')
+      if (error) throw error
+      setPlans((current) => [...current, ...(data || [])])
+      setShowForm(false)
+      setTitle('')
+      setNote('')
+      await showCustomAlert(rows.length > 1 ? 'Plan został wpisany na cały wybrany okres.' : 'Plan został zapisany.')
+    } catch (error) {
+      console.error('Nie udało się zapisać planu:', error)
+      await showCustomAlert('Nie udało się zapisać planu.')
+    } finally {
+      setSaving(false)
     }
   }
 
-  const moveJobToDate = async (job, targetDate) => {
-    const range = getJobRange(job)
+  const removePlan = async (plan) => {
+    const ok = await showCustomConfirm('Usunąć wpis „' + plan.title + '” z terminarza?')
+    if (!ok) return
+    const { error } = await supabase.from('calendar_plans').delete().eq('id', plan.id)
+    if (error) {
+      await showCustomAlert('Nie udało się usunąć wpisu.')
+      return
+    }
+    setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
+  }
+
+  const moveJob = async (job, targetDate) => {
+    const range = getRange(job)
     if (!range || !onUpdateJob) return
-
-    const target = makeDate(targetDate)
-    const duration = Math.max(0, diffDays(range.end, range.start))
-    const newStart = toDateString(target)
-    const newEnd = toDateString(addDays(target, duration))
-
+    const duration = Math.round((range.end.getTime() - range.start.getTime()) / 86400000)
     setMovingJobId(job.id)
     try {
       await onUpdateJob({
         ...job,
-        plannedStartDate: newStart,
-        plannedEndDate: newEnd,
+        plannedStartDate: targetDate,
+        plannedEndDate: toDateString(addDays(makeDate(targetDate), duration)),
       })
     } finally {
       setMovingJobId(null)
     }
   }
 
-  const shiftJob = (job, amount) => {
-    const range = getJobRange(job)
-    if (!range) return
-    void moveJobToDate(job, toDateString(addDays(range.start, amount)))
+  const openFormForDay = (date) => {
+    setStartDate(date)
+    setEndDate(date)
+    setShowForm(true)
   }
-
-  const handleDrop = (targetDate) => {
-    if (!draggedJobId) return
-    const job = jobs.find((item) => String(item.id) === String(draggedJobId))
-    setDraggedJobId(null)
-    if (job) void moveJobToDate(job, targetDate)
-  }
-
-  const weekLabel =
-    formatDate(toDateString(weekStart)) +
-    ' – ' +
-    formatDate(toDateString(weekEnd))
 
   return (
     <div>
-      <div className="small-label">TERMINARZ 2.0</div>
-      <h1 style={{ marginBottom: '6px' }}>Planowanie tygodnia</h1>
+      <div className="small-label">TERMINARZ 3.0</div>
+      <h1 style={{ marginBottom: '6px' }}>Planowanie pracy</h1>
       <div style={{ color: '#718096', fontSize: '13px', marginBottom: '14px' }}>
-        Przeciągnij realizację na inny dzień, aby przesunąć cały termin. Konflikty ekip są oznaczane na czerwono.
+        Wpisujecie ręcznie, gdzie pracowaliście danego dnia, albo planujecie cały tydzień z góry. Urlopy i inne nieobecności są w tym samym kalendarzu.
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          marginBottom: '12px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ fontWeight: 800, color: '#12234f' }}>{weekLabel}</div>
-        <div style={{ display: 'flex', gap: '7px' }}>
-          <button type="button" onClick={() => setWeekStart((current) => addDays(current, -7))} style={calendarSmallButtonStyle}>← Poprzedni</button>
-          <button type="button" onClick={() => setWeekStart(getMonday(new Date()))} style={calendarSmallButtonStyle}>Dzisiaj</button>
-          <button type="button" onClick={() => setWeekStart((current) => addDays(current, 7))} style={calendarSmallButtonStyle}>Następny →</button>
-        </div>
+      <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        <button type="button" onClick={() => setWeekStart((d) => addDays(d, -7))} style={calendarSmallButtonStyle}>← Poprzedni</button>
+        <button type="button" onClick={() => setWeekStart(getMonday(new Date()))} style={calendarSmallButtonStyle}>Dzisiaj</button>
+        <button type="button" onClick={() => setWeekStart((d) => addDays(d, 7))} style={calendarSmallButtonStyle}>Następny →</button>
+        <button type="button" onClick={() => { setStartDate(toDateString(weekStart)); setEndDate(toDateString(weekEnd)); setShowForm(true) }} style={{ ...calendarSmallButtonStyle, background: '#168fe5', color: '#fff', borderColor: '#168fe5' }}>＋ Zaplanuj zakres</button>
       </div>
 
-      {conflictPairs.length > 0 && (
-        <div style={{ border: '1px solid #f1b5b5', background: '#fff5f5', color: '#9f2f2f', borderRadius: '14px', padding: '12px 14px', marginBottom: '12px' }}>
-          <strong>⚠️ KONFLIKT EKIP: {conflictPairs.length}</strong>
-          <div style={{ fontSize: '12px', marginTop: '5px', lineHeight: 1.5 }}>
-            {conflictPairs.map(([a, b]) => (
-              <div key={String(a.id) + '-' + String(b.id)}>{a.name} ↔ {b.name}</div>
-            ))}
+      {showForm && (
+        <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
+          <strong style={{ color: '#12234f' }}>＋ Nowy plan</strong>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }} style={settingsInputStyle}>
+              <option value="job">🏗️ Robota</option>
+              <option value="vacation">🏖️ Urlop</option>
+              <option value="sick">🤒 Chorobowe</option>
+              <option value="day_off">🛌 Dzień wolny</option>
+              <option value="delegation">🚗 Delegacja</option>
+              <option value="other">📌 Inne</option>
+            </select>
+            <select value={userId} onChange={(e) => setUserId(e.target.value)} style={settingsInputStyle}>
+              <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
+              {organizationMembers.map((member) => (
+                <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
+              ))}
+            </select>
           </div>
-        </div>
+          {type === 'job' ? (
+            <select value={jobId} onChange={(e) => setJobId(e.target.value)} style={settingsInputStyle}>
+              <option value="">Wybierz robotę</option>
+              {jobs.map((job) => <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>)}
+            </select>
+          ) : (
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nazwa, np. Urlop wypoczynkowy" style={settingsInputStyle} />
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Od<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Do<input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
+          </div>
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" onClick={() => setShowForm(false)} className="back-button">Anuluj</button>
+            <button type="submit" disabled={saving} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz plan'}</button>
+          </div>
+        </form>
       )}
 
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
-        {weekDays.map((day) => {
-          const dateString = toDateString(day)
-          const dayJobs = jobsInWeek.filter((job) => {
-            const range = getJobRange(job)
+        {days.map((day) => {
+          const date = toDateString(day)
+          const dayPlans = plans.filter((plan) => String(plan.plan_date) === date)
+          const dayJobs = jobs.filter((job) => {
+            const range = getRange(job)
             return range && day >= range.start && day <= range.end
           })
-          const isToday = dateString === todayString
+          const isToday = date === today
 
           return (
-            <div
-              key={dateString}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={() => handleDrop(dateString)}
-              style={{
-                flex: '0 0 170px',
-                minHeight: '360px',
-                border: isToday ? '2px solid #5ba6e6' : '1px solid #dce7f1',
-                background: isToday ? '#f5faff' : '#f8fbfe',
-                borderRadius: '15px',
-                padding: '9px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', marginBottom: '8px' }}>
-                <strong style={{ color: '#12234f', fontSize: '13px' }}>
-                  {['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][day.getDay()]}
-                </strong>
-                <span style={{ color: isToday ? '#1670c5' : '#718096', fontSize: '12px', fontWeight: 800 }}>
-                  {formatDate(dateString).slice(0, 5)}
-                </span>
+            <div key={date} style={{ flex: '0 0 190px', minHeight: '390px', border: isToday ? '2px solid #5ba6e6' : '1px solid #dce7f1', background: isToday ? '#f5faff' : '#f8fbfe', borderRadius: '15px', padding: '9px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <strong style={{ color: '#12234f', fontSize: '13px' }}>{['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][day.getDay()]}</strong>
+                <span style={{ color: isToday ? '#1670c5' : '#718096', fontSize: '12px', fontWeight: 800 }}>{formatDate(date).slice(0, 5)}</span>
               </div>
 
-              {dayJobs.length === 0 ? (
-                <div style={{ color: '#a0aec0', fontSize: '12px', textAlign: 'center', padding: '28px 4px' }}>Brak robót</div>
-              ) : (
-                <div style={{ display: 'grid', gap: '7px' }}>
-                  {dayJobs.map((job) => {
-                    const range = getJobRange(job)
-                    const conflict = conflictingJobIds.has(String(job.id))
-                    const isMoving = String(movingJobId) === String(job.id)
-                    const startsToday = range && toDateString(range.start) === dateString
-                    const isMultiDay = range && range.end > range.start
+              <button type="button" onClick={() => openFormForDay(date)} style={{ width: '100%', border: '1px dashed #b8c9d8', background: '#fff', color: '#526174', borderRadius: '9px', padding: '7px', fontSize: '11px', fontWeight: 800, marginBottom: '7px' }}>＋ Wpisz dzień</button>
 
-                    return (
-                      <div
-                        key={String(job.id) + '-' + dateString}
-                        draggable={!isMoving}
-                        onDragStart={() => setDraggedJobId(job.id)}
-                        onDragEnd={() => setDraggedJobId(null)}
-                        style={{
-                          border: conflict ? '1px solid #e35d5d' : '1px solid #d6e3ef',
-                          background: conflict ? '#fff2f2' : '#fff',
-                          borderRadius: '11px',
-                          padding: '9px',
-                          opacity: isMoving ? 0.55 : 1,
-                          cursor: 'grab',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onOpenJob(job)}
-                          style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', textAlign: 'left', color: '#12234f', cursor: 'pointer' }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
-                            <strong style={{ fontSize: '13px' }}>{job.name}</strong>
-                            {conflict && <span style={{ fontSize: '11px', color: '#c53030', fontWeight: 900 }}>⚠️</span>}
-                          </div>
-                          <div style={{ marginTop: '4px', fontSize: '11px', color: '#718096' }}>📍 {job.location || 'Brak lokalizacji'}</div>
-                          {startsToday && isMultiDay && (
-                            <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>
-                              {formatDate(toDateString(range.start))} → {formatDate(toDateString(range.end))}
-                            </div>
-                          )}
-                          <div style={{ marginTop: '5px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                            <span style={calendarBadgeStyle}>👥 {(job.assignedEmployeeIds || []).length || 2}</span>
-                            {conflict && <span style={{ ...calendarBadgeStyle, background: '#ffe1e1', color: '#a22d2d' }}>KONFLIKT</span>}
-                          </div>
-                        </button>
+              <div style={{ display: 'grid', gap: '6px' }}>
+                {dayPlans.map((plan) => (
+                  <div key={plan.id} style={{ border: plan.plan_type === 'vacation' ? '1px solid #8bc7a7' : '1px solid #d7e1eb', background: plan.plan_type === 'vacation' ? '#effaf4' : '#fff', borderRadius: '10px', padding: '8px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#12234f' }}>{planIcon[plan.plan_type] || '📌'} {plan.title}</div>
+                    <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>{getMemberName(plan.user_id)}</div>
+                    {plan.note && <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>{plan.note}</div>}
+                    <button type="button" onClick={() => removePlan(plan)} style={{ marginTop: '5px', border: 'none', background: 'transparent', color: '#c53030', fontSize: '10px', fontWeight: 800, padding: 0 }}>Usuń</button>
+                  </div>
+                ))}
 
-                        <div style={{ display: 'flex', gap: '5px', marginTop: '7px' }}>
-                          <button type="button" onClick={() => shiftJob(job, -1)} disabled={isMoving} style={calendarMoveButtonStyle}>←</button>
-                          <button type="button" onClick={() => shiftJob(job, 1)} disabled={isMoving} style={calendarMoveButtonStyle}>→</button>
+                {dayJobs.map((job) => {
+                  const range = getRange(job)
+                  const starts = range && toDateString(range.start) === date
+                  const moving = String(movingJobId) === String(job.id)
+                  return (
+                    <div key={'job-' + job.id} draggable={!moving} onDragStart={() => setDraggedJobId(job.id)} onDragEnd={() => setDraggedJobId(null)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (draggedJobId) { const dragged = jobs.find((item) => String(item.id) === String(draggedJobId)); if (dragged) void moveJob(dragged, date); setDraggedJobId(null) } }} style={{ border: '1px solid #d6e3ef', background: '#fff', borderRadius: '10px', padding: '8px', opacity: moving ? 0.5 : 1 }}>
+                      <button type="button" onClick={() => onOpenJob(job)} style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', textAlign: 'left', color: '#12234f', cursor: 'pointer' }}>
+                        <strong style={{ fontSize: '12px' }}>🏗️ {job.name}</strong>
+                        <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>📍 {job.location || 'Brak lokalizacji'}</div>
+                      </button>
+                      {starts && (
+                        <div style={{ display: 'flex', gap: '5px', marginTop: '6px' }}>
+                          <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }} style={calendarMoveButtonStyle}>←</button>
+                          <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }} style={calendarMoveButtonStyle}>→</button>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )}
+                    </div>
+                  )
+                })}
+
+                {dayPlans.length === 0 && dayJobs.length === 0 && <div style={{ color: '#a0aec0', fontSize: '11px', textAlign: 'center', padding: '20px 4px' }}>Brak planu</div>}
+              </div>
             </div>
           )
         })}
       </div>
-
-      {plannedJobs.length === 0 && (
-        <div className="detail-card" style={{ textAlign: 'center', padding: '28px 18px', marginTop: '12px' }}>
-          <div style={{ fontSize: '30px' }}>📅</div>
-          <strong style={{ display: 'block', marginTop: '8px' }}>Brak zaplanowanych robót</strong>
-          <div style={{ fontSize: '13px', color: '#718096', marginTop: '6px' }}>
-            Wejdź w realizację → Edytuj i ustaw datę rozpoczęcia oraz zakończenia.
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -13134,15 +13143,6 @@ const calendarSmallButtonStyle = {
   fontSize: '12px',
   fontWeight: 800,
   cursor: 'pointer',
-}
-
-const calendarBadgeStyle = {
-  padding: '3px 6px',
-  borderRadius: '6px',
-  background: '#eef4fa',
-  color: '#526174',
-  fontSize: '10px',
-  fontWeight: 800,
 }
 
 const calendarMoveButtonStyle = {

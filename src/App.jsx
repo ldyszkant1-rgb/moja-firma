@@ -3192,7 +3192,7 @@ function StartPage({
 
         <div className="jobs">
           {activeJobs.length === 0 && (
-            <div className="detail-card">Brak robót w toku.</div>
+            <div className="detail-card">Brak realizacji w toku.</div>
           )}
 
           {[...activeJobs]
@@ -3341,7 +3341,7 @@ function StartPage({
         <div className="jobs">
           {completedJobs.length === 0 && (
             <div className="detail-card">
-              Brak zakończonych robót.
+              Brak zakończonych realizacji.
             </div>
           )}
 
@@ -11496,50 +11496,6 @@ function SettingsPage({
     kg: 0,
   }
 
-  const [accessDiagnostic, setAccessDiagnostic] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    const runAccessDiagnostic = async () => {
-      try {
-        const { data: userData, error: userError } = await supabase.auth.getUser()
-        if (userError) throw userError
-
-        const { data: memberships, error: membershipError } = await supabase
-          .from('organization_members')
-          .select('organization_id,role,display_name')
-
-        const { data: visibleJobs, error: jobsError } = await supabase
-          .from('jobs')
-          .select('id,organization_id,deleted_at')
-          .limit(50)
-
-        if (!cancelled) {
-          setAccessDiagnostic({
-            userId: userData?.user?.id || null,
-            email: userData?.user?.email || null,
-            anonymous: Boolean(userData?.user?.is_anonymous),
-            memberships: memberships || [],
-            membershipError: membershipError?.message || null,
-            jobsCount: Array.isArray(visibleJobs) ? visibleJobs.length : null,
-            jobsSampleOrganizationId: visibleJobs?.[0]?.organization_id || null,
-            jobsActiveCount: Array.isArray(visibleJobs)
-              ? visibleJobs.filter((job) => !job.deleted_at).length
-              : null,
-            jobsError: jobsError?.message || null,
-          })
-        }
-      } catch (error) {
-        if (!cancelled) setAccessDiagnostic({ error: error?.message || String(error) })
-      }
-    }
-
-    runAccessDiagnostic()
-
-    return () => { cancelled = true }
-  }, [authSession?.user?.id])
-
   const [draftRates, setDraftRates] = useState({
     mb: currentRates.mb ?? 0,
     m2: currentRates.m2 ?? 0,
@@ -12027,31 +11983,6 @@ function SettingsPage({
       </div>
 
       <div className="settings-list settings-page">
-        <div className="detail-card settings-detail-card" style={{ border: '1px solid #d7e7f5', background: '#f8fbff' }}>
-            <h2 style={{ marginTop: 0 }}>Diagnostyka dostępu</h2>
-            {!accessDiagnostic && <div style={{ fontSize: '13px', opacity: 0.7 }}>Sprawdzam sesję i dostęp do danych…</div>}
-            {accessDiagnostic?.error && <pre style={{ whiteSpace: 'pre-wrap', color: '#a22', fontSize: '12px' }}>{accessDiagnostic.error}</pre>}
-            {accessDiagnostic && !accessDiagnostic.error && (
-              <div style={{ fontSize: '12px', lineHeight: 1.7, wordBreak: 'break-word' }}>
-                <div><strong>user id:</strong> {accessDiagnostic.userId || 'brak'}</div>
-                <div><strong>email:</strong> {accessDiagnostic.email || 'brak'}</div>
-                <div><strong>anonymous:</strong> {String(accessDiagnostic.anonymous)}</div>
-                <div><strong>organizacje:</strong> {accessDiagnostic.memberships.length}</div>
-                <div><strong>jobs widoczne:</strong> {accessDiagnostic.jobsCount ?? 'brak'}</div>
-                {accessDiagnostic.jobsActiveCount != null && (
-                  <div><strong>jobs aktywne:</strong> {accessDiagnostic.jobsActiveCount}</div>
-                )}
-                {accessDiagnostic.jobsSampleOrganizationId && (
-                  <div><strong>org pierwszej roboty:</strong> {accessDiagnostic.jobsSampleOrganizationId}</div>
-                )}
-                {accessDiagnostic.membershipError && <div style={{ color: '#a22' }}><strong>membership error:</strong> {accessDiagnostic.membershipError}</div>}
-                {accessDiagnostic.jobsError && <div style={{ color: '#a22' }}><strong>jobs error:</strong> {accessDiagnostic.jobsError}</div>}
-                {accessDiagnostic.memberships.map((item, index) => (
-                  <div key={index}>{item.organization_id} · {item.role} · {item.display_name || ''}</div>
-                ))}
-              </div>
-            )}
-          </div>
         <div className="settings-item settings-item-locked settings-section-user">
           <div>
             <span>👤 Użytkownik</span>
@@ -13228,6 +13159,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeDayPlans = async (date, dayPlans) => {
     if (!dayPlans.length) return
 
+    const confirmed = await showCustomConfirm(
+      `Usunąć wszystkie wpisy z ${formatDate(date)}?\\n\\nZostanie usuniętych ${dayPlans.length} ${dayPlans.length === 1 ? '1 wpis' : dayPlans.length + ' wpisów'} z tego dnia. Tej operacji nie można cofnąć.`
+    )
+    if (!confirmed) return
+
     const ids = new Set(dayPlans.map((plan) => String(plan.id)))
     setPlans((current) => current.filter((plan) => !ids.has(String(plan.id))))
 
@@ -13243,6 +13179,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   }
 
   const removePlan = async (plan) => {
+    const confirmed = await showCustomConfirm(
+      `Usunąć wpis „${plan.title || 'bez nazwy'}” z ${formatDate(String(plan.plan_date))}?`
+    )
+    if (!confirmed) return
+
     setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
 
     const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
@@ -13521,7 +13462,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
               whiteSpace: 'nowrap',
             }}
           >
-            ＋ Dodaj wpis
+            ＋ Dodaj dzień
           </button>
         </div>
 
@@ -13703,7 +13644,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       {showForm && (
         <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-            <strong style={{ color: '#12234f' }}>＋ Nowy wpis</strong>
+            <strong style={{ color: '#12234f' }}>＋ Nowy dzień</strong>
             <button type="button" onClick={() => setShowForm(false)} className="back-button">Zamknij</button>
           </div>
 
@@ -13773,11 +13714,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
 
           <div style={{ color: '#718096', fontSize: '11px' }}>
-            Możesz wpisać np. <strong>4 h 30 min</strong>. Godziny i minuty zapisują się do konkretnego dnia.
+            Możesz wpisać samo <strong>4</strong> (czyli 4 godziny) albo <strong>4 h 30 min</strong>.
           </div>
 
           <button type="submit" disabled={saving} className="save-button">
-            {saving ? 'Zapisywanie…' : 'Zapisz wpis'}
+            {saving ? 'Zapisywanie…' : 'Zapisz dzień'}
           </button>
         </form>
       )}
@@ -13858,158 +13799,38 @@ const calendarMoveButtonStyle = {
    DOLNE MENU
    ===================================================== */
 
-function BottomNavigation({
-  activePage,
-  onChange,
-}) {
+function BottomNavigation({ activePage, onChange }) {
+  const [moreOpen, setMoreOpen] = useState(false)
+  const secondary = [
+    ['offers', '📄', 'Oferty'],
+    ['clients', '👥', 'Klienci'],
+    ['invoices', '🧾', 'Faktury'],
+    ['settings', '⚙', 'Ustawienia'],
+  ]
+  const secondaryActive = secondary.some(([page]) => page === activePage)
 
   return (
-
-    <nav className="bottom-navigation">
-
-      <NavButton
-
-        icon="⌂"
-
-        label="Start"
-
-        active={
-          activePage === 'start'
-        }
-
-        onClick={() =>
-          onChange(
-            'start'
-          )
-        }
-
-      />
-
-
-      <NavButton
-        icon="📅"
-        label="Terminarz"
-        active={activePage === 'calendar'}
-        onClick={() => onChange('calendar')}
-      />
-
-      <NavButton
-
-        icon="🔧"
-
-        label="Realizacje"
-
-        active={
-          activePage === 'jobs'
-        }
-
-        onClick={() =>
-          onChange(
-            'jobs'
-          )
-        }
-
-      />
-
-
-      <NavButton
-
-        icon="📄"
-
-        label="Oferty"
-
-        active={
-          activePage === 'offers'
-        }
-
-        onClick={() =>
-          onChange(
-            'offers'
-          )
-        }
-
-      />
-
-
-      <NavButton
-
-        icon="👥"
-
-        label="Klienci"
-
-        active={
-          activePage === 'clients'
-        }
-
-        onClick={() =>
-          onChange(
-            'clients'
-          )
-        }
-
-      />
-
-
-            <NavButton
-
-        icon="🧾"
-
-        label="Faktury"
-
-        active={
-          activePage === 'invoices'
-        }
-
-        onClick={() =>
-          onChange(
-            'invoices'
-          )
-        }
-
-      />
-
-
-      <NavButton
-
-        icon="▥"
-
-        label="Finanse"
-
-        active={
-          activePage === 'finance'
-        }
-
-        onClick={() =>
-          onChange(
-            'finance'
-          )
-        }
-
-      />
-
-
-      <NavButton
-
-        icon="⚙"
-
-        label="Ustawienia"
-
-        active={
-          activePage === 'settings'
-        }
-
-        onClick={() =>
-          onChange(
-            'settings'
-          )
-        }
-
-      />
-
-    </nav>
-
+    <>
+      {moreOpen && (
+        <div className="bottom-more-menu" role="menu">
+          {secondary.map(([page, icon, label]) => (
+            <button key={page} type="button"
+              className={activePage === page ? 'bottom-more-item active' : 'bottom-more-item'}
+              onClick={() => { onChange(page); setMoreOpen(false) }}>
+              <span aria-hidden="true">{icon}</span><span>{label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <nav className="bottom-navigation">
+        <NavButton icon="⌂" label="Start" active={activePage === 'start'} onClick={() => { onChange('start'); setMoreOpen(false) }} />
+        <NavButton icon="📅" label="Terminarz" active={activePage === 'calendar'} onClick={() => { onChange('calendar'); setMoreOpen(false) }} />
+        <NavButton icon="🔧" label="Realizacje" active={activePage === 'jobs'} onClick={() => { onChange('jobs'); setMoreOpen(false) }} />
+        <NavButton icon="▥" label="Finanse" active={activePage === 'finance'} onClick={() => { onChange('finance'); setMoreOpen(false) }} />
+        <NavButton icon="•••" label="Więcej" active={secondaryActive || moreOpen} onClick={() => setMoreOpen((value) => !value)} />
+      </nav>
+    </>
   )
-
 }
 
 

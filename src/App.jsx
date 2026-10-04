@@ -9963,7 +9963,7 @@ function SettingsPage({
       }
     }
 
-    if (authSession) runAccessDiagnostic()
+    runAccessDiagnostic()
 
     return () => { cancelled = true }
   }, [authSession?.user?.id])
@@ -10455,8 +10455,7 @@ function SettingsPage({
       </div>
 
       <div className="settings-list settings-page">
-        {authSession && (
-          <div className="detail-card settings-detail-card" style={{ border: '1px solid #d7e7f5', background: '#f8fbff' }}>
+        <div className="detail-card settings-detail-card" style={{ border: '1px solid #d7e7f5', background: '#f8fbff' }}>
             <h2 style={{ marginTop: 0 }}>Diagnostyka dostępu</h2>
             {!accessDiagnostic && <div style={{ fontSize: '13px', opacity: 0.7 }}>Sprawdzam sesję i dostęp do danych…</div>}
             {accessDiagnostic?.error && <pre style={{ whiteSpace: 'pre-wrap', color: '#a22', fontSize: '12px' }}>{accessDiagnostic.error}</pre>}
@@ -10475,7 +10474,6 @@ function SettingsPage({
               </div>
             )}
           </div>
-        )}
         <div className="settings-item settings-item-locked settings-section-user">
           <div>
             <span>👤 Użytkownik</span>

@@ -4080,6 +4080,13 @@ function JobCard({
                   onClick={onClick}
                 >
                   <strong>{task.text}</strong>
+                  {(task.assignee || task.priority === 'high' || task.priority === 'urgent') && (
+                    <span style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '3px' }}>
+                      {task.assignee && <span>👤 {task.assignee}</span>}
+                      {task.priority === 'urgent' && <span style={{ color: '#b42318', fontWeight: 800 }}>🔴 pilne</span>}
+                      {task.priority === 'high' && <span style={{ color: '#9a6800', fontWeight: 800 }}>🟠 wysoki</span>}
+                    </span>
+                  )}
                   {task.date && <span>{formatDate(task.date)}</span>}
                 </button>
               </div>
@@ -5101,6 +5108,10 @@ function JobDetails({
 
       text: '',
 
+      assignee: '',
+
+      priority: 'normal',
+
       reminderEnabled: false,
 
       date: '',
@@ -5857,6 +5868,10 @@ function JobDetails({
 
       text: '',
 
+      assignee: '',
+
+      priority: 'normal',
+
       reminderEnabled: false,
 
       date: '',
@@ -5887,6 +5902,12 @@ function JobDetails({
 
       text:
         newNote.text.trim(),
+
+      assignee:
+        newNote.assignee || '',
+
+      priority:
+        newNote.priority || 'normal',
 
       done:
         false,
@@ -5925,6 +5946,8 @@ function JobDetails({
 
       setNewNote({
         text: '',
+        assignee: '',
+        priority: 'normal',
         reminderEnabled: false,
         date: '',
         time: '',
@@ -7331,6 +7354,66 @@ function JobDetails({
 
             </div>
 
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '10px',
+                marginTop: '10px',
+              }}
+            >
+              <label
+                style={{
+                  display: 'grid',
+                  gap: '5px',
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#718096' }}>
+                  ODPOWIEDZIALNY
+                </span>
+                <select
+                  className="note-text-input"
+                  value={newNote.assignee || ''}
+                  onChange={(e) =>
+                    setNewNote({
+                      ...newNote,
+                      assignee: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Nieprzypisane</option>
+                  {DEVICE_USERS.map((user) => (
+                    <option key={user} value={user}>{user}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label
+                style={{
+                  display: 'grid',
+                  gap: '5px',
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#718096' }}>
+                  PRIORYTET
+                </span>
+                <select
+                  className="note-text-input"
+                  value={newNote.priority || 'normal'}
+                  onChange={(e) =>
+                    setNewNote({
+                      ...newNote,
+                      priority: e.target.value,
+                    })
+                  }
+                >
+                  <option value="normal">Normalny</option>
+                  <option value="high">Wysoki</option>
+                  <option value="urgent">Pilny</option>
+                </select>
+              </label>
+            </div>
+
 
             {newNote.reminderEnabled && (
 
@@ -7477,6 +7560,54 @@ function JobDetails({
                       <strong>{note.text}</strong>
                     </div>
 
+                  )}
+
+                  {(note.assignee || note.priority === 'high' || note.priority === 'urgent') && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '7px',
+                        flexWrap: 'wrap',
+                        marginTop: '5px',
+                      }}
+                    >
+                      {note.assignee && (
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: '#087fce',
+                          background: '#e9f5ff',
+                          borderRadius: '999px',
+                          padding: '4px 8px',
+                        }}>
+                          👤 {note.assignee}
+                        </span>
+                      )}
+                      {note.priority === 'urgent' && (
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: '#b42318',
+                          background: '#fff0ee',
+                          borderRadius: '999px',
+                          padding: '4px 8px',
+                        }}>
+                          🔴 PILNE
+                        </span>
+                      )}
+                      {note.priority === 'high' && (
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          color: '#9a6800',
+                          background: '#fff8e8',
+                          borderRadius: '999px',
+                          padding: '4px 8px',
+                        }}>
+                          🟠 WYSOKI
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   <div className="note-created-at">

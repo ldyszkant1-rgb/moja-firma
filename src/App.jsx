@@ -12845,90 +12845,316 @@ const teamRowStyle = {
    TERMINARZ
    ===================================================== */
 
-function CalendarPage({ jobs = [], onOpenJob }) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
-  const plannedJobs = jobs
-    .filter((job) => job.plannedStartDate || job.plannedEndDate)
-    .sort((a, b) => String(a.plannedStartDate || a.plannedEndDate).localeCompare(String(b.plannedStartDate || b.plannedEndDate)))
-
-  const dateDiff = (a, b) => Math.round((a.getTime() - b.getTime()) / 86400000)
-  const getDays = (job) => {
-    const start = new Date((job.plannedStartDate || job.plannedEndDate) + 'T00:00:00')
-    const end = new Date((job.plannedEndDate || job.plannedStartDate) + 'T00:00:00')
-    return { start, end }
+function CalendarPage({ jobs = [], onOpenJob, onUpdateJob }) {
+  const makeDate = (value) => new Date(String(value) + 'T00:00:00')
+  const toDateString = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return year + '-' + month + '-' + day
   }
 
-  const upcoming = plannedJobs.filter((job) => getDays(job).end >= today)
+  const addDays = (date, amount) => {
+    const next = new Date(date)
+    next.setDate(next.getDate() + amount)
+    return next
+  }
+
+  const diffDays = (a, b) =>
+    Math.round((a.getTime() - b.getTime()) / 86400000)
+
+  const getJobRange = (job) => {
+    const startValue = job.plannedStartDate || job.plannedEndDate
+    const endValue = job.plannedEndDate || job.plannedStartDate
+    if (!startValue || !endValue) return null
+
+    const start = makeDate(startValue)
+    const end = makeDate(endValue)
+    return start <= end
+      ? { start, end }
+      : { start: end, end: start }
+  }
+
+  const getMonday = (date) => {
+    const result = new Date(date)
+    result.setHours(0, 0, 0, 0)
+    const day = result.getDay()
+    const mondayOffset = day === 0 ? -6 : 1 - day
+    result.setDate(result.getDate() + mondayOffset)
+    return result
+  }
+
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
+  const [draggedJobId, setDraggedJobId] = useState(null)
+  const [movingJobId, setMovingJobId] = useState(null)
+
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index))
+  const weekEnd = weekDays[6]
+  const todayString = toDateString(new Date())
+
+  const plannedJobs = jobs
+    .filter((job) => getJobRange(job))
+    .sort((a, b) => getJobRange(a).start.getTime() - getJobRange(b).start.getTime())
+
+  const jobsInWeek = plannedJobs.filter((job) => {
+    const range = getJobRange(job)
+    return range.start <= weekEnd && range.end >= weekStart
+  })
+
+  const getAssignedIds = (job) =>
+    Array.isArray(job.assignedEmployeeIds)
+      ? job.assignedEmployeeIds.map((id) => String(id))
+      : []
+
+  const jobsConflict = (a, b) => {
+    if (String(a.id) === String(b.id)) return false
+
+    const rangeA = getJobRange(a)
+    const rangeB = getJobRange(b)
+    if (!rangeA || !rangeB) return false
+    if (rangeA.start > rangeB.end || rangeB.start > rangeA.end) return false
+
+    if (a.assignedTeamId && b.assignedTeamId) {
+      return String(a.assignedTeamId) === String(b.assignedTeamId)
+    }
+
+    const idsA = getAssignedIds(a)
+    const idsB = getAssignedIds(b)
+    if (!idsA.length || !idsB.length) return false
+
+    return idsA.some((id) => idsB.includes(id))
+  }
+
+  const conflictingJobIds = new Set()
+  jobsInWeek.forEach((job) => {
+    if (jobsInWeek.some((other) => jobsConflict(job, other))) {
+      conflictingJobIds.add(String(job.id))
+    }
+  })
+
+  const conflictPairs = []
+  for (let i = 0; i < jobsInWeek.length; i += 1) {
+    for (let j = i + 1; j < jobsInWeek.length; j += 1) {
+      if (jobsConflict(jobsInWeek[i], jobsInWeek[j])) {
+        conflictPairs.push([jobsInWeek[i], jobsInWeek[j]])
+      }
+    }
+  }
+
+  const moveJobToDate = async (job, targetDate) => {
+    const range = getJobRange(job)
+    if (!range || !onUpdateJob) return
+
+    const target = makeDate(targetDate)
+    const duration = Math.max(0, diffDays(range.end, range.start))
+    const newStart = toDateString(target)
+    const newEnd = toDateString(addDays(target, duration))
+
+    setMovingJobId(job.id)
+    try {
+      await onUpdateJob({
+        ...job,
+        plannedStartDate: newStart,
+        plannedEndDate: newEnd,
+      })
+    } finally {
+      setMovingJobId(null)
+    }
+  }
+
+  const shiftJob = (job, amount) => {
+    const range = getJobRange(job)
+    if (!range) return
+    void moveJobToDate(job, toDateString(addDays(range.start, amount)))
+  }
+
+  const handleDrop = (targetDate) => {
+    if (!draggedJobId) return
+    const job = jobs.find((item) => String(item.id) === String(draggedJobId))
+    setDraggedJobId(null)
+    if (job) void moveJobToDate(job, targetDate)
+  }
+
+  const weekLabel =
+    formatDate(toDateString(weekStart)) +
+    ' – ' +
+    formatDate(toDateString(weekEnd))
 
   return (
     <div>
-      <div className="small-label">TERMINARZ</div>
-      <h1 style={{ marginBottom: '6px' }}>Planowanie robót</h1>
-      <div style={{ color: '#718096', fontSize: '13px', marginBottom: '16px' }}>
-        Zaplanowane realizacje i przypisane ekipy.
+      <div className="small-label">TERMINARZ 2.0</div>
+      <h1 style={{ marginBottom: '6px' }}>Planowanie tygodnia</h1>
+      <div style={{ color: '#718096', fontSize: '13px', marginBottom: '14px' }}>
+        Przeciągnij realizację na inny dzień, aby przesunąć cały termin. Konflikty ekip są oznaczane na czerwono.
       </div>
 
-      {upcoming.length === 0 ? (
-        <div className="detail-card" style={{ textAlign: 'center', padding: '28px 18px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          marginBottom: '12px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ fontWeight: 800, color: '#12234f' }}>{weekLabel}</div>
+        <div style={{ display: 'flex', gap: '7px' }}>
+          <button type="button" onClick={() => setWeekStart((current) => addDays(current, -7))} style={calendarSmallButtonStyle}>← Poprzedni</button>
+          <button type="button" onClick={() => setWeekStart(getMonday(new Date()))} style={calendarSmallButtonStyle}>Dzisiaj</button>
+          <button type="button" onClick={() => setWeekStart((current) => addDays(current, 7))} style={calendarSmallButtonStyle}>Następny →</button>
+        </div>
+      </div>
+
+      {conflictPairs.length > 0 && (
+        <div style={{ border: '1px solid #f1b5b5', background: '#fff5f5', color: '#9f2f2f', borderRadius: '14px', padding: '12px 14px', marginBottom: '12px' }}>
+          <strong>⚠️ KONFLIKT EKIP: {conflictPairs.length}</strong>
+          <div style={{ fontSize: '12px', marginTop: '5px', lineHeight: 1.5 }}>
+            {conflictPairs.map(([a, b]) => (
+              <div key={String(a.id) + '-' + String(b.id)}>{a.name} ↔ {b.name}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
+        {weekDays.map((day) => {
+          const dateString = toDateString(day)
+          const dayJobs = jobsInWeek.filter((job) => {
+            const range = getJobRange(job)
+            return range && day >= range.start && day <= range.end
+          })
+          const isToday = dateString === todayString
+
+          return (
+            <div
+              key={dateString}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => handleDrop(dateString)}
+              style={{
+                flex: '0 0 170px',
+                minHeight: '360px',
+                border: isToday ? '2px solid #5ba6e6' : '1px solid #dce7f1',
+                background: isToday ? '#f5faff' : '#f8fbfe',
+                borderRadius: '15px',
+                padding: '9px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '6px', marginBottom: '8px' }}>
+                <strong style={{ color: '#12234f', fontSize: '13px' }}>
+                  {['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][day.getDay()]}
+                </strong>
+                <span style={{ color: isToday ? '#1670c5' : '#718096', fontSize: '12px', fontWeight: 800 }}>
+                  {formatDate(dateString).slice(0, 5)}
+                </span>
+              </div>
+
+              {dayJobs.length === 0 ? (
+                <div style={{ color: '#a0aec0', fontSize: '12px', textAlign: 'center', padding: '28px 4px' }}>Brak robót</div>
+              ) : (
+                <div style={{ display: 'grid', gap: '7px' }}>
+                  {dayJobs.map((job) => {
+                    const range = getJobRange(job)
+                    const conflict = conflictingJobIds.has(String(job.id))
+                    const isMoving = String(movingJobId) === String(job.id)
+                    const startsToday = range && toDateString(range.start) === dateString
+                    const isMultiDay = range && range.end > range.start
+
+                    return (
+                      <div
+                        key={String(job.id) + '-' + dateString}
+                        draggable={!isMoving}
+                        onDragStart={() => setDraggedJobId(job.id)}
+                        onDragEnd={() => setDraggedJobId(null)}
+                        style={{
+                          border: conflict ? '1px solid #e35d5d' : '1px solid #d6e3ef',
+                          background: conflict ? '#fff2f2' : '#fff',
+                          borderRadius: '11px',
+                          padding: '9px',
+                          opacity: isMoving ? 0.55 : 1,
+                          cursor: 'grab',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onOpenJob(job)}
+                          style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', textAlign: 'left', color: '#12234f', cursor: 'pointer' }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '5px' }}>
+                            <strong style={{ fontSize: '13px' }}>{job.name}</strong>
+                            {conflict && <span style={{ fontSize: '11px', color: '#c53030', fontWeight: 900 }}>⚠️</span>}
+                          </div>
+                          <div style={{ marginTop: '4px', fontSize: '11px', color: '#718096' }}>📍 {job.location || 'Brak lokalizacji'}</div>
+                          {startsToday && isMultiDay && (
+                            <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>
+                              {formatDate(toDateString(range.start))} → {formatDate(toDateString(range.end))}
+                            </div>
+                          )}
+                          <div style={{ marginTop: '5px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            <span style={calendarBadgeStyle}>👥 {(job.assignedEmployeeIds || []).length || 2}</span>
+                            {conflict && <span style={{ ...calendarBadgeStyle, background: '#ffe1e1', color: '#a22d2d' }}>KONFLIKT</span>}
+                          </div>
+                        </button>
+
+                        <div style={{ display: 'flex', gap: '5px', marginTop: '7px' }}>
+                          <button type="button" onClick={() => shiftJob(job, -1)} disabled={isMoving} style={calendarMoveButtonStyle}>←</button>
+                          <button type="button" onClick={() => shiftJob(job, 1)} disabled={isMoving} style={calendarMoveButtonStyle}>→</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {plannedJobs.length === 0 && (
+        <div className="detail-card" style={{ textAlign: 'center', padding: '28px 18px', marginTop: '12px' }}>
           <div style={{ fontSize: '30px' }}>📅</div>
           <strong style={{ display: 'block', marginTop: '8px' }}>Brak zaplanowanych robót</strong>
           <div style={{ fontSize: '13px', color: '#718096', marginTop: '6px' }}>
             Wejdź w realizację → Edytuj i ustaw datę rozpoczęcia oraz zakończenia.
           </div>
         </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {upcoming.map((job) => {
-            const { start, end } = getDays(job)
-            const days = Math.max(1, dateDiff(end, start) + 1)
-            const isToday = start <= today && end >= today
-            const assigned = (job.assignedEmployeeIds || []).length
-            return (
-              <button
-                key={job.id}
-                type="button"
-                onClick={() => onOpenJob(job)}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  border: isToday ? '1px solid #65a9e8' : '1px solid #dce7f1',
-                  background: isToday ? '#f3f9ff' : '#fff',
-                  borderRadius: '14px',
-                  padding: '14px',
-                  cursor: 'pointer',
-                  color: '#12234f',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <strong style={{ fontSize: '15px' }}>{job.name}</strong>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: isToday ? '#1670c5' : '#64748b' }}>
-                    {isToday ? 'DZISIAJ' : days + ' ' + (days === 1 ? 'dzień' : 'dni')}
-                  </span>
-                </div>
-                <div style={{ marginTop: '5px', fontSize: '13px', color: '#64748b' }}>
-                  📍 {job.location || 'Brak lokalizacji'}
-                </div>
-                <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
-                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
-                    📅 {formatDate(job.plannedStartDate || job.plannedEndDate)}
-                    {job.plannedEndDate && job.plannedEndDate !== job.plannedStartDate ? ' → ' + formatDate(job.plannedEndDate) : ''}
-                  </span>
-                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
-                    👥 {assigned || 2} {assigned === 1 ? 'osoba' : 'osoby'}
-                  </span>
-                  <span style={{ padding: '5px 8px', borderRadius: '8px', background: '#eef4fa', fontSize: '12px' }}>
-                    {normalizeJobStage(job)}
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
       )}
     </div>
   )
+}
+
+const calendarSmallButtonStyle = {
+  border: '1px solid #d7e1eb',
+  background: '#fff',
+  color: '#334e68',
+  borderRadius: '10px',
+  padding: '8px 10px',
+  fontSize: '12px',
+  fontWeight: 800,
+  cursor: 'pointer',
+}
+
+const calendarBadgeStyle = {
+  padding: '3px 6px',
+  borderRadius: '6px',
+  background: '#eef4fa',
+  color: '#526174',
+  fontSize: '10px',
+  fontWeight: 800,
+}
+
+const calendarMoveButtonStyle = {
+  flex: 1,
+  minHeight: '30px',
+  border: '1px solid #d7e1eb',
+  background: '#f5f8fb',
+  color: '#526174',
+  borderRadius: '8px',
+  fontSize: '14px',
+  fontWeight: 900,
+  cursor: 'pointer',
 }
 
 /* =====================================================

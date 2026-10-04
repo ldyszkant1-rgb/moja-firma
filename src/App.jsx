@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -10238,7 +10238,7 @@ function FinancePage({
             className="finance-header-add-button"
             onClick={() => setShowForm(true)}
           >
-            <span aria-hidden="true">+</span>
+            <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
             Dodaj koszt
           </button>
         )}
@@ -10706,11 +10706,6 @@ function FinancePage({
       <div className="detail-card finance-cost-card">
         <div className="finance-cost-header finance-cost-header-modern">
           <div className="finance-cost-title-wrap">
-            <div className="finance-cost-title-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M7 4h10M7 8h10M7 12h6M5 20h14V4H5v16Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
             <div>
               <h2>Koszty</h2>
               <span>{monthTitle}</span>
@@ -10722,11 +10717,9 @@ function FinancePage({
         {monthCosts.length === 0 ? (
           <div className="cost-empty-state">
             <div className="cost-empty-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <FileText size={40} strokeWidth={1.75} />
             </div>
-            <div>
+            <div className="cost-empty-copy">
               <strong>Brak kosztów</strong>
               <span>Nie dodano jeszcze kosztów w tym miesiącu.</span>
             </div>
@@ -10903,11 +10896,7 @@ function FinancePage({
             className="cost-add-button cost-add-button-modern"
             onClick={() => setShowForm(true)}
           >
-            <span className="cost-add-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-              </svg>
-            </span>
+            <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
             <span>Dodaj koszt</span>
           </button>
         )}
@@ -11074,15 +11063,10 @@ function FinancePage({
         )}
       </div>
 
-      <div
-        className="detail-card"
-        style={{
-          marginTop: '14px',
-          marginBottom: '14px',
-        }}
-      >
+      <div className="detail-card finance-history-card">
         <button
           type="button"
+          className="finance-history-toggle"
           onClick={() => setShowHistory((value) => !value)}
           style={{
             width: '100%',
@@ -11097,14 +11081,11 @@ function FinancePage({
           }}
         >
           <div>
-            <h2 style={{ marginBottom: '4px' }}>Historia finansów</h2>
-            <span>
-              Wszystkie zapisane koszty — od najnowszych
-            </span>
+            <div className="finance-overview-label">HISTORIA</div>
+            <h2>Historia finansów</h2>
+            <span>Wszystkie zapisane koszty — od najnowszych</span>
           </div>
-          <span style={{ fontSize: '20px', fontWeight: 700 }}>
-            {showHistory ? '⌃' : '⌄'}
-          </span>
+          <ChevronRight className="finance-history-arrow" size={20} strokeWidth={1.75} aria-hidden="true" />
         </button>
 
         {showHistory && (
@@ -11183,7 +11164,7 @@ function FinancePage({
         </div>
 
         <div
-          className="finance-summary"
+          className="finance-summary finance-year-summary-rows"
           style={{
             marginTop: '12px',
             marginBottom: 0,
@@ -11192,18 +11173,18 @@ function FinancePage({
           <div>
             <span>Otrzymane</span>
             <strong>{formatMoney(yearRevenue)}</strong>
-            <small>{yearPayments.length} płatności</small>
+            <small>{yearPayments.length === 1 ? "1 płatność" : `${yearPayments.length} płatności`}</small>
           </div>
 
           <div>
             <span>Koszty</span>
             <strong>{formatMoney(yearCosts)}</strong>
-            <small>{yearCostsList.length} wpisów</small>
+            <small>{yearCostsList.length === 1 ? "1 wpis" : yearCostsList.length >= 2 && yearCostsList.length <= 4 ? `${yearCostsList.length} wpisy` : `${yearCostsList.length} wpisów`}</small>
           </div>
 
           <div>
             <span>Zysk</span>
-            <strong>{formatMoney(yearProfit)}</strong>
+            <strong>{formatMoney(yearProfit)} <small className="finance-inline-unit">netto</small></strong>
             <small>Po kosztach</small>
           </div>
         </div>

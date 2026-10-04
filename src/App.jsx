@@ -8174,6 +8174,49 @@ function FinancePage({
       0
     )
 
+  // Dla otrzymanych płatności netto wyliczamy z powiązanej faktury.
+  // Brutto pozostaje faktycznie otrzymaną kwotą. Dla starszych wpisów,
+  // które nie mają danych VAT, netto = brutto, aby nie wymyślać stawki VAT.
+  const getReceivedNetAmount = (payment) => {
+    const amount = Math.max(0, Number(payment.amount || 0))
+    const invoice = payment.invoiceId
+      ? invoices.find((item) => String(item.id) === String(payment.invoiceId))
+      : null
+
+    if (invoice) {
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const net = Math.max(0, Number(invoice.netAmount || 0))
+      if (gross > 0 && net >= 0) {
+        return Math.min(amount, amount * (net / gross))
+      }
+    }
+
+    const jobInvoices = invoices.filter(
+      (invoice) => String(invoice.jobId || '') === String(payment.jobId || '')
+    )
+    if (jobInvoices.length === 1) {
+      const invoice = jobInvoices[0]
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const net = Math.max(0, Number(invoice.netAmount || 0))
+      if (gross > 0 && net >= 0) {
+        return Math.min(amount, amount * (net / gross))
+      }
+    }
+
+    return amount
+  }
+
+  const monthRevenueGross = revenue
+  const monthRevenueNet =
+    monthPayments.reduce(
+      (sum, payment) => sum + getReceivedNetAmount(payment),
+      0
+    ) +
+    legacyCompletedJobsThisMonth.reduce(
+      (sum, job) => sum + calculateTotal(job),
+      0
+    )
+
   const monthCosts = costs.filter(
     (cost) =>
       cost.month &&
@@ -9075,7 +9118,16 @@ function FinancePage({
         <div className="finance-kpi-grid">
           <div className="finance-kpi-card finance-kpi-revenue">
             <span>OTRZYMANE</span>
-            <strong>{formatMoney(revenue)}</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
+              <div>
+                <small style={{ display: 'block', fontWeight: 800, opacity: 0.72 }}>NETTO</small>
+                <strong>{formatMoney(monthRevenueNet)}</strong>
+              </div>
+              <div>
+                <small style={{ display: 'block', fontWeight: 800, opacity: 0.72 }}>BRUTTO</small>
+                <strong>{formatMoney(monthRevenueGross)}</strong>
+              </div>
+            </div>
             <small>Faktycznie otrzymane pieniądze</small>
           </div>
           <div className="finance-kpi-card">
@@ -9252,7 +9304,17 @@ function FinancePage({
           <span className="finance-year-summary-badge">Bieżący rok</span>
         </div>
         <div className="finance-year-summary-grid">
-          <div><span>Otrzymane</span><strong>{formatMoney(yearRevenue)}</strong></div>
+          <div>
+            <span>Otrzymane netto</span>
+            <strong>{formatMoney(
+              yearPayments.reduce((sum, payment) => sum + getReceivedNetAmount(payment), 0) +
+              legacyCompletedJobsThisYear.reduce((sum, job) => sum + calculateTotal(job), 0)
+            )}</strong>
+          </div>
+          <div>
+            <span>Otrzymane brutto</span>
+            <strong>{formatMoney(yearRevenue)}</strong>
+          </div>
           <div><span>Koszty</span><strong>{formatMoney(yearCosts)}</strong></div>
           <div><span>Zysk</span><strong className={yearProfit >= 0 ? 'finance-year-positive' : 'finance-year-negative'}>{formatMoney(yearProfit)}</strong></div>
           <div><span>Należności do zapłaty</span><strong className={totalReceivables > 0.01 ? 'finance-year-warning' : 'finance-year-positive'}>{formatMoney(totalReceivables)}</strong></div>

@@ -3006,3 +3006,706 @@ section {
 .bottom-more-item.active { background: #eaf5ff; border-color: #8bc7f4; color: #087fce; }
 @media (min-width: 900px) { .bottom-more-menu { left: auto; right: 24px; width: 300px; } }
 @media (max-width: 520px) { .bottom-navigation .nav-item small { font-size: 10px; } .bottom-navigation .nav-item span { font-size: 19px; } }
+
+
+/* =========================================================
+   HOTFIX — Dashboard / JobCard mobile layout
+   ========================================================= */
+
+.job-card-with-tasks {
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e4ebf1;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.job-card-main {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.job-card-topline {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.job-card-identity {
+  min-width: 0;
+  flex: 1 1 180px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.job-card-photo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: block;
+  object-fit: cover;
+  border-radius: 11px;
+  background: #edf2f6;
+  border: 1px solid #dce5ec;
+}
+
+.job-card-photo-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #718096;
+}
+
+.job-card-identity-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-card-identity-text > strong {
+  min-width: 0;
+  color: var(--blue-dark);
+  font-size: 17px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.job-card-identity-text > span {
+  min-width: 0;
+  color: #657491;
+  font-size: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.job-card-client-name {
+  color: #718096;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.job-card-topline > .status,
+.job-card-topline > span[style] {
+  margin-left: 0;
+  flex: 0 0 auto;
+}
+
+.job-card-progress {
+  width: 100%;
+  min-width: 0;
+}
+
+.job-card-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: #526174;
+  font-size: 11px;
+}
+
+.job-card-progress-label strong {
+  color: var(--blue-dark);
+  font-size: 14px;
+}
+
+.job-card-metrics {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.job-card-metrics > div {
+  min-width: 0;
+  padding: 7px 5px;
+  border-radius: 10px;
+  background: #f6f9fc;
+  text-align: center;
+}
+
+.job-card-metrics span {
+  display: block;
+  color: #718096;
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+.job-card-metrics strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--blue-dark);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.job-card-metrics .job-card-value {
+  background: #eef7ff;
+}
+
+.job-card-metrics .job-card-value strong {
+  color: #087fce;
+}
+
+.job-card-invoice-summary {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.job-card-invoice-summary > div {
+  min-width: 0;
+}
+
+.job-card-tasks {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 0 0;
+  border-top: 1px solid #edf1f4;
+}
+
+.job-card-tasks-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.job-card-tasks-header > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-card-tasks-label {
+  color: #657491;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.job-card-tasks-header strong {
+  color: var(--blue-dark);
+  font-size: 13px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.job-card-task-count {
+  flex: 0 0 auto;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.job-card-add-task-hint,
+.job-card-more-tasks,
+.job-card-open-link {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #d9e4ec;
+  border-radius: 10px;
+  background: #f7fafc;
+  color: #334e68;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.job-task-row {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 6px 0;
+  border-top: 1px solid #f0f3f6;
+}
+
+.job-task-checkbox {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #cbd8e2;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.job-task-text {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue-dark);
+  text-align: left;
+  font: inherit;
+}
+
+.job-task-text strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.job-task-text > span {
+  display: block;
+  color: #718096;
+  font-size: 10px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.job-card-completed-summary {
+  padding: 6px 0;
+  color: #718096;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.job-card-open-link {
+  border-color: #1b1b1d;
+  background: #262629;
+  color: #ffffff;
+  border-radius: 11px;
+}
+
+.dashboard-today-section {
+  width: 100%;
+}
+
+.dashboard-today-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-today-header h2 {
+  margin: 0;
+  color: var(--blue-dark);
+  font-size: 25px;
+  line-height: 1.1;
+}
+
+.dashboard-today-count {
+  flex: 0 0 auto;
+  color: var(--blue-dark);
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.dashboard-today-list {
+  width: 100%;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e4ebf1;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.dashboard-today-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.dashboard-today-check {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #cbd8e2;
+  border-radius: 50%;
+  background: #f8fbfd;
+  color: #168fe5;
+  font-weight: 900;
+}
+
+.dashboard-today-main {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue-dark);
+  text-align: left;
+  font: inherit;
+}
+
+.dashboard-today-main strong,
+.dashboard-today-main span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-today-main strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.dashboard-today-main span {
+  margin-top: 2px;
+  color: #718096;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.dashboard-today-type {
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: #edf9f1;
+  color: #21804a;
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dashboard-today-type-job {
+  background: #eaf5ff;
+  color: #087fce;
+}
+
+.dashboard-today-row-overdue {
+  background: #fff9f8;
+}
+
+.dashboard-today-row-overdue .dashboard-today-check {
+  border-color: #f0b5b5;
+  color: #c53030;
+}
+
+.dashboard-today-empty {
+  min-height: 96px;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.dashboard-today-empty > span {
+  color: #159447;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dashboard-today-empty strong {
+  color: var(--blue-dark);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.dashboard-today-empty small {
+  color: #718096;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.general-reminders-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e4ebf1;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.general-reminders-list {
+  width: 100%;
+}
+
+.general-reminder-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.general-reminder-checkbox {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #cbd8e2;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.general-reminder-checkbox.checked {
+  border-color: #159447;
+  background: #e7f8ee;
+  color: #159447;
+}
+
+.general-reminder-main {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue-dark);
+  text-align: left;
+  font: inherit;
+}
+
+.general-reminder-main strong,
+.general-reminder-main span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.general-reminder-main strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.general-reminder-main span {
+  margin-top: 2px;
+  color: #718096;
+  font-size: 10px;
+}
+
+.general-reminder-row.done .general-reminder-main strong {
+  color: #8b98aa;
+  text-decoration: line-through;
+}
+
+.general-reminder-delete {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #e6d7d7;
+  border-radius: 50%;
+  background: #fff8f8;
+  color: #a45d5d;
+}
+
+.general-reminder-empty {
+  min-height: 105px;
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.general-reminder-empty-icon {
+  color: #159447;
+  font-size: 20px;
+}
+
+.general-reminder-empty strong {
+  color: var(--blue-dark);
+  font-size: 14px;
+}
+
+.general-reminder-empty span:last-child {
+  color: #718096;
+  font-size: 11px;
+}
+
+.general-reminder-add-button {
+  width: calc(100% - 24px);
+  margin: 10px 12px 12px;
+  min-height: 38px;
+  border: 1px solid #d8e4ec;
+  border-radius: 11px;
+  background: #f7fafc;
+  color: #334e68;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.general-reminder-form {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #edf1f4;
+}
+
+.general-reminder-form-title {
+  color: var(--blue-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.general-reminder-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d6e1e9;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--blue-dark);
+  font: inherit;
+}
+
+.general-reminder-date-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.general-reminder-cancel {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d8e4ec;
+  border-radius: 10px;
+  background: #f7fafc;
+  color: #526174;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.general-reminders-count {
+  color: var(--blue-dark);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.general-reminders-alert {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: -3px 0 8px;
+  padding: 8px 10px;
+  border: 1px solid #f0caca;
+  border-radius: 10px;
+  background: #fff7f7;
+  color: #b42318;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .job-card-with-tasks {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .job-card-topline {
+    gap: 6px;
+  }
+
+  .job-card-identity {
+    flex-basis: 100%;
+  }
+
+  .job-card-photo {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .job-card-identity-text > strong {
+    font-size: 16px;
+  }
+
+  .job-card-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .job-card-metrics > div {
+    padding: 6px 3px;
+  }
+
+  .job-card-metrics strong {
+    font-size: 11px;
+  }
+
+  .dashboard-today-header h2 {
+    font-size: 22px;
+  }
+
+  .dashboard-today-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .dashboard-today-type {
+    display: none;
+  }
+
+  .general-reminder-row {
+    grid-template-columns: 26px minmax(0, 1fr) 26px;
+    padding: 9px;
+  }
+}
+
+@media (max-width: 420px) {
+  .job-card-with-tasks {
+    padding: 10px;
+  }
+
+  .job-card-identity-text > strong {
+    font-size: 15px;
+  }
+
+  .job-card-metrics span {
+    font-size: 8px;
+  }
+
+  .job-card-metrics strong {
+    font-size: 10px;
+  }
+
+  .job-card-invoice-summary {
+    font-size: 11px;
+  }
+
+  .dashboard-today-header h2 {
+    font-size: 20px;
+  }
+
+  .dashboard-today-empty strong {
+    font-size: 14px;
+  }
+}
+
+/* UX 2.0 — uproszczona nawigacja mobilna */
+.bottom-navigation { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.bottom-more-menu { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 1002; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; background: rgba(255,255,255,.98); border: 1px solid #dce5ec; border-radius: 18px; box-shadow: 0 14px 36px rgba(18,35,79,.18); backdrop-filter: blur(10px); }
+.bottom-more-item { min-height: 48px; border: 1px solid #e1e8ef; border-radius: 12px; background: #f8fbfe; color: #24345c; font: inherit; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; }
+.bottom-more-item.active { background: #eaf5ff; border-color: #8bc7f4; color: #087fce; }
+@media (min-width: 900px) { .bottom-more-menu { left: auto; right: 24px; width: 300px; } }
+@media (max-width: 520px) { .bottom-navigation .nav-item small { font-size: 10px; } .bottom-navigation .nav-item span { font-size: 19px; } }

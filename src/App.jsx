@@ -5252,29 +5252,49 @@ function JobDetails({
   }
 
   const removeTimeEntry = async (entry) => {
+    if (!entry?.id) return
+
     const confirmed = await showCustomConfirm(entry?.endedAt
       ? 'Usunąć ten wpis czasu?'
       : 'Zatrzymać i usunąć aktywny pomiar?')
     if (!confirmed) return
-    try {
-      if (!entry.endedAt) await stopJobTimer(entry)
 
-      // Usuwamy bezpośrednio z Supabase w tym samym komponencie,
-      // żeby historia nie zależała od starego cache/importu API.
-      const { error: deleteError } = await supabase
+    try {
+      if (!entry.endedAt) {
+        await stopJobTimer(entry)
+      }
+
+      // Usuwamy po ID i od razu żądamy zwrotu usuniętego rekordu.
+      // Dzięki temu od razu wiemy, czy Supabase faktycznie wykonał DELETE.
+      const { data: deletedRow, error: deleteError } = await supabase
         .from('job_time_entries')
         .delete()
         .eq('id', entry.id)
         .eq('job_id', editedJob.id)
+        .select('id')
+        .maybeSingle()
 
       if (deleteError) throw deleteError
 
+      if (!deletedRow?.id) {
+        throw new Error('Supabase nie usunął wpisu czasu (brak usuniętego rekordu).')
+      }
+
+      // Najpierw usuwamy go lokalnie, żeby UI reagował natychmiast.
+      setJobTimeEntries((current) =>
+        current.filter((item) => String(item.id) !== String(entry.id))
+      )
+      setTimeTick(Date.now())
+
+      // Potwierdzamy stan z bazy.
       const refreshedEntries = await getJobTimeEntries(editedJob.id)
       setJobTimeEntries(refreshedEntries)
-      setTimeTick(Date.now())
     } catch (error) {
       console.error('Nie udało się usunąć wpisu czasu:', error)
-      showCustomAlert('Nie udało się usunąć wpisu czasu. Spróbuj ponownie.')
+      showCustomAlert(
+        'Nie udało się usunąć wpisu czasu. ' +
+        (error?.message || 'Sprawdź połączenie z bazą.')
+      )
     }
   }
 
@@ -7673,7 +7693,19 @@ function JobDetails({
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <strong>{formatDuration(getEntryMinutes(entry))}</strong>
-                    <button type="button" className="note-action-button note-delete-button" onClick={() => removeTimeEntry(entry)}>🗑</button>
+                    <button
+                      type="button"
+                      className="note-action-button note-delete-button"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        removeTimeEntry(entry)
+                      }}
+                      style={{ minWidth: '72px', minHeight: '38px', padding: '8px 12px', cursor: 'pointer', pointerEvents: 'auto' }}
+                      aria-label="Usuń wpis czasu"
+                    >
+                      🗑 Usuń
+                    </button>
                   </div>
                 </div>
               ))}

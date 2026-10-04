@@ -7368,6 +7368,79 @@ function JobDetails({
       </div>
 
 
+      {/* KOSZTY REALIZACJI */}
+      <div className="detail-card">
+        <div className="notes-header">
+          <div>
+            <div className="small-label">KOSZTY</div>
+            <h2>Koszty tej realizacji</h2>
+          </div>
+          {!showCostForm && (
+            <button type="button" className="document-button" onClick={() => setShowCostForm(true)}>+ Dodaj koszt</button>
+          )}
+        </div>
+
+        {showCostForm && (
+          <div className="note-form note-form-modern">
+            <select className="note-text-input" value={costForm.costType} onChange={(e) => setCostForm({ ...costForm, costType: e.target.value })}>
+              <option value="material">Materiał</option>
+              <option value="hours">Robocizna / godziny</option>
+              <option value="other">Inny koszt</option>
+            </select>
+
+            <input className="note-text-input" type="text" placeholder="Np. kanał, materiał, transport..." value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <input className="note-text-input" inputMode="decimal" placeholder="Ilość" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })} />
+              <input className="note-text-input" placeholder="Jednostka" value={costForm.unit} onChange={(e) => setCostForm({ ...costForm, unit: e.target.value })} />
+              <input className="note-text-input" inputMode="decimal" placeholder="Cena jedn." value={costForm.unitCost} onChange={(e) => setCostForm({ ...costForm, unitCost: e.target.value })} />
+            </div>
+
+            <input className="note-date-input" type="date" value={costForm.costDate} onChange={(e) => setCostForm({ ...costForm, costDate: e.target.value })} />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', fontWeight: 800 }}>
+              Razem: {formatMoney(parseDecimal(costForm.quantity) * parseDecimal(costForm.unitCost))}
+            </div>
+
+            <div className="note-form-actions">
+              <button className="save-button" onClick={saveJobCost}>{editingCostId ? 'Zapisz koszt' : 'Dodaj koszt'}</button>
+              <button className="restore-button" onClick={resetCostForm}>Anuluj</button>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '14px 0' }}>
+          <div className="finance-kpi-card"><small>WARTOŚĆ</small><strong>{formatMoney(jobRevenue)}</strong></div>
+          <div className="finance-kpi-card"><small>KOSZTY</small><strong>{formatMoney(totalJobCosts)}</strong></div>
+          <div className="finance-kpi-card"><small>ZYSK</small><strong>{formatMoney(jobProfit)}</strong></div>
+        </div>
+
+        {jobCosts.length === 0 ? (
+          <div className="empty-notes">Brak kosztów przypisanych do tej realizacji.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: '8px' }}>
+            {jobCosts.map((cost) => (
+              <div key={cost.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center', padding: '12px', border: '1px solid #e7edf4', borderRadius: '12px' }}>
+                <div>
+                  <strong>{cost.description}</strong>
+                  <div style={{ marginTop: '4px', fontSize: '12px', color: '#718096' }}>
+                    {cost.costType === 'material' ? 'Materiał' : cost.costType === 'hours' ? 'Robocizna' : 'Inny koszt'}
+                    {' • '}{cost.quantity} {cost.unit} × {formatMoney(cost.unitCost)}
+                    {cost.costDate ? ' • ' + formatDate(cost.costDate) : ''}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <strong>{formatMoney(cost.totalCost)}</strong>
+                  <button type="button" className="note-action-button note-edit-button" onClick={() => startEditJobCost(cost)}>✎</button>
+                  <button type="button" className="note-action-button note-delete-button" onClick={() => removeJobCost(cost)}>🗑</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+
       {/* NOTATKI */}
 
       <div className="detail-card notes-card">

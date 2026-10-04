@@ -12971,19 +12971,21 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     setSaving(true)
     try {
-      const { data, error } = await supabase
-        .from('calendar_plans')
-        .insert(rows)
-        .select('id,user_id,job_id,plan_type,plan_date,title,note')
-      if (error) {
-        console.error('Nie udało się zapisać planu:', error)
-        await showCustomAlert('Błąd zapisu terminarza: ' + (error.message || 'Nieznany błąd.'))
-        return
+      const savedRows = []
+      for (const row of rows) {
+        const { data, error } = await supabase.rpc('create_calendar_plan', {
+          p_user_id: row.user_id,
+          p_job_id: row.job_id,
+          p_plan_type: row.plan_type,
+          p_plan_date: row.plan_date,
+          p_title: row.title,
+          p_note: row.note,
+        })
+        if (error) throw error
+        if (!data) throw new Error('Baza nie zwróciła zapisanego wpisu.')
+        savedRows.push(data)
       }
-      if (!data || data.length === 0) {
-        await showCustomAlert('Plan nie został zapisany — baza nie zwróciła zapisanego wpisu.')
-        return
-      }
+      const data = savedRows
       setPlans((current) => [...current, ...(data || [])])
       setShowForm(false)
       setTitle('')

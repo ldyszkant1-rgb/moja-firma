@@ -12935,11 +12935,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     }
     setPlans(data || [])
 
-    const { data: exclusions, error: exclusionsError } = await supabase
-      .from('calendar_job_exclusions')
-      .select('job_id,excluded_date')
-      .gte('excluded_date', toDateString(weekStart))
-      .lte('excluded_date', toDateString(weekEnd))
+    const { data: exclusions, error: exclusionsError } = await supabase.rpc('list_calendar_job_exclusions', {
+      p_organization_id: organizationId,
+      p_start_date: toDateString(weekStart),
+      p_end_date: toDateString(weekEnd),
+    })
 
     if (exclusionsError) {
       console.error('Nie udało się wczytać wykluczonych dni realizacji:', exclusionsError)
@@ -13108,11 +13108,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeJobDayFromCalendar = async (job, date) => {
     if (!job?.id || !date) return
 
-    const ok = await showCustomConfirm(
-      'Usunąć „' + (job.name || 'robotę') + '” tylko z dnia ' + formatDate(date) + '?\\n\\nPozostałe dni tej realizacji pozostaną w kalendarzu.'
-    )
-    if (!ok) return
-
     setMovingJobId(job.id + ':' + date)
     try {
       const { data: saved, error } = await supabase.rpc('add_calendar_job_exclusion', {
@@ -13122,7 +13117,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
       if (error || !saved) {
         console.error('Nie udało się usunąć dnia realizacji z kalendarza:', error)
-        await showCustomAlert('Nie udało się usunąć tego dnia z kalendarza.')
+        await showCustomAlert(error?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
         return
       }
 

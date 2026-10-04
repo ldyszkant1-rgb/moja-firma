@@ -13068,41 +13068,32 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const removeDayPlans = async (date, dayPlans) => {
     if (!dayPlans.length) return
-    const ok = await showCustomConfirm('Usunąć wszystkie wpisy z dnia ' + formatDate(date) + '?')
-    if (!ok) return
+    const ids = new Set(dayPlans.map((plan) => String(plan.id)))
+    setPlans((current) => current.filter((plan) => !ids.has(String(plan.id))))
+
     const { data: deletedCount, error } = await supabase.rpc('delete_calendar_day', {
       p_plan_date: date,
     })
-    if (error) {
-      console.error('Nie udało się usunąć planu dnia:', error)
-      await showCustomAlert('Nie udało się usunąć planu dnia.')
+    if (error || Number(deletedCount) !== dayPlans.length) {
+      console.error('Nie udało się usunąć planu dnia:', error, { deletedCount, expected: dayPlans.length })
+      await loadPlans()
+      await showCustomAlert(error?.message || 'Nie udało się usunąć wszystkich wpisów z tego dnia.')
       return
     }
-    if (Number(deletedCount) < dayPlans.length) {
-      console.warn('Usunięto mniej wpisów niż widocznych w dniu:', {
-        visible: dayPlans.length,
-        deleted: deletedCount,
-      })
-    }
-    await loadPlans()
   }
 
   const removePlan = async (plan) => {
-    const ok = await showCustomConfirm('Usunąć wpis „' + plan.title + '” z terminarza?')
-    if (!ok) return
+    setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
+
     const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
       p_plan_id: plan.id,
     })
-    if (error) {
-      console.error('Nie udało się usunąć wpisu:', error)
-      await showCustomAlert('Nie udało się usunąć wpisu.')
+    if (error || !deleted) {
+      console.error('Nie udało się usunąć wpisu:', error, { deleted })
+      await loadPlans()
+      await showCustomAlert(error?.message || 'Nie udało się usunąć wpisu.')
       return
     }
-    if (!deleted) {
-      await showCustomAlert('Nie udało się usunąć wpisu. Odśwież terminarz i spróbuj ponownie.')
-      return
-    }
-    await loadPlans()
   }
 
   const removeJobDayFromCalendar = async (job, date) => {

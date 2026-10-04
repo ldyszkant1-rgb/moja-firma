@@ -4580,6 +4580,15 @@ body {
   gap: 12px;
 }
 
+.finance-page .receivables-header > div:first-child {
+  min-width: 0;
+  text-align: left;
+}
+
+.finance-page .receivables-header .small-label {
+  text-align: left;
+}
+
 .finance-page .finance-command-card-header h2,
 .finance-page .finance-cost-header h2,
 .finance-page .finance-partner-card h2,
@@ -4673,6 +4682,46 @@ body {
   padding: 0;
   color: #94a3b8;
   font-size: 9px;
+}
+
+.finance-page .finance-kpi-revenue > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.finance-page .finance-kpi-revenue > div > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.finance-page .finance-kpi-revenue > div > div + div {
+  margin-top: 0;
+}
+
+.finance-page .finance-kpi-revenue > div > div small {
+  margin: 0 0 3px;
+  padding: 0;
+  color: #94a3b8;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.finance-page .finance-kpi-revenue > div > div strong {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 18px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .finance-page .finance-quick-actions {
@@ -4976,10 +5025,43 @@ body {
 .finance-page .finance-trend-chart {
   height: 120px;
   margin-top: 14px;
+  margin-bottom: 8px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
+}
+
+.finance-page .finance-trend-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.finance-page .finance-trend-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.finance-page .finance-trend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+}
+
+.finance-page .finance-trend-dot-revenue {
+  background: #0787e8;
+}
+
+.finance-page .finance-trend-dot-costs {
+  background: #94a3b8;
 }
 
 .finance-page .finance-trend-column {
@@ -5175,10 +5257,12 @@ body {
 }
 
 .finance-page .finance-completed-amount small {
+  display: inline;
   margin-left: 3px;
   color: #94a3b8;
   font-size: 9px;
   font-weight: 600;
+  line-height: 1;
 }
 
 .finance-page .finance-history-card {

@@ -5268,14 +5268,13 @@ function JobDetails({
 
   const initializeProfitShares = () => {
     if (jobProfitShares.length > 0) return jobProfitShares
-    const members = (organizationMembers || []).slice(0, 2)
-    if (members.length === 0) return []
-    const percentage = members.length === 2 ? 50 : 100
-    return members.map((member) => ({
-      employeeId: member.user_id,
-      employeeName: member.display_name || member.email || 'Pracownik',
-      percentage,
-    }))
+    return [
+      {
+        employeeId: 'team',
+        employeeName: 'Ekipa',
+        percentage: 100,
+      },
+    ]
   }
 
   const currentProfitShares = jobProfitShares.length > 0
@@ -7685,26 +7684,9 @@ function JobDetails({
         <div style={{ display: 'grid', gap: '9px' }}>
           {currentProfitShares.map((share, index) => (
             <div key={share.employeeId} style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '10px', alignItems: 'center' }}>
-              <select
-                className="note-text-input"
-                value={share.employeeId}
-                onChange={(e) => {
-                  const member = organizationMembers.find((item) => String(item.user_id) === String(e.target.value))
-                  const next = [...currentProfitShares]
-                  next[index] = {
-                    ...next[index],
-                    employeeId: e.target.value,
-                    employeeName: member?.display_name || member?.email || 'Pracownik',
-                  }
-                  setJobProfitShares(next)
-                }}
-              >
-                {(organizationMembers || []).map((member) => (
-                  <option key={member.user_id} value={member.user_id}>
-                    {member.display_name || member.email || 'Pracownik'}
-                  </option>
-                ))}
-              </select>
+              <div className="note-text-input" style={{ display: 'flex', alignItems: 'center', minHeight: '44px', fontWeight: 800 }}>
+                👥 {share.employeeName || 'Ekipa'}
+              </div>
               <div style={{ position: 'relative' }}>
                 <input
                   className="note-text-input"

@@ -5191,29 +5191,6 @@ function JobDetails({
     .filter((cost) => cost.costType === 'hours')
     .reduce((sum, cost) => sum + Number(cost.totalCost || 0), 0)
 
-  const assignedEmployeeDetails = (editedJob.assignedEmployeeIds || [])
-    .map((id) => (organizationMembers || []).find(
-      (member) => String(member.user_id) === String(id)
-    ))
-    .filter(Boolean)
-
-  const automaticLaborCost = assignedEmployeeDetails.length > 0
-    ? assignedEmployeeDetails.reduce(
-        (sum, member) => sum + (
-          (teamElapsedMinutes / 60) * Number(member.hourly_rate || 0)
-        ),
-        0
-      )
-    : 0
-
-  const effectiveLaborCost = manualLaborCosts > 0
-    ? manualLaborCosts
-    : automaticLaborCost
-
-  const effectiveJobCosts = totalJobCosts - manualLaborCosts + effectiveLaborCost
-  const jobRevenue = calculateTotal(editedJob)
-  const jobProfit = jobRevenue - effectiveJobCosts
-
   const [jobTimeEntries, setJobTimeEntries] = useState([])
   const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState('team')
   const [timeTick, setTimeTick] = useState(Date.now())
@@ -5283,6 +5260,30 @@ function JobDetails({
   // dopóki konkretna ekipa nie zostanie przypisana do realizacji.
   const teamSize = assignedTeamMembers.length || 2
   const teamLaborMinutes = teamElapsedMinutes * teamSize
+
+  const assignedEmployeeLabor = assignedTeamMembers.map((member) => {
+    const hours = teamElapsedMinutes / 60
+    const hourlyRate = Number(member.hourly_rate || 0)
+    return {
+      ...member,
+      hours,
+      hourlyRate,
+      laborCost: hours * hourlyRate,
+    }
+  })
+
+  const automaticLaborCost = assignedEmployeeLabor.reduce(
+    (sum, member) => sum + member.laborCost,
+    0
+  )
+
+  const effectiveLaborCost = manualLaborCosts > 0
+    ? manualLaborCosts
+    : automaticLaborCost
+
+  const effectiveJobCosts = totalJobCosts - manualLaborCosts + effectiveLaborCost
+  const jobRevenue = calculateTotal(editedJob)
+  const jobProfit = jobRevenue - effectiveJobCosts
 
   const activeTimerFor = (employeeId, timeType) =>
     jobTimeEntries.find(
@@ -7874,6 +7875,38 @@ function JobDetails({
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#edf9f1' }}>
                 <span>Roboczogodziny ({teamSize} {teamSize === 1 ? 'osoba' : 'osób'})</span>
                 <strong>{formatDuration(teamLaborMinutes)}</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {jobTimeEntries.length > 0 && assignedTeamMembers.length > 0 && (
+          <div style={{ marginTop: '16px' }}>
+            <div className="small-label">ROZLICZENIE EKIPY</div>
+            <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+              {assignedEmployeeLabor.map((member) => (
+                <div
+                  key={member.user_id}
+                  style={{
+                    padding: '11px 12px',
+                    borderRadius: '12px',
+                    background: '#f8fafc',
+                    border: '1px solid #e5ebf1',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                    <strong>{member.display_name || member.email || 'Pracownik'}</strong>
+                    <strong>{formatMoney(member.laborCost)}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px', fontSize: '12px', color: '#718096' }}>
+                    <span>Czas: {formatDuration(member.hours * 60)}</span>
+                    <span>{formatMoney(member.hourlyRate)} / h</span>
+                  </div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '11px 12px', borderRadius: '12px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
+                <strong>Razem koszt ekipy</strong>
+                <strong>{formatMoney(automaticLaborCost)}</strong>
               </div>
             </div>
           </div>

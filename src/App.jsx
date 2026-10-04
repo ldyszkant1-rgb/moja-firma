@@ -12430,6 +12430,7 @@ function TeamsSettings({ organizationId, members, canManage }) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
 
   const loadTeams = async () => {
@@ -13172,6 +13173,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   }
 
   const openEditPlan = (plan) => {
+    setSavingEdit(false)
     const time = splitWorkedHours(plan.hours_worked)
     setEditingPlan(plan)
     setEditHours(time.hours)
@@ -13196,7 +13198,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       return
     }
 
-    setSaving(true)
+    setSavingEdit(true)
     try {
       const { data, error } = await supabase.rpc('update_calendar_plan', {
         p_plan_id: editingPlan.id,
@@ -13219,7 +13221,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       console.error('Nie udało się edytować wpisu:', error)
       await showCustomAlert(error?.message || 'Nie udało się zaktualizować wpisu.')
     } finally {
-      setSaving(false)
+      setSavingEdit(false)
     }
   }
 
@@ -13693,7 +13695,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           <input value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" onClick={closeEditPlan} className="back-button">Anuluj</button>
-            <button type="submit" disabled={saving} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz zmiany'}</button>
+            <button type="submit" disabled={savingEdit} className="save-button">{savingEdit ? 'Zapisywanie…' : 'Zapisz zmiany'}</button>
           </div>
         </form>
       )}

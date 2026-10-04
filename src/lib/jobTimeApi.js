@@ -99,7 +99,16 @@ export async function stopJobTimer(entry) {
 
 export async function deleteJobTimeEntry(id) {
   if (!id) throw new Error('Brak ID wpisu czasu.')
-  const { error } = await supabase.from('job_time_entries').delete().eq('id', id)
+  const { data, error } = await supabase
+    .from('job_time_entries')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .maybeSingle()
+
   if (error) throw error
+  if (!data?.id) {
+    throw new Error('Nie znaleziono wpisu czasu albo brak uprawnień do jego usunięcia.')
+  }
   return true
 }

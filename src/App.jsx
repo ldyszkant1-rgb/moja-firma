@@ -10257,14 +10257,14 @@ function FinancePage({
             <div className="small-label">NALEŻNOŚCI</div>
             <h2>Do odzyskania</h2>
           </div>
-          <div className="receivables-total" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-            <strong>{formatMoney(totalReceivablesNet)} netto</strong>
-            <span style={{ fontSize: '14px', opacity: 0.72 }}>{formatMoney(totalReceivablesVat)} VAT</span>
-            <span style={{ fontSize: '17px', fontWeight: 800 }}>{formatMoney(totalReceivables)} brutto</span>
+          <div className="receivables-total">
+            <div><span>Netto</span><strong>{formatMoney(totalReceivablesNet)}</strong></div>
+            <div><span>VAT</span><strong>{formatMoney(totalReceivablesVat)}</strong></div>
+            <div><span>Brutto</span><strong>{formatMoney(totalReceivables)}</strong></div>
           </div>
         </div>
         <div className="receivables-summary">
-          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'} • netto + VAT + brutto</span>
+          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'}</span>
           {overdueReceivables > 0 && <strong className="receivables-overdue-pill"><span aria-hidden="true" />Zaległe: {formatMoney(overdueReceivables)}</strong>}
         </div>
         {receivables.length > 0 ? (

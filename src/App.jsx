@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -9540,7 +9540,7 @@ function FinancePage({
     0
   )
 
-  const profit = revenue - totalCosts
+  const profit = monthRevenueNet - totalCosts
   const share = hasPartnerSettlement ? profit / 2 : 0
 
   // Roczne podsumowanie dla aktualnie wybranego roku.
@@ -9589,7 +9589,11 @@ function FinancePage({
     0
   )
 
-  const yearProfit = yearRevenue - yearCosts
+  const yearRevenueNet =
+    yearPayments.reduce((sum, payment) => sum + getReceivedNetAmount(payment), 0) +
+    legacyCompletedJobsThisYear.reduce((sum, job) => sum + calculateTotal(job), 0)
+
+  const yearProfit = yearRevenueNet - yearCosts
 
 
   /*
@@ -10217,7 +10221,7 @@ function FinancePage({
   }
 
   return (
-    <div className="sub-page">
+    <div className="sub-page finance-page">
 
       <div className="page-heading finance-page-heading">
         <div>
@@ -10305,9 +10309,9 @@ function FinancePage({
             className="restore-button"
             onClick={() => changeMonth(-1)}
             aria-label="Poprzedni miesiąc"
-            style={{ fontSize: '20px', minWidth: '46px' }}
+            className="finance-month-arrow"
           >
-            ‹
+            <ChevronLeft size={20} strokeWidth={1.75} />
           </button>
 
           <button
@@ -10324,16 +10328,16 @@ function FinancePage({
               borderRadius: '10px',
             }}
           >
-            {monthTitle} <span style={{ fontSize: '14px' }}>⌄</span>
+            {monthTitle} <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
 
           <button
             className="restore-button"
             onClick={() => changeMonth(1)}
             aria-label="Następny miesiąc"
-            style={{ fontSize: '20px', minWidth: '46px' }}
+            className="finance-month-arrow"
           >
-            ›
+            <ChevronRight size={20} strokeWidth={1.75} />
           </button>
         </div>
 
@@ -10488,15 +10492,15 @@ function FinancePage({
 
         <div className="finance-quick-actions">
           <button type="button" className="finance-quick-action finance-quick-action-primary" onClick={() => setShowForm(true)}>
-            <span>＋</span>
+            <Wallet size={20} strokeWidth={1.75} aria-hidden="true" />
             <div><strong>Dodaj koszt</strong><small>Zapisz nowy wydatek</small></div>
           </button>
           <button type="button" className="finance-quick-action" onClick={() => onOpenInvoices?.()}>
-            <span>🧾</span>
+            <Receipt size={20} strokeWidth={1.75} aria-hidden="true" />
             <div><strong>Faktury</strong><small>{invoicesToIssue} do wystawienia</small></div>
           </button>
           <button type="button" className="finance-quick-action" onClick={() => onOpenJobs?.('active')}>
-            <span>🔧</span>
+            <Wrench size={20} strokeWidth={1.75} aria-hidden="true" />
             <div><strong>Realizacje</strong><small>{partiallyPaidReceivables} częściowo opłaconych</small></div>
           </button>
         </div>
@@ -10508,7 +10512,7 @@ function FinancePage({
                 <div className="finance-overview-label">PŁATNOŚCI</div>
                 <h2>Gotówka i należności</h2>
               </div>
-              <span className="finance-command-icon">💰</span>
+              <Wallet className="finance-command-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
             </div>
 
             <div className="finance-payment-row">
@@ -10541,7 +10545,7 @@ function FinancePage({
                 <div className="finance-overview-label">WSPÓLNICY</div>
                 <h2>Podział i koszty</h2>
               </div>
-              <span className="finance-command-icon">👥</span>
+              <Wallet className="finance-command-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
             </div>
 
             <div className="finance-partner-mini-grid">
@@ -10606,7 +10610,7 @@ function FinancePage({
                 <div className="finance-overview-label">WYMAGA UWAGI</div>
                 <h2>Najważniejsze działania</h2>
               </div>
-              <span className="finance-command-icon">⚠️</span>
+              <AlertTriangle className="finance-command-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
             </div>
 
             {monthAlerts.length === 0 ? (
@@ -10631,32 +10635,6 @@ function FinancePage({
               </div>
             )}
           </div>
-        </div>
-      </section>
-
-      <section className="finance-year-summary">
-        <div className="finance-year-summary-header">
-          <div>
-            <div className="finance-overview-label">PODSUMOWANIE ROKU</div>
-            <h2>Rok {selectedYear}</h2>
-          </div>
-          <span className="finance-year-summary-badge">Bieżący rok</span>
-        </div>
-        <div className="finance-year-summary-grid">
-          <div>
-            <span>Otrzymane netto</span>
-            <strong>{formatMoney(
-              yearPayments.reduce((sum, payment) => sum + getReceivedNetAmount(payment), 0) +
-              legacyCompletedJobsThisYear.reduce((sum, job) => sum + calculateTotal(job), 0)
-            )}</strong>
-          </div>
-          <div>
-            <span>Otrzymane brutto</span>
-            <strong>{formatMoney(yearRevenue)}</strong>
-          </div>
-          <div><span>Koszty</span><strong>{formatMoney(yearCosts)}</strong></div>
-          <div><span>Zysk</span><strong className={yearProfit >= 0 ? 'finance-year-positive' : 'finance-year-negative'}>{formatMoney(yearProfit)}</strong></div>
-          <div><span>Należności do zapłaty</span><strong className={totalReceivables > 0.01 ? 'finance-year-warning' : 'finance-year-positive'}>{formatMoney(totalReceivables)}</strong></div>
         </div>
       </section>
 

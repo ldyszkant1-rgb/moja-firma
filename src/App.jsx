@@ -2516,6 +2516,7 @@ return (
 
           company={settings.company}
           invoices={invoices}
+          organizationMembers={organizationMembers}
           onCreateInvoice={openInvoiceCreatorForJob}
           onOpenInvoice={openInvoiceFromJob}
 
@@ -5040,6 +5041,7 @@ function JobDetails({
   onBack,
   onUpdate,
   onDelete,
+  organizationMembers = [],
 }) {
 
   const [editedJob, setEditedJob] =
@@ -5117,6 +5119,8 @@ function JobDetails({
     unit: 'szt.',
     unitCost: '',
     costDate: getTodayString(),
+    employeeId: '',
+    employeeName: '',
   })
 
   useEffect(() => {
@@ -5144,6 +5148,8 @@ function JobDetails({
       unit: 'szt.',
       unitCost: '',
       costDate: getTodayString(),
+      employeeId: '',
+      employeeName: '',
     })
     setEditingCostId(null)
     setShowCostForm(false)
@@ -5173,6 +5179,8 @@ function JobDetails({
         unit: costForm.unit || 'szt.',
         unitCost,
         costDate: costForm.costDate || null,
+        employeeId: costForm.costType === 'hours' ? (costForm.employeeId || null) : null,
+        employeeName: costForm.costType === 'hours' ? (costForm.employeeName || '') : '',
       }
 
       const saved = editingCostId
@@ -5200,6 +5208,8 @@ function JobDetails({
       unit: cost.unit || 'szt.',
       unitCost: String(cost.unitCost ?? 0),
       costDate: cost.costDate || '',
+      employeeId: cost.employeeId || '',
+      employeeName: cost.employeeName || '',
     })
     setShowCostForm(true)
   }

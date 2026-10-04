@@ -13053,6 +13053,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   }
 
   const openFormForDay = (date) => {
+    setSaveMessage('')
     setStartDate(date)
     setEndDate(date)
     setShowForm(true)
@@ -13070,7 +13071,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         <button type="button" onClick={() => setWeekStart((d) => addDays(d, -7))} style={calendarSmallButtonStyle}>← Poprzedni</button>
         <button type="button" onClick={() => setWeekStart(getMonday(new Date()))} style={calendarSmallButtonStyle}>Dzisiaj</button>
         <button type="button" onClick={() => setWeekStart((d) => addDays(d, 7))} style={calendarSmallButtonStyle}>Następny →</button>
-        <button type="button" onClick={() => { setStartDate(toDateString(weekStart)); setEndDate(toDateString(weekEnd)); setShowForm(true) }} style={{ ...calendarSmallButtonStyle, background: '#168fe5', color: '#fff', borderColor: '#168fe5' }}>＋ Zaplanuj zakres</button>
+        <button type="button" onClick={() => { setSaveMessage(''); setStartDate(toDateString(weekStart)); setEndDate(toDateString(weekEnd)); setShowForm(true) }} style={{ ...calendarSmallButtonStyle, background: '#168fe5', color: '#fff', borderColor: '#168fe5' }}>＋ Zaplanuj zakres</button>
       </div>
 
       {showForm && (

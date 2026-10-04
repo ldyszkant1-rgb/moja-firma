@@ -12904,6 +12904,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
   const [plans, setPlans] = useState([])
+  const [calendarExclusions, setCalendarExclusions] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
@@ -12936,6 +12937,20 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       return
     }
     setPlans(data || [])
+
+    const { data: exclusions, error: exclusionsError } = await supabase
+      .from('calendar_job_exclusions')
+      .select('job_id,excluded_date')
+      .eq('organization_id', organizationId)
+      .gte('excluded_date', toDateString(weekStart))
+      .lte('excluded_date', toDateString(weekEnd))
+
+    if (exclusionsError) {
+      console.error('Nie udało się wczytać wykluczonych dni realizacji:', exclusionsError)
+      setCalendarExclusions([])
+    } else {
+      setCalendarExclusions(exclusions || [])
+    }
   }
 
   useEffect(() => {
@@ -13086,18 +13101,33 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     await loadPlans()
   }
 
-  const removeJobFromCalendar = async (job) => {
-    if (!job?.id || !onUpdateJob) return
+  const removeJobDayFromCalendar = async (job, date) => {
+    if (!job?.id || !date) return
 
-    setMovingJobId(job.id)
+    const ok = await showCustomConfirm(
+      'Usunąć „' + (job.name || 'robotę') + '” tylko z dnia ' + formatDate(date) + '?\\n\\nPozostałe dni tej realizacji pozostaną w kalendarzu.'
+    )
+    if (!ok) return
+
+    setMovingJobId(job.id + ':' + date)
     try {
-      const saved = await onUpdateJob({
-        ...job,
-        plannedStartDate: null,
-        plannedEndDate: null,
+      const { data: saved, error } = await supabase.rpc('add_calendar_job_exclusion', {
+        p_job_id: job.id,
+        p_excluded_date: date,
       })
 
-      if (saved === false) return
+      if (error || !saved) {
+        console.error('Nie udało się usunąć dnia realizacji z kalendarza:', error)
+        await showCustomAlert('Nie udało się usunąć tego dnia z kalendarza.')
+        return
+      }
+
+      setCalendarExclusions((current) => {
+        if (current.some((item) => String(item.job_id) === String(job.id) && String(item.excluded_date) === String(date))) {
+          return current
+        }
+        return [...current, { job_id: job.id, excluded_date: date }]
+      })
     } finally {
       setMovingJobId(null)
     }
@@ -13202,7 +13232,12 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           const dayPlans = plans.filter((plan) => String(plan.plan_date) === date)
           const dayJobs = jobs.filter((job) => {
             const range = getRange(job)
-            return range && day >= range.start && day <= range.end
+            const excluded = calendarExclusions.some(
+              (item) =>
+                String(item.job_id) === String(job.id) &&
+                String(item.excluded_date) === String(date)
+            )
+            return range && day >= range.start && day <= range.end && !excluded
           })
           const isToday = date === today
 
@@ -13234,7 +13269,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                 {dayJobs.map((job) => {
                   const range = getRange(job)
                   const starts = range && toDateString(range.start) === date
-                  const moving = String(movingJobId) === String(job.id)
+                  const moving = String(movingJobId) === String(job.id + ':' + date)
                   return (
                     <div key={'job-' + job.id} draggable={!moving} onDragStart={() => setDraggedJobId(job.id)} onDragEnd={() => setDraggedJobId(null)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (draggedJobId) { const dragged = jobs.find((item) => String(item.id) === String(draggedJobId)); if (dragged) void moveJob(dragged, date); setDraggedJobId(null) } }} style={{ border: '1px solid #d6e3ef', background: '#fff', borderRadius: '10px', padding: '8px', opacity: moving ? 0.5 : 1 }}>
                       <button type="button" onClick={() => onOpenJob(job)} style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', textAlign: 'left', color: '#12234f', cursor: 'pointer' }}>
@@ -13250,7 +13285,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <button
                         type="button"
                         disabled={moving}
-                        onClick={() => void removeJobFromCalendar(job)}
+                        onClick={() => void removeJobDayFromCalendar(job, date)}
                         style={{
                           width: '100%',
                           minHeight: '30px',
@@ -13265,7 +13300,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                           opacity: moving ? 0.55 : 1,
                         }}
                       >
-                        🗑 Usuń z kalendarza
+                        🗑 Usuń ten dzień
                       </button>
                     </div>
                   )

@@ -11,6 +11,8 @@ function mapCost(row) {
     unitCost: Number(row.unit_cost || 0),
     totalCost: Number(row.total_cost || 0),
     costDate: row.cost_date || null,
+    employeeId: row.employee_id || null,
+    employeeName: row.employee_name || '',
     createdBy: row.created_by || null,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
@@ -33,6 +35,8 @@ function mapPayload(cost, organizationId) {
     unit_cost: unitCost,
     total_cost: Math.max(0, quantity * unitCost),
     cost_date: cost.costDate || null,
+    employee_id: cost.employeeId || null,
+    employee_name: String(cost.employeeName || '').trim(),
   }
 }
 

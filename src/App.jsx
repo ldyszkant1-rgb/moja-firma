@@ -7681,10 +7681,23 @@ function JobDetails({
                     <button
                       type="button"
                       className="note-action-button note-delete-button"
-                      onClick={(event) => {
+                      onClick={async (event) => {
                         event.preventDefault()
                         event.stopPropagation()
-                        removeTimeEntry(entry)
+                        try {
+                          await deleteJobTimeEntry(entry.id)
+                          setJobTimeEntries((current) =>
+                            current.filter((item) => String(item.id) !== String(entry.id))
+                          )
+                          setTimeTick(Date.now())
+                          await showCustomAlert('Wpis czasu został usunięty.')
+                        } catch (error) {
+                          console.error('Błąd usuwania wpisu czasu:', error)
+                          await showCustomAlert(
+                            'Nie udało się usunąć wpisu czasu. ' +
+                            (error?.message || 'Sprawdź połączenie z bazą.')
+                          )
+                        }
                       }}
                       style={{ minWidth: '72px', minHeight: '38px', padding: '8px 12px', cursor: 'pointer', pointerEvents: 'auto' }}
                       aria-label="Usuń wpis czasu"

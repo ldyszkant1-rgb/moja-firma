@@ -12933,7 +12933,18 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     setPlans(data || [])
   }
 
-  useEffect(() => { loadPlans() }, [organizationId, weekStart.getTime()])
+  useEffect(() => {
+    void loadPlans()
+
+    const refresh = () => { void loadPlans() }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [organizationId, weekStart.getTime()])
 
   const getMemberName = (id) => {
     if (!id) return 'Cała ekipa'
@@ -13011,7 +13022,10 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         savedRows.push(data)
       }
       const data = savedRows
-      setPlans((current) => [...current, ...(data || [])])
+      // Po zapisie pobieramy stan bezpośrednio z Supabase. Dzięki temu
+      // terminarz po zmianie zakładki/odświeżeniu pokazuje dokładnie to,
+      // co znajduje się w bazie, a nie tylko lokalny stan Reacta.
+      await loadPlans()
       setSaveMessage(rows.length > 1 ? 'Plan zapisany na cały wybrany okres.' : 'Plan zapisany.')
       setShowForm(false)
       setTitle('')

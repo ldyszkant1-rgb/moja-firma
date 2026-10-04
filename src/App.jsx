@@ -6,6 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -138,6 +139,24 @@ function formatWorkedHours(value) {
   return `${hours} h ${minutes} min`
 }
 
+
+function formatDisplayNumber(value, options = {}) {
+  const number = Number(value || 0)
+  return new Intl.NumberFormat('pl-PL', {
+    maximumFractionDigits: options.maximumFractionDigits ?? 2,
+    minimumFractionDigits: options.minimumFractionDigits ?? 0,
+    useGrouping: true,
+  }).format(Number.isFinite(number) ? number : 0).replace(/ /g, '\u00A0')
+}
+
+function formatDisplayMoney(value) {
+  return formatDisplayNumber(value, { maximumFractionDigits: 2 }) + ' zł'
+}
+
+function capitalizeDisplay(value) {
+  const text = String(value ?? '').trim()
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
+}
 
 /* =====================================================
    DANE STARTOWE
@@ -2903,50 +2922,17 @@ function StartPage({
   onDeleteGeneralReminder,
   onToggleJobTask,
 }) {
-
   const activeJobs = jobs.filter((job) => normalizeJobStage(job) === 'W toku')
   const completedJobs = jobs.filter((job) => normalizeJobStage(job) === 'Zakończone')
-
-  const averageProgress =
-    activeJobs.length > 0
-      ? Math.round(
-          activeJobs.reduce(
-            (sum, job) => sum + Number(job.progress || 0),
-            0
-          ) / activeJobs.length
-        )
-      : 0
-
-  const totalValue = jobs.reduce(
-    (sum, job) => sum + calculateTotal(job),
-    0
-  )
-
-  const activeValue = activeJobs.reduce(
-    (sum, job) => sum + calculateTotal(job),
-    0
-  )
-
-  const completedValue = completedJobs.reduce(
-    (sum, job) => sum + calculateTotal(job),
-    0
-  )
-
+  const activeValue = activeJobs.reduce((sum, job) => sum + calculateTotal(job), 0)
+  const completedValue = completedJobs.reduce((sum, job) => sum + calculateTotal(job), 0)
   const today = getTodayString()
 
-  const dashboardInvoiceIds = new Set(
-    invoices
-      .filter((invoice) => invoice.status !== 'Anulowana')
-      .map((invoice) => String(invoice.id))
-  )
-
   const dashboardPaidByInvoice = new Map()
-
   invoices.forEach((invoice) => {
     const assigned = allJobPayments
       .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
-
     dashboardPaidByInvoice.set(String(invoice.id), Math.max(0, assigned))
   })
 
@@ -2961,16 +2947,10 @@ function StartPage({
 
   dashboardInvoicesByJob.forEach((jobInvoices, jobId) => {
     const unassigned = allJobPayments
-      .filter((payment) =>
-        String(payment.jobId) === String(jobId) &&
-        !payment.invoiceId
-      )
+      .filter((payment) => String(payment.jobId) === String(jobId) && !payment.invoiceId)
       .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
 
-    let remaining = unassigned.reduce(
-      (sum, payment) => sum + Number(payment.amount || 0),
-      0
-    )
+    let remaining = unassigned.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
 
     const sorted = [...jobInvoices].sort((a, b) => {
       const dateCompare = String(a.issueDate || '').localeCompare(String(b.issueDate || ''))
@@ -2980,72 +2960,61 @@ function StartPage({
 
     sorted.forEach((invoice) => {
       const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const already = Math.min(
-        gross,
-        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
-      )
-      const legacy = Math.min(
-        Math.max(0, gross - already),
-        Math.max(0, remaining)
-      )
+      const already = Math.min(gross, Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0)))
+      const legacy = Math.min(Math.max(0, gross - already), Math.max(0, remaining))
       dashboardPaidByInvoice.set(String(invoice.id), already + legacy)
       remaining = Math.max(0, remaining - legacy)
     })
   })
 
   const dashboardReceivables = invoices
-    .filter((invoice) =>
-      invoice.status !== 'Anulowana' &&
-      invoice.status !== 'Do wystawienia' &&
-      invoice.issueDate
-    )
+    .filter((invoice) => invoice.status !== 'Anulowana' && invoice.status !== 'Do wystawienia' && invoice.issueDate)
     .map((invoice) => {
-      const net = Math.max(0, Number(invoice.netAmount || 0))
-      const paid = Math.min(
-        net,
-        Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
-      )
-      const remaining = Math.max(0, net - paid)
+      const gross = Math.max(0, Number(invoice.grossAmount || 0))
+      const paid = Math.min(gross, Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0)))
+      const remaining = Math.max(0, gross - paid)
       return {
         invoice,
         remaining,
-        overdue: Boolean(
-          remaining > 0.01 &&
-          invoice.dueDate &&
-          invoice.dueDate < today
-        ),
+        overdue: Boolean(remaining > 0.01 && invoice.dueDate && invoice.dueDate < today),
       }
     })
     .filter((item) => item.remaining > 0.01)
 
-  const dashboardReceivablesNet = dashboardReceivables.reduce(
-    (sum, item) => sum + item.remaining,
-    0
-  )
+  const dashboardReceivablesGross = dashboardReceivables.reduce((sum, item) => sum + item.remaining, 0)
+  const pendingGeneral = (generalReminders || []).filter((item) => !item.done)
 
-  const dashboardOverdueNet = dashboardReceivables
-    .filter((item) => item.overdue)
-    .reduce((sum, item) => sum + item.remaining, 0)
-
-  const dashboardMonthPrefix = today.slice(0, 7)
-  const dashboardMonthReceived = allJobPayments
-    .filter((payment) => payment.paidAt?.startsWith(dashboardMonthPrefix))
-    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
-
-  const dashboardOpenInvoices = dashboardReceivables.length
-
-  const pendingGeneral = (generalReminders || []).filter(
-    (item) => !item.done
-  )
-
-  const overdueGeneral = pendingGeneral.filter(
-    (item) => item.date && item.date < today
-  )
-
-  const visibleGeneral = [
-    ...pendingGeneral,
-    ...(generalReminders || []).filter((item) => item.done),
-  ].slice(0, 5)
+  const todayItems = [
+    ...pendingGeneral.map((reminder) => ({
+      id: 'general-' + reminder.id,
+      type: 'general',
+      text: reminder.text,
+      date: reminder.date,
+      overdue: Boolean(reminder.date && reminder.date < today),
+      job: null,
+      taskId: null,
+    })),
+    ...activeJobs.flatMap((job) =>
+      (Array.isArray(job.notes) ? job.notes : [])
+        .filter((task) => task && !task.done)
+        .map((task) => ({
+          id: 'task-' + job.id + '-' + task.id,
+          type: 'job',
+          text: task.text,
+          date: task.date,
+          overdue: Boolean(task.date && task.date < today),
+          job,
+          taskId: task.id,
+        }))
+    ),
+  ]
+    .sort((a, b) => {
+      if (a.overdue !== b.overdue) return a.overdue ? -1 : 1
+      if (!a.date && b.date) return 1
+      if (a.date && !b.date) return -1
+      return String(a.date || '').localeCompare(String(b.date || ''))
+    })
+    .slice(0, 8)
 
   return (
     <>
@@ -3054,38 +3023,21 @@ function StartPage({
           <h2>Wartość robót</h2>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: '10px',
-            marginBottom: '20px',
-          }}
-        >
-          <div className="detail-card" style={{ margin: 0 }}>
-            <span style={{ opacity: 0.7 }}>W toku</span>
-            <strong
-              style={{
-                display: 'block',
-                fontSize: '20px',
-                marginTop: '5px',
-              }}
-            >
-              {formatMoney(activeValue)}
-            </strong>
+        <div className="dashboard-value-grid">
+          <div className="detail-card dashboard-value-card">
+            <span>W toku</span>
+            <strong>{formatMoney(activeValue)}</strong>
+            <small>netto</small>
           </div>
-
-          <div className="detail-card" style={{ margin: 0 }}>
-            <span style={{ opacity: 0.7 }}>Zakończone</span>
-            <strong
-              style={{
-                display: 'block',
-                fontSize: '20px',
-                marginTop: '5px',
-              }}
-            >
-              {formatMoney(completedValue)}
-            </strong>
+          <div className="detail-card dashboard-value-card">
+            <span>Zakończone</span>
+            <strong>{formatMoney(completedValue)}</strong>
+            <small>netto</small>
+          </div>
+          <div className="detail-card dashboard-value-card dashboard-value-card-payable">
+            <span>Do zapłaty</span>
+            <strong>{formatMoney(dashboardReceivablesGross)}</strong>
+            <small>brutto</small>
           </div>
         </div>
       </section>
@@ -3096,83 +3048,46 @@ function StartPage({
             <div className="small-label">DZISIAJ</div>
             <h2>Do zrobienia</h2>
           </div>
-          <span className="dashboard-today-count">
-            {pendingGeneral.length + activeJobs.reduce((sum, job) => sum + (Array.isArray(job.notes) ? job.notes.filter((task) => task && !task.done).length : 0), 0)}
-          </span>
+          <span className="dashboard-count-pill">{formatDisplayNumber(todayItems.length)}</span>
         </div>
 
         <div className="dashboard-today-list">
-          {[
-            ...pendingGeneral.map((reminder) => ({
-              id: `general-${reminder.id}`,
-              type: 'general',
-              text: reminder.text,
-              date: reminder.date,
-              overdue: Boolean(reminder.date && reminder.date < today),
-              job: null,
-              taskId: null,
-            })),
-            ...activeJobs.flatMap((job) =>
-              (Array.isArray(job.notes) ? job.notes : [])
-                .filter((task) => task && !task.done)
-                .map((task) => ({
-                  id: `task-${job.id}-${task.id}`,
-                  type: 'job',
-                  text: task.text,
-                  date: task.date,
-                  overdue: Boolean(task.date && task.date < today),
-                  job,
-                  taskId: task.id,
-                }))
-            ),
-          ]
-            .sort((a, b) => {
-              if (a.overdue !== b.overdue) return a.overdue ? -1 : 1
-              if (!a.date && b.date) return 1
-              if (a.date && !b.date) return -1
-              return String(a.date || '').localeCompare(String(b.date || ''))
-            })
-            .slice(0, 8)
-            .map((item) => (
-              <div className={`dashboard-today-row${item.overdue ? ' dashboard-today-row-overdue' : ''}`} key={item.id}>
-                <button
-                  type="button"
-                  className="dashboard-today-check"
-                  onClick={() => {
-                    if (item.type === 'general') {
-                      onToggleGeneralReminder(
-                        pendingGeneral.find((reminder) => String(reminder.id) === String(item.id.replace('general-', '')))
-                      )
-                    } else {
-                      onToggleJobTask?.(item.job, item.taskId)
-                    }
-                  }}
-                  aria-label="Oznacz jako wykonane"
-                >
-                  {item.overdue ? '!' : '✓'}
-                </button>
+          {todayItems.map((item) => (
+            <div className={'dashboard-today-row' + (item.overdue ? ' dashboard-today-row-overdue' : '')} key={item.id}>
+              <button
+                type="button"
+                className="dashboard-today-check"
+                onClick={() => item.type === 'general'
+                  ? onToggleGeneralReminder(pendingGeneral.find((reminder) => String(reminder.id) === String(item.id.replace('general-', ''))))
+                  : onToggleJobTask?.(item.job, item.taskId)}
+                aria-label="Oznacz jako wykonane"
+              >
+                {item.overdue ? '!' : '✓'}
+              </button>
 
-                <button
-                  type="button"
-                  className="dashboard-today-main"
-                  onClick={() => item.job ? onOpenJob(item.job) : document.querySelector('.general-reminders-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  <strong>{item.text || 'Bez nazwy zadania'}</strong>
-                  <span>
-                    {item.job
-                      ? `🔧 ${item.job.name}`
-                      : '🔔 Ogólne przypomnienie'}
-                    {item.date ? ` • ${item.overdue ? 'zaległe • ' : ''}${formatDate(item.date)}` : ''}
-                  </span>
-                </button>
-
-                <span className={item.type === 'job' ? 'dashboard-today-type dashboard-today-type-job' : 'dashboard-today-type'}>
-                  {item.type === 'job' ? 'REALIZACJA' : 'OGÓLNE'}
+              <button
+                type="button"
+                className="dashboard-today-main"
+                onClick={() => item.job
+                  ? onOpenJob(item.job)
+                  : document.querySelector('.general-reminders-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                <strong>{item.text || 'Bez nazwy zadania'}</strong>
+                <span>
+                  {item.job
+                    ? <><Wrench size={13} strokeWidth={1.75} aria-hidden="true" /> {capitalizeDisplay(item.job.name)}</>
+                    : <><Bell size={13} strokeWidth={1.75} aria-hidden="true" /> Ogólne przypomnienie</>}
+                  {item.date ? ' • ' + (item.overdue ? 'zaległe • ' : '') + formatDate(item.date) : ''}
                 </span>
-              </div>
-            ))}
+              </button>
 
-          {pendingGeneral.length === 0 && activeJobs.every((job) => !(Array.isArray(job.notes) ? job.notes : []).some((task) => task && !task.done)) && (
+              <span className={item.type === 'job' ? 'dashboard-today-type dashboard-today-type-job' : 'dashboard-today-type'}>
+                {item.type === 'job' ? 'REALIZACJA' : 'OGÓLNE'}
+              </span>
+            </div>
+          ))}
+
+          {todayItems.length === 0 && (
             <div className="dashboard-today-empty">
               <span>✓</span>
               <strong>Na dziś wszystko zrobione</strong>
@@ -3185,51 +3100,26 @@ function StartPage({
       <section>
         <div className="section-title">
           <h2>W toku</h2>
-          <button className="section-link" onClick={() => onJobs('active')}>
-            Wszystkie
-          </button>
+          <button className="section-link" onClick={() => onJobs('active')}>Wszystkie</button>
         </div>
 
         <div className="jobs">
-          {activeJobs.length === 0 && (
-            <div className="detail-card">Brak realizacji w toku.</div>
-          )}
-
+          {activeJobs.length === 0 && <div className="detail-card">Brak realizacji w toku.</div>}
           {[...activeJobs]
             .sort((a, b) => {
-              const priorityOrder = {
-                urgent: 3,
-                high: 2,
-                normal: 1,
-              }
-
+              const priorityOrder = { urgent: 3, high: 2, normal: 1 }
               const aPriority = priorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
               const bPriority = priorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
-
-              if (bPriority !== aPriority) {
-                return bPriority - aPriority
-              }
-
+              if (bPriority !== aPriority) return bPriority - aPriority
               return Number(b.progress || 0) - Number(a.progress || 0)
             })
             .slice(0, 5)
             .map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                invoices={invoices}
-                onClick={() => onOpenJob(job)}
-                onToggleTask={onToggleJobTask}
-              />
+              <JobCard key={job.id} job={job} invoices={invoices} onClick={() => onOpenJob(job)} onToggleTask={onToggleJobTask} />
             ))}
-
           {activeJobs.length > 5 && (
-            <button
-              className="section-link"
-              onClick={() => onJobs('active')}
-              style={{ alignSelf: 'center', padding: '8px 0' }}
-            >
-              Pokaż wszystkie w toku ({activeJobs.length})
+            <button className="section-link section-link-centered" onClick={() => onJobs('active')}>
+              Pokaż wszystkie w toku ({formatDisplayNumber(activeJobs.length)})
             </button>
           )}
         </div>
@@ -3241,25 +3131,21 @@ function StartPage({
             <div className="small-label">OGÓLNE</div>
             <h2>Przypomnienia</h2>
           </div>
-          <span className="general-reminders-count">
-            {pendingGeneral.length}
-          </span>
+          <span className="dashboard-count-pill">{formatDisplayNumber(pendingGeneral.length)}</span>
         </div>
 
-        {overdueGeneral.length > 0 && (
+        {pendingGeneral.some((item) => item.date && item.date < today) && (
           <div className="general-reminders-alert">
             <span>!</span>
-            <strong>Zaległe: {overdueGeneral.length}</strong>
+            <strong>Zaległe: {formatDisplayNumber(pendingGeneral.filter((item) => item.date && item.date < today).length)}</strong>
           </div>
         )}
 
         <div className="general-reminders-card">
           <div className="general-reminders-list">
-            {generalRemindersLoading && (
-              <div className="general-reminder-empty">Wczytywanie…</div>
-            )}
+            {generalRemindersLoading && <div className="general-reminder-empty">Wczytywanie…</div>}
 
-            {!generalRemindersLoading && visibleGeneral.length === 0 && (
+            {!generalRemindersLoading && pendingGeneral.length === 0 && (
               <div className="general-reminder-empty">
                 <span className="general-reminder-empty-icon">✓</span>
                 <strong>Brak ogólnych przypomnień</strong>
@@ -3267,65 +3153,20 @@ function StartPage({
               </div>
             )}
 
-            {visibleGeneral.map((reminder) => {
-              const overdue =
-                !reminder.done && reminder.date && reminder.date < today
-
+            {pendingGeneral.map((reminder) => {
+              const overdue = reminder.date && reminder.date < today
               return (
-                <div
-                  className={
-                    reminder.done
-                      ? 'general-reminder-row done'
-                      : overdue
-                        ? 'general-reminder-row overdue'
-                        : 'general-reminder-row'
-                  }
-                  key={reminder.id}
-                >
-                  <button
-                    type="button"
-                    className={
-                      reminder.done
-                        ? 'general-reminder-checkbox checked'
-                        : 'general-reminder-checkbox'
-                    }
-                    aria-label={
-                      reminder.done
-                        ? 'Oznacz jako niewykonane'
-                        : 'Oznacz jako wykonane'
-                    }
-                    onClick={() => onToggleGeneralReminder(reminder)}
-                  >
-                    {reminder.done ? '✓' : ''}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="general-reminder-main"
-                    onClick={() => onToggleGeneralReminder(reminder)}
-                  >
+                <div className={overdue ? 'general-reminder-row overdue' : 'general-reminder-row'} key={reminder.id}>
+                  <button type="button" className="general-reminder-checkbox" aria-label="Oznacz jako wykonane" onClick={() => onToggleGeneralReminder(reminder)} />
+                  <button type="button" className="general-reminder-main" onClick={() => onToggleGeneralReminder(reminder)}>
                     <strong>{reminder.text}</strong>
-                    {reminder.date && (
-                      <span>
-                        {overdue ? 'Zaległe • ' : ''}
-                        {formatDate(reminder.date)}
-                      </span>
-                    )}
+                    {reminder.date && <span>{overdue ? 'Zaległe • ' : ''}{formatDate(reminder.date)}</span>}
                   </button>
-
-                  <button
-                    type="button"
-                    className="general-reminder-delete"
-                    aria-label="Usuń przypomnienie"
-                    onClick={() => onDeleteGeneralReminder(reminder)}
-                  >
-                    ×
-                  </button>
+                  <button type="button" className="general-reminder-delete" aria-label="Usuń przypomnienie" onClick={() => onDeleteGeneralReminder(reminder)}>×</button>
                 </div>
               )
             })}
           </div>
-
           <GeneralReminderForm onAdd={onAddGeneralReminder} />
         </div>
       </section>
@@ -3333,33 +3174,16 @@ function StartPage({
       <section>
         <div className="section-title">
           <h2>Ostatnio zakończone</h2>
-          <button className="section-link" onClick={onJobs}>
-            Realizacje
-          </button>
+          <button className="section-link" onClick={onJobs}>Realizacje</button>
         </div>
 
         <div className="jobs">
-          {completedJobs.length === 0 && (
-            <div className="detail-card">
-              Brak zakończonych realizacji.
-            </div>
-          )}
-
+          {completedJobs.length === 0 && <div className="detail-card">Brak zakończonych realizacji.</div>}
           {[...completedJobs]
-            .sort((a, b) =>
-              String(b.completedAt || '').localeCompare(
-                String(a.completedAt || '')
-              )
-            )
+            .sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')))
             .slice(0, 3)
             .map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                invoices={invoices}
-                onClick={() => onOpenJob(job)}
-                onToggleTask={onToggleJobTask}
-              />
+              <JobCard key={job.id} job={job} invoices={invoices} onClick={() => onOpenJob(job)} onToggleTask={onToggleJobTask} />
             ))}
         </div>
       </section>
@@ -3919,7 +3743,6 @@ function JobCard({
   onClick,
   onToggleTask,
 }) {
-
   const stage = normalizeJobStage(job)
   const stageStyle = getJobStageStyle(stage)
   const tasks = (Array.isArray(job.notes) ? job.notes : []).filter(Boolean)
@@ -3929,32 +3752,20 @@ function JobCard({
   const taskPriorityOrder = { urgent: 3, high: 2, normal: 1 }
 
   const sortTasks = (a, b) => {
-    if (Boolean(a.done) !== Boolean(b.done)) {
-      return a.done ? 1 : -1
-    }
-
+    if (Boolean(a.done) !== Boolean(b.done)) return a.done ? 1 : -1
     const priorityA = taskPriorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
     const priorityB = taskPriorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
-
-    if (priorityA !== priorityB) {
-      return priorityB - priorityA
-    }
-
+    if (priorityA !== priorityB) return priorityB - priorityA
     const dateA = a.reminderEnabled && a.date ? a.date : ''
     const dateB = b.reminderEnabled && b.date ? b.date : ''
     const overdueA = !a.done && dateA && dateA < today ? 1 : 0
     const overdueB = !b.done && dateB && dateB < today ? 1 : 0
-
-    if (overdueA !== overdueB) {
-      return overdueB - overdueA
-    }
-
+    if (overdueA !== overdueB) return overdueB - overdueA
     if (dateA !== dateB) {
       if (!dateA) return 1
       if (!dateB) return -1
       return dateA.localeCompare(dateB)
     }
-
     return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
   }
 
@@ -3964,9 +3775,7 @@ function JobCard({
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
   const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
-  const linkedInvoice = (invoices || []).find(
-    (invoice) => String(invoice.jobId) === String(job.id)
-  )
+  const linkedInvoice = (invoices || []).find((invoice) => String(invoice.jobId) === String(job.id))
   const invoicePaid = Number(linkedInvoice?.paidAmount || 0)
   const invoiceVatSettled = Number(linkedInvoice?.vatSettledAmount || 0)
   const invoiceGross = Number(linkedInvoice?.grossAmount || 0)
@@ -3975,15 +3784,27 @@ function JobCard({
   const invoiceStatusLabel = linkedInvoice
     ? invoiceRemaining <= 0.01
       ? 'Zapłacona'
-      : invoicePaid > 0
+      : invoiceSettledTotal > 0
         ? 'Częściowo zapłacona'
         : linkedInvoice.status || 'Wystawiona'
     : 'Brak faktury'
 
+  const quantityItems = [
+    ['mb', 'MB', Number(job.quantities?.mb || 0)],
+    ['m2', 'm²', Number(job.quantities?.m2 || 0)],
+    ['kg', 'kg', Number(job.quantities?.kg || 0)],
+  ].filter(([, , value]) => value > 0)
+
+  const showPriority = stage !== 'Zakończone' && (job.priority === 'urgent' || job.priority === 'high')
 
   return (
-    <article className="job-card job-card-with-tasks">
-      <button type="button" className="job-card-main" onClick={onClick}>
+    <article
+      className="job-card job-card-with-tasks"
+      onClick={(event) => {
+        if (!event.target.closest('button, a, input, select, textarea')) onClick?.()
+      }}
+    >
+      <div className="job-card-main">
         <div className="job-card-topline">
           <div className="job-card-identity">
             {job.mainPhoto?.url ? (
@@ -4008,162 +3829,163 @@ function JobCard({
             )}
 
             <span className="job-card-identity-text">
-              <strong>{job.name}</strong>
-              <span>{job.location || 'Brak lokalizacji'}</span>
-              {clientName && <small className="job-card-client-name">👤 {clientName}</small>}
+              <strong>{capitalizeDisplay(job.name)}</strong>
+              <span>{capitalizeDisplay(job.location || 'Brak lokalizacji')}</span>
+              {clientName && (
+                <small className="job-card-client-name">
+                  <UserRound size={11} strokeWidth={1.75} aria-hidden="true" /> {capitalizeDisplay(clientName)}
+                </small>
+              )}
             </span>
           </div>
 
-          <span
-            className={stage === 'Zakończone' ? 'status completed' : 'status'}
-            style={stageStyle}
-          >
-            <span aria-hidden="true">{stage === 'Zakończone' ? '✓' : '●'}</span>
-            {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage.toUpperCase()}
-          </span>
+          {stage === 'Zakończone' && (
+            <span className="status completed" style={stageStyle}>
+              <span className="status-dot status-dot-completed" aria-hidden="true" />
+              ZAKOŃCZONA
+            </span>
+          )}
 
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginTop: '5px',
-              fontSize: '11px',
-              fontWeight: 800,
-              color: job.priority === 'urgent' ? '#b42318' : job.priority === 'high' ? '#9a6800' : '#21804a',
-              background: job.priority === 'urgent' ? '#fff0ee' : job.priority === 'high' ? '#fff8e8' : '#edf9f1',
-              borderRadius: '999px',
-              padding: '4px 8px',
-            }}
-          >
-            {job.priority === 'urgent' ? '🔴 PILNY' : job.priority === 'high' ? '🟠 WYSOKI' : '🟢 NORMALNY'}
-          </span>
+          {showPriority && (
+            <span className={job.priority === 'urgent' ? 'job-priority-badge urgent' : 'job-priority-badge high'}>
+              <span className="priority-dot" aria-hidden="true" />
+              {job.priority === 'urgent' ? 'PILNY' : 'WYSOKI'}
+            </span>
+          )}
+
+          {job.endDate && <span className="job-deadline">{formatDate(job.endDate)}</span>}
         </div>
 
         <div className="job-card-progress">
           <div className="job-card-progress-label">
             <span>Postęp realizacji</span>
-            <strong>{progress}%</strong>
+            <strong>{formatDisplayNumber(progress, { maximumFractionDigits: 0 })}%</strong>
           </div>
           <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div className="progress-fill" style={{ width: progress + '%' }} />
           </div>
         </div>
 
         <div className="job-card-metrics">
-          <div>
-            <span>MB</span>
-            <strong>{job.quantities?.mb || 0}</strong>
-          </div>
-          <div>
-            <span>m²</span>
-            <strong>{job.quantities?.m2 || 0}</strong>
-          </div>
-          <div>
-            <span>kg</span>
-            <strong>{job.quantities?.kg || 0}</strong>
-          </div>
+          {quantityItems.map(([key, label, value]) => (
+            <div key={key}>
+              <span>{label}</span>
+              <strong>{formatDisplayNumber(value)}</strong>
+            </div>
+          ))}
           <div className="job-card-value">
             <span>Wartość</span>
             <strong>{formatMoney(totalValue)}</strong>
+            <small>netto</small>
           </div>
         </div>
 
-        <div className="job-card-invoice-summary" style={{ marginTop: '10px', padding: '10px 12px', borderRadius: '12px', background: linkedInvoice ? '#f6f9fc' : '#fafafa', border: '1px solid #e5ebf1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-          <div style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: '11px', fontWeight: 800, color: '#718096', textTransform: 'uppercase' }}>Faktura</span>
-            <strong style={{ display: 'block', marginTop: '2px', overflowWrap: 'anywhere' }}>{linkedInvoice?.invoiceNumber || 'Brak faktury'}</strong>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <strong style={{ display: 'block', fontSize: '13px', color: linkedInvoice && invoiceRemaining <= 0.01 ? '#159447' : '#24345c' }}>{linkedInvoice ? formatMoney(invoiceGross) : '—'}</strong>
-            <span style={{ display: 'block', fontSize: '11px', color: linkedInvoice && invoiceRemaining > 0.01 ? '#b77908' : '#718096', marginTop: '2px' }}>{invoiceStatusLabel}</span>
-          </div>
-        </div>
-
-
-      </button>
-
-      <section className="job-card-tasks" aria-label="Zadania">
-        <div className="job-card-tasks-header">
-          <div>
-            <span className="job-card-tasks-label">ZADANIA</span>
-            <strong>
-              {pendingTasks.length > 0
-                ? `${pendingTasks.length} ${pendingTasks.length === 1 ? 'zadanie do wykonania' : 'zadań do wykonania'}`
-                : tasks.length > 0
-                  ? 'Wszystkie zadania wykonane'
-                  : 'Brak zadań'}
-            </strong>
+        <div className="job-card-invoice-summary">
+          <div className="job-card-invoice-left">
+            <span>Faktura</span>
+            {linkedInvoice ? (
+              <strong>{linkedInvoice.invoiceNumber || 'Faktura'}</strong>
+            ) : (
+              <strong className="job-card-no-invoice">Brak faktury</strong>
+            )}
           </div>
 
-          {tasks.length > 0 && (
-            <span className="job-card-task-count">
-              {completedTaskCount}/{tasks.length}
-            </span>
+          {linkedInvoice && (
+            <div className="job-card-invoice-right">
+              <strong>{formatMoney(invoiceGross)}</strong>
+              <small>brutto</small>
+              <span className={invoiceRemaining > 0.01 ? 'invoice-status-unpaid' : 'invoice-status-paid'}>
+                {invoiceStatusLabel}
+              </span>
+              {invoiceStatusLabel === 'Częściowo zapłacona' && (
+                <small className="invoice-remaining">Pozostało: {formatMoney(invoiceRemaining)}</small>
+              )}
+            </div>
           )}
         </div>
+      </div>
 
-        {tasks.length === 0 ? (
-          <button
-            type="button"
-            className="job-card-add-task-hint"
-            onClick={onClick}
-          >
-            + Dodaj zadanie
-          </button>
-        ) : (
-          <>
-            {visibleTasks.map((task) => (
-              <div className="job-task-row" key={task.id}>
-                <button
-                  type="button"
-                  className="job-task-checkbox"
-                  aria-label="Oznacz jako wykonane"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onToggleTask?.(job, task.id)
-                  }}
-                />
-                <button
-                  type="button"
-                  className="job-task-text"
-                  onClick={onClick}
-                >
-                  <strong>{task.text}</strong>
-                  {(task.assignee || task.priority === 'high' || task.priority === 'urgent') && (
-                    <span style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '3px' }}>
-                      {task.assignee && <span>👤 {task.assignee}</span>}
-                      {task.priority === 'urgent' && <span style={{ color: '#b42318', fontWeight: 800 }}>🔴 pilne</span>}
-                      {task.priority === 'high' && <span style={{ color: '#9a6800', fontWeight: 800 }}>🟠 wysoki</span>}
-                    </span>
-                  )}
-                  {task.date && <span>{formatDate(task.date)}</span>}
-                </button>
-              </div>
-            ))}
+      {tasks.length === 0 ? (
+        <button
+          type="button"
+          className="job-card-add-task-hint"
+          onClick={(event) => {
+            event.stopPropagation()
+            onClick?.()
+          }}
+        >
+          + Dodaj zadanie
+        </button>
+      ) : (
+        <section className="job-card-tasks" aria-label="Zadania">
+          <div className="job-card-tasks-header">
+            <div>
+              <span className="job-card-tasks-label">ZADANIA</span>
+              <strong>
+                {pendingTasks.length > 0
+                  ? formatDisplayNumber(pendingTasks.length) + (pendingTasks.length === 1 ? ' zadanie do wykonania' : ' zadań do wykonania')
+                  : 'Wszystkie zadania wykonane'}
+              </strong>
+            </div>
+            <span className="job-card-task-count">
+              {formatDisplayNumber(completedTaskCount)}/{formatDisplayNumber(tasks.length)}
+            </span>
+          </div>
 
-            {extraCompletedTasks > 0 && (
-              <div className="job-card-completed-summary">
-                + {extraCompletedTasks} wykonanych
-              </div>
-            )}
-
-            {(tasks.length > visibleTasks.length || pendingTasks.length === 0) && (
+          {visibleTasks.map((task) => (
+            <div className="job-task-row" key={task.id}>
               <button
                 type="button"
-                className="job-card-more-tasks"
-                onClick={onClick}
+                className="job-task-checkbox"
+                aria-label="Oznacz jako wykonane"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleTask?.(job, task.id)
+                }}
+              />
+              <button
+                type="button"
+                className="job-task-text"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onClick?.()
+                }}
               >
-                {pendingTasks.length === 0 ? 'Zobacz wszystkie zadania →' : 'Pokaż wszystkie zadania →'}
+                <strong>{task.text}</strong>
+                {(task.assignee || task.priority === 'high' || task.priority === 'urgent') && (
+                  <span className="job-task-meta">
+                    {task.assignee && <span><UserRound size={10} strokeWidth={1.75} aria-hidden="true" /> {task.assignee}</span>}
+                    {task.priority === 'urgent' && <span className="task-priority task-priority-urgent"><span className="priority-dot" />pilne</span>}
+                    {task.priority === 'high' && <span className="task-priority task-priority-high"><span className="priority-dot" />wysoki</span>}
+                  </span>
+                )}
+                {task.date && <span>{formatDate(task.date)}</span>}
               </button>
-            )}
-          </>
-        )}
-      </section>
+            </div>
+          ))}
 
-      <button type="button" className="job-card-open-link" onClick={onClick}>
+          {extraCompletedTasks > 0 && (
+            <div className="job-card-completed-summary">+ {formatDisplayNumber(extraCompletedTasks)} wykonanych</div>
+          )}
+
+          {(tasks.length > visibleTasks.length || pendingTasks.length === 0) && (
+            <button type="button" className="job-card-more-tasks" onClick={(e) => { e.stopPropagation(); onClick?.() }}>
+              {pendingTasks.length === 0 ? 'Zobacz wszystkie zadania →' : 'Pokaż wszystkie zadania →'}
+            </button>
+          )}
+        </section>
+      )}
+
+      <button
+        type="button"
+        className="job-card-open-link"
+        onClick={(event) => {
+          event.stopPropagation()
+          onClick?.()
+        }}
+      >
         <span>Otwórz szczegóły realizacji</span>
-        <span aria-hidden="true">→</span>
+        <ArrowRight size={18} strokeWidth={1.75} aria-hidden="true" />
       </button>
     </article>
   )
@@ -13802,10 +13624,10 @@ const calendarMoveButtonStyle = {
 function BottomNavigation({ activePage, onChange }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const secondary = [
-    ['offers', '📄', 'Oferty'],
-    ['clients', '👥', 'Klienci'],
-    ['invoices', '🧾', 'Faktury'],
-    ['settings', '⚙', 'Ustawienia'],
+    ['offers', 'Oferty'],
+    ['clients', 'Klienci'],
+    ['invoices', 'Faktury'],
+    ['settings', 'Ustawienia'],
   ]
   const secondaryActive = secondary.some(([page]) => page === activePage)
 
@@ -13813,21 +13635,27 @@ function BottomNavigation({ activePage, onChange }) {
     <>
       {moreOpen && (
         <div className="bottom-more-menu" role="menu">
-          {secondary.map(([page, icon, label]) => (
-            <button key={page} type="button"
+          {secondary.map(([page, label]) => (
+            <button
+              key={page}
+              type="button"
               className={activePage === page ? 'bottom-more-item active' : 'bottom-more-item'}
-              onClick={() => { onChange(page); setMoreOpen(false) }}>
-              <span aria-hidden="true">{icon}</span><span>{label}</span>
+              onClick={() => {
+                onChange(page)
+                setMoreOpen(false)
+              }}
+            >
+              {label}
             </button>
           ))}
         </div>
       )}
-      <nav className="bottom-navigation">
-        <NavButton icon="⌂" label="Start" active={activePage === 'start'} onClick={() => { onChange('start'); setMoreOpen(false) }} />
-        <NavButton icon="📅" label="Terminarz" active={activePage === 'calendar'} onClick={() => { onChange('calendar'); setMoreOpen(false) }} />
-        <NavButton icon="🔧" label="Realizacje" active={activePage === 'jobs'} onClick={() => { onChange('jobs'); setMoreOpen(false) }} />
-        <NavButton icon="▥" label="Finanse" active={activePage === 'finance'} onClick={() => { onChange('finance'); setMoreOpen(false) }} />
-        <NavButton icon="•••" label="Więcej" active={secondaryActive || moreOpen} onClick={() => setMoreOpen((value) => !value)} />
+      <nav className="bottom-navigation" aria-label="Główna nawigacja">
+        <NavButton icon={Home} label="Start" active={activePage === 'start'} onClick={() => { onChange('start'); setMoreOpen(false) }} />
+        <NavButton icon={CalendarDays} label="Terminarz" active={activePage === 'calendar'} onClick={() => { onChange('calendar'); setMoreOpen(false) }} />
+        <NavButton icon={Wrench} label="Realizacje" active={activePage === 'jobs'} onClick={() => { onChange('jobs'); setMoreOpen(false) }} />
+        <NavButton icon={Receipt} label="Finanse" active={activePage === 'finance'} onClick={() => { onChange('finance'); setMoreOpen(false) }} />
+        <NavButton icon={MoreHorizontal} label="Więcej" active={secondaryActive || moreOpen} onClick={() => setMoreOpen((value) => !value)} />
       </nav>
     </>
   )
@@ -13838,42 +13666,18 @@ function BottomNavigation({ activePage, onChange }) {
    PRZYCISK MENU
    ===================================================== */
 
-function NavButton({
-  icon,
-  label,
-  active,
-  onClick,
-}) {
-
+function NavButton({ icon: Icon, label, active, onClick }) {
   return (
-
     <button
-
-      className={
-        active
-          ? 'nav-item active'
-          : 'nav-item'
-      }
-
-      onClick={
-        onClick
-      }
-
+      type="button"
+      className={active ? 'nav-item active' : 'nav-item'}
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
     >
-
-      <span>
-        {icon}
-      </span>
-
-
-      <small>
-        {label}
-      </small>
-
+      <Icon size={22} strokeWidth={1.75} aria-hidden="true" />
+      <small>{label}</small>
     </button>
-
   )
-
 }
 
 
@@ -13997,22 +13801,7 @@ function getTodayString() {
 function formatMoney(
   value
 ) {
-
-  return (
-
-    Number(
-      value || 0
-    )
-      .toLocaleString(
-        'pl-PL'
-      )
-
-    +
-
-    ' zł'
-
-  )
-
+  return formatDisplayMoney(value)
 }
 
 

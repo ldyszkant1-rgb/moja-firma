@@ -10292,16 +10292,7 @@ function FinancePage({
         )}
       </section>
 
-      <div
-        className="detail-card"
-        style={{
-          padding: '14px 18px',
-          marginBottom: '14px',
-          position: 'relative',
-          overflow: 'visible',
-          zIndex: 50,
-        }}
-      >
+      <div className="detail-card finance-month-card">
         <div
           style={{
             display: 'flex',
@@ -10322,16 +10313,7 @@ function FinancePage({
           <button
             onClick={() => setShowMonthPicker((value) => !value)}
             aria-expanded={showMonthPicker}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              fontSize: '19px',
-              fontWeight: 700,
-              color: '#1f2937',
-              cursor: 'pointer',
-              padding: '8px 10px',
-              borderRadius: '10px',
-            }}
+            className="finance-month-title"
           >
             {monthTitle} <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
@@ -11029,7 +11011,7 @@ function FinancePage({
         )}
       </div>
 
-      <div className="detail-card" style={{ marginTop: '14px' }}>
+      <div className="detail-card finance-completed-card">
         <div className="finance-cost-header">
           <div>
             <h2 style={{ marginBottom: '4px' }}>Zakończone realizacje</h2>
@@ -11192,13 +11174,7 @@ function FinancePage({
         )}
       </div>
 
-      <div
-        className="detail-card"
-        style={{
-          marginTop: '14px',
-          marginBottom: '24px',
-        }}
-      >
+      <div className="detail-card finance-year-summary">
         <div className="finance-cost-header">
           <div>
             <h2 style={{ marginBottom: '4px' }}>Podsumowanie {selectedYear}</h2>

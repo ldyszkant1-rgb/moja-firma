@@ -94,6 +94,10 @@ function mapSupabaseJobToAppJob(job) {
 
     clientId: job.client_id || null,
 
+    priority: ['normal', 'high', 'urgent'].includes(job.priority)
+      ? job.priority
+      : 'normal',
+
     status: normalizeJobStatus(
       job.status,
       job.completed
@@ -177,6 +181,11 @@ function mapAppJobToSupabaseJob(job) {
 
     client_id:
       job.clientId || null,
+
+    priority:
+      ['normal', 'high', 'urgent'].includes(job.priority)
+        ? job.priority
+        : 'normal',
 
     status:
       normalizeJobStatus(

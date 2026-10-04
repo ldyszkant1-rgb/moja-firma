@@ -4162,7 +4162,7 @@ function JobCard({
       </section>
 
       <button type="button" className="job-card-open-link" onClick={onClick}>
-        <span>Otwórz szczegóły realizacje</span>
+        <span>Otwórz szczegóły realizacji</span>
         <span aria-hidden="true">→</span>
       </button>
     </article>

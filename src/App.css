@@ -2998,6 +2998,7 @@ section {
 .note-edit-actions {
   display: flex;
   gap: 7px;
+}
 
 /* UX 2.0 — uproszczona nawigacja mobilna */
 .bottom-navigation { grid-template-columns: repeat(5, minmax(0, 1fr)); }

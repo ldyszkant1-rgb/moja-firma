@@ -30,6 +30,16 @@ import {
   deleteJobCost,
 } from './lib/jobCostsApi'
 import {
+  getJobTimeEntries,
+  startJobTimer,
+  stopJobTimer,
+  deleteJobTimeEntry,
+} from './lib/jobTimeApi'
+import {
+  getJobProfitShares,
+  saveJobProfitShares,
+} from './lib/jobProfitShareApi'
+import {
   getFinance,
   createFinance,
   updateFinance,
@@ -5140,6 +5150,194 @@ function JobDetails({
   const jobRevenue = calculateTotal(editedJob)
   const jobProfit = jobRevenue - totalJobCosts
 
+  const [jobTimeEntries, setJobTimeEntries] = useState([])
+  const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState(
+    organizationMembers?.[0]?.user_id || ''
+  )
+  const [timeTick, setTimeTick] = useState(Date.now())
+  const [jobProfitShares, setJobProfitShares] = useState([])
+  const [profitShareSaving, setProfitShareSaving] = useState(false)
+
+  useEffect(() => {
+    if (!selectedTimeEmployeeId && organizationMembers?.[0]?.user_id) {
+      setSelectedTimeEmployeeId(organizationMembers[0].user_id)
+    }
+  }, [organizationMembers, selectedTimeEmployeeId])
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([
+      getJobTimeEntries(job.id),
+      getJobProfitShares(job.id),
+    ])
+      .then(([entries, shares]) => {
+        if (cancelled) return
+        setJobTimeEntries(Array.isArray(entries) ? entries : [])
+        setJobProfitShares(Array.isArray(shares) ? shares : [])
+      })
+      .catch((error) => console.error('Nie udało się wczytać czasu lub podziału zysku:', error))
+    return () => { cancelled = true }
+  }, [job.id])
+
+  useEffect(() => {
+    const hasActive = jobTimeEntries.some((entry) => !entry.endedAt)
+    if (!hasActive) return undefined
+    const timer = window.setInterval(() => setTimeTick(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [jobTimeEntries])
+
+  const getTimeLabel = (timeType) => ({
+    transport: 'Transport',
+    warehouse: 'Magazyn',
+    assembly: 'Montaż',
+  }[timeType] || timeType)
+
+  const getEntryMinutes = (entry) => {
+    if (!entry?.startedAt) return 0
+    if (entry.endedAt) return Math.max(0, Number(entry.durationMinutes || 0))
+    return Math.max(0, (timeTick - new Date(entry.startedAt).getTime()) / 60000)
+  }
+
+  const formatDuration = (minutes) => {
+    const totalMinutes = Math.max(0, Math.round(Number(minutes || 0)))
+    const hours = Math.floor(totalMinutes / 60)
+    const mins = totalMinutes % 60
+    if (hours === 0) return String(mins) + ' min'
+    return String(hours) + ' h ' + String(mins).padStart(2, '0') + ' min'
+  }
+
+  const totalTrackedMinutes = jobTimeEntries.reduce(
+    (sum, entry) => sum + getEntryMinutes(entry),
+    0
+  )
+  const timeByType = ['transport', 'warehouse', 'assembly'].reduce((acc, type) => {
+    acc[type] = jobTimeEntries
+      .filter((entry) => entry.timeType === type)
+      .reduce((sum, entry) => sum + getEntryMinutes(entry), 0)
+    return acc
+  }, {})
+  const timeByEmployee = organizationMembers.map((member) => ({
+    ...member,
+    minutes: jobTimeEntries
+      .filter((entry) => String(entry.employeeId) === String(member.user_id))
+      .reduce((sum, entry) => sum + getEntryMinutes(entry), 0),
+  })).filter((member) => member.minutes > 0)
+
+  const activeTimerFor = (employeeId, timeType) =>
+    jobTimeEntries.find(
+      (entry) =>
+        !entry.endedAt &&
+        String(entry.employeeId) === String(employeeId) &&
+        entry.timeType === timeType
+    ) || null
+
+  const startTimer = async (timeType) => {
+    if (!selectedTimeEmployeeId) {
+      showCustomAlert('Wybierz osobę, której czas chcesz mierzyć.')
+      return
+    }
+    if (activeTimerFor(selectedTimeEmployeeId, timeType)) return
+    const member = organizationMembers.find(
+      (item) => String(item.user_id) === String(selectedTimeEmployeeId)
+    )
+    try {
+      const saved = await startJobTimer({
+        jobId: editedJob.id,
+        employeeId: selectedTimeEmployeeId,
+        employeeName: member?.display_name || member?.email || 'Pracownik',
+        timeType,
+      })
+      setJobTimeEntries((current) => [saved, ...current])
+      setTimeTick(Date.now())
+    } catch (error) {
+      console.error('Nie udało się uruchomić pomiaru czasu:', error)
+      showCustomAlert('Nie udało się uruchomić pomiaru czasu. Spróbuj ponownie.')
+    }
+  }
+
+  const stopTimer = async (entry) => {
+    try {
+      const saved = await stopJobTimer(entry)
+      setJobTimeEntries((current) =>
+        current.map((item) => String(item.id) === String(saved.id) ? saved : item)
+      )
+    } catch (error) {
+      console.error('Nie udało się zatrzymać pomiaru czasu:', error)
+      showCustomAlert('Nie udało się zatrzymać pomiaru czasu. Spróbuj ponownie.')
+    }
+  }
+
+  const removeTimeEntry = async (entry) => {
+    const confirmed = await showCustomConfirm(entry?.endedAt
+      ? 'Usunąć ten wpis czasu?'
+      : 'Zatrzymać i usunąć aktywny pomiar?')
+    if (!confirmed) return
+    try {
+      if (!entry.endedAt) await stopJobTimer(entry)
+      await deleteJobTimeEntry(entry.id)
+      setJobTimeEntries((current) => current.filter((item) => String(item.id) !== String(entry.id)))
+    } catch (error) {
+      console.error('Nie udało się usunąć wpisu czasu:', error)
+      showCustomAlert('Nie udało się usunąć wpisu czasu. Spróbuj ponownie.')
+    }
+  }
+
+  const initializeProfitShares = () => {
+    if (jobProfitShares.length > 0) return jobProfitShares
+    const members = (organizationMembers || []).slice(0, 2)
+    if (members.length === 0) return []
+    const percentage = members.length === 2 ? 50 : 100
+    return members.map((member) => ({
+      employeeId: member.user_id,
+      employeeName: member.display_name || member.email || 'Pracownik',
+      percentage,
+    }))
+  }
+
+  const currentProfitShares = jobProfitShares.length > 0
+    ? jobProfitShares
+    : initializeProfitShares()
+
+  const profitShareTotal = currentProfitShares.reduce(
+    (sum, share) => sum + Number(share.percentage || 0),
+    0
+  )
+
+  const saveProfitShares = async () => {
+    if (currentProfitShares.length === 0) {
+      showCustomAlert('Dodaj co najmniej jedną osobę do podziału zysku.')
+      return
+    }
+    if (Math.abs(profitShareTotal - 100) > 0.01) {
+      showCustomAlert('Udziały muszą razem dawać dokładnie 100%.')
+      return
+    }
+    setProfitShareSaving(true)
+    try {
+      const saved = await saveJobProfitShares(editedJob.id, currentProfitShares)
+      setJobProfitShares(saved)
+    } catch (error) {
+      console.error('Nie udało się zapisać podziału zysku:', error)
+      showCustomAlert('Nie udało się zapisać podziału zysku. Spróbuj ponownie.')
+    } finally {
+      setProfitShareSaving(false)
+    }
+  }
+
+  const individualProfitHours = currentProfitShares.map((share) => {
+    const member = timeByEmployee.find(
+      (item) => String(item.user_id) === String(share.employeeId)
+    )
+    const hours = (member?.minutes || 0) / 60
+    const profit = jobProfit * (Number(share.percentage || 0) / 100)
+    return {
+      ...share,
+      hours,
+      profit,
+      hourly: hours > 0 ? profit / hours : 0,
+    }
+  })
+
   const resetCostForm = () => {
     setCostForm({
       costType: 'material',
@@ -7384,6 +7582,215 @@ function JobDetails({
 
       </div>
 
+
+      {/* CZAS REALIZACJI */}
+      <div className="detail-card">
+        <div className="notes-header">
+          <div>
+            <div className="small-label">CZAS REALIZACJI</div>
+            <h2>Czas pracy</h2>
+          </div>
+          <strong style={{ fontSize: '18px', color: '#12234f' }}>
+            {formatDuration(totalTrackedMinutes)}
+          </strong>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '12px 0 16px' }}>
+          {[
+            ['transport', '🚚', 'Transport'],
+            ['warehouse', '📦', 'Magazyn'],
+            ['assembly', '🔧', 'Montaż'],
+          ].map(([type, icon, label]) => (
+            <div key={type} style={{ padding: '12px 8px', borderRadius: '14px', background: '#f6f9fc', border: '1px solid #e5ebf1', textAlign: 'center' }}>
+              <div style={{ fontSize: '20px' }}>{icon}</div>
+              <small style={{ display: 'block', marginTop: '4px', color: '#718096', fontWeight: 800 }}>{label}</small>
+              <strong style={{ display: 'block', marginTop: '3px', color: '#12234f' }}>{formatDuration(timeByType[type])}</strong>
+            </div>
+          ))}
+        </div>
+
+        <select
+          className="note-text-input"
+          value={selectedTimeEmployeeId}
+          onChange={(e) => setSelectedTimeEmployeeId(e.target.value)}
+        >
+          <option value="">Wybierz osobę</option>
+          {(organizationMembers || []).map((member) => (
+            <option key={member.user_id} value={member.user_id}>
+              {member.display_name || member.email || 'Pracownik'}
+            </option>
+          ))}
+        </select>
+
+        <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
+          {[
+            ['transport', '🚚', 'Transport'],
+            ['warehouse', '📦', 'Magazyn'],
+            ['assembly', '🔧', 'Montaż'],
+          ].map(([type, icon, label]) => {
+            const active = activeTimerFor(selectedTimeEmployeeId, type)
+            return (
+              <div key={type} style={{ padding: '12px', borderRadius: '14px', border: active ? '1px solid #b9e3c7' : '1px solid #e5ebf1', background: active ? '#edf9f1' : '#fff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <strong>{icon} {label}</strong>
+                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '3px' }}>
+                      {active ? 'Trwa: ' + formatDuration(getEntryMinutes(active)) : 'Pomiar zatrzymany'}
+                    </div>
+                  </div>
+                  {active ? (
+                    <button type="button" className="save-button" style={{ width: 'auto', padding: '10px 14px', background: '#d9534f' }} onClick={() => stopTimer(active)}>
+                      ■ Zatrzymaj
+                    </button>
+                  ) : (
+                    <button type="button" className="document-button" onClick={() => startTimer(type)}>
+                      ▶ Start
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {timeByEmployee.length > 0 && (
+          <div style={{ marginTop: '16px' }}>
+            <div className="small-label">ROBOCZOGODZINY</div>
+            <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
+              {timeByEmployee.map((member) => (
+                <div key={member.user_id} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
+                  <span>{member.display_name || member.email || 'Pracownik'}</span>
+                  <strong>{formatDuration(member.minutes)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {jobTimeEntries.length > 0 && (
+          <div style={{ marginTop: '16px' }}>
+            <div className="small-label">HISTORIA POMIARÓW</div>
+            <div style={{ display: 'grid', gap: '7px', marginTop: '8px' }}>
+              {jobTimeEntries.map((entry) => (
+                <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center', padding: '9px 10px', border: '1px solid #edf1f5', borderRadius: '11px' }}>
+                  <div>
+                    <strong>{getTimeLabel(entry.timeType)} • {entry.employeeName || 'Pracownik'}</strong>
+                    <div style={{ fontSize: '11px', color: '#718096', marginTop: '3px' }}>
+                      {entry.startedAt ? formatCreatedAt(entry.startedAt) : ''}
+                      {entry.endedAt ? ' → ' + formatCreatedAt(entry.endedAt) : ' → trwa'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <strong>{formatDuration(getEntryMinutes(entry))}</strong>
+                    <button type="button" className="note-action-button note-delete-button" onClick={() => removeTimeEntry(entry)}>🗑</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* PODZIAŁ ZYSKU */}
+      <div className="detail-card">
+        <div className="notes-header">
+          <div>
+            <div className="small-label">ROZLICZENIE</div>
+            <h2>Podział zysku realizacji</h2>
+          </div>
+          <strong style={{ color: Math.abs(profitShareTotal - 100) < 0.01 ? '#159447' : '#b42318' }}>
+            {profitShareTotal.toFixed(0)}%
+          </strong>
+        </div>
+
+        <p style={{ margin: '4px 0 14px', color: '#68758a', fontSize: '13px', lineHeight: 1.45 }}>
+          Udziały dotyczą zysku tej realizacji, po odjęciu kosztów.
+        </p>
+
+        <div style={{ display: 'grid', gap: '9px' }}>
+          {currentProfitShares.map((share, index) => (
+            <div key={share.employeeId} style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '10px', alignItems: 'center' }}>
+              <select
+                className="note-text-input"
+                value={share.employeeId}
+                onChange={(e) => {
+                  const member = organizationMembers.find((item) => String(item.user_id) === String(e.target.value))
+                  const next = [...currentProfitShares]
+                  next[index] = {
+                    ...next[index],
+                    employeeId: e.target.value,
+                    employeeName: member?.display_name || member?.email || 'Pracownik',
+                  }
+                  setJobProfitShares(next)
+                }}
+              >
+                {(organizationMembers || []).map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.display_name || member.email || 'Pracownik'}
+                  </option>
+                ))}
+              </select>
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="note-text-input"
+                  inputMode="decimal"
+                  value={share.percentage}
+                  onChange={(e) => {
+                    const next = [...currentProfitShares]
+                    next[index] = { ...next[index], percentage: e.target.value }
+                    setJobProfitShares(next)
+                  }}
+                  style={{ paddingRight: '28px' }}
+                />
+                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#718096', fontWeight: 800 }}>%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {currentProfitShares.length === 2 && (
+          <button
+            type="button"
+            className="document-button"
+            style={{ marginTop: '10px' }}
+            onClick={() => setJobProfitShares(currentProfitShares.map((share) => ({ ...share, percentage: 50 })))}
+          >
+            Ustaw 50 / 50
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="save-button"
+          style={{ marginTop: '10px' }}
+          disabled={profitShareSaving || Math.abs(profitShareTotal - 100) > 0.01}
+          onClick={saveProfitShares}
+        >
+          {profitShareSaving ? 'Zapisywanie...' : 'Zapisz podział'}
+        </button>
+
+        <div style={{ display: 'grid', gap: '8px', marginTop: '14px' }}>
+          {individualProfitHours.map((share) => (
+            <div key={share.employeeId} style={{ padding: '12px', borderRadius: '13px', background: '#f6f9fc', border: '1px solid #e5ebf1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                <strong>{share.employeeName}</strong>
+                <strong>{formatMoney(share.profit)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px', fontSize: '12px', color: '#718096' }}>
+                <span>{share.percentage}% zysku • {formatDuration(share.hours * 60)}</span>
+                <strong style={{ color: '#12234f' }}>{share.hours > 0 ? formatMoney(share.hourly) + ' / h' : 'brak czasu'}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '13px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <span>Zysk / roboczogodzina</span>
+            <strong>{totalTrackedMinutes > 0 ? formatMoney(jobProfit / (totalTrackedMinutes / 60)) + ' / h' : '—'}</strong>
+          </div>
+        </div>
+      </div>
 
       {/* KOSZTY REALIZACJI */}
       <div className="detail-card">

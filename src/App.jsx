@@ -2928,12 +2928,17 @@ function StartPage({
   const completedValue = completedJobs.reduce((sum, job) => sum + calculateTotal(job), 0)
   const today = getTodayString()
 
+  // Do zapłaty = suma (brutto faktury - suma wpłat) dla faktur,
+  // które nie są Zapłacona. Anulowane faktury nie są należnością.
   const dashboardPaidByInvoice = new Map()
   invoices.forEach((invoice) => {
-    const assigned = allJobPayments
+    const payments = allJobPayments
       .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
-    dashboardPaidByInvoice.set(String(invoice.id), Math.max(0, assigned))
+    const paid = invoice.jobId
+      ? payments
+      : Math.max(payments, Number(invoice.paidAmount || 0))
+    dashboardPaidByInvoice.set(String(invoice.id), Math.max(0, paid))
   })
 
   const dashboardInvoicesByJob = new Map()
@@ -2968,7 +2973,7 @@ function StartPage({
   })
 
   const dashboardReceivables = invoices
-    .filter((invoice) => invoice.status !== 'Anulowana' && invoice.status !== 'Do wystawienia' && invoice.issueDate)
+    .filter((invoice) => invoice.status !== 'Zapłacona' && invoice.status !== 'Anulowana' && Number(invoice.grossAmount || 0) > 0)
     .map((invoice) => {
       const gross = Math.max(0, Number(invoice.grossAmount || 0))
       const paid = Math.min(gross, Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0)))
@@ -3026,18 +3031,15 @@ function StartPage({
         <div className="dashboard-value-grid">
           <div className="detail-card dashboard-value-card">
             <span>W toku</span>
-            <strong>{formatMoney(activeValue)}</strong>
-            <small>netto</small>
+            <strong>{formatMoney(activeValue)} <small>netto</small></strong>
           </div>
           <div className="detail-card dashboard-value-card">
             <span>Zakończone</span>
-            <strong>{formatMoney(completedValue)}</strong>
-            <small>netto</small>
+            <strong>{formatMoney(completedValue)} <small>netto</small></strong>
           </div>
           <div className="detail-card dashboard-value-card dashboard-value-card-payable">
             <span>Do zapłaty</span>
-            <strong>{formatMoney(dashboardReceivablesGross)}</strong>
-            <small>brutto</small>
+            <strong>{formatMoney(dashboardReceivablesGross)} <small>brutto</small></strong>
           </div>
         </div>
       </section>
@@ -3853,7 +3855,7 @@ function JobCard({
             </span>
           )}
 
-          {job.plannedEndDate && <span className="job-deadline">{formatDate(job.plannedEndDate)}</span>}
+          {job.plannedEndDate && <span className="job-deadline">{formatDeadlineShort(job.plannedEndDate)}</span>}
         </div>
 
         <div className="job-card-progress">
@@ -3875,31 +3877,32 @@ function JobCard({
           ))}
           <div className="job-card-value">
             <span>Wartość</span>
-            <strong>{formatMoney(totalValue)}</strong>
-            <small>netto</small>
+            <strong>{formatMoney(totalValue)} <small>netto</small></strong>
           </div>
         </div>
 
         <div className="job-card-invoice-summary">
-          <div className="job-card-invoice-left">
-            <span>Faktura</span>
-            {linkedInvoice ? (
-              <strong>{linkedInvoice.invoiceNumber || 'Faktura'}</strong>
-            ) : (
-              <strong className="job-card-no-invoice">Brak faktury</strong>
-            )}
-          </div>
-
-          {linkedInvoice && (
-            <div className="job-card-invoice-right">
-              <strong>{formatMoney(invoiceGross)}</strong>
-              <small>brutto</small>
-              <span className={invoiceRemaining > 0.01 ? 'invoice-status-unpaid' : 'invoice-status-paid'}>
-                {invoiceStatusLabel}
-              </span>
-              {invoiceStatusLabel === 'Częściowo zapłacona' && (
-                <small className="invoice-remaining">Pozostało: {formatMoney(invoiceRemaining)}</small>
-              )}
+          {linkedInvoice ? (
+            <>
+              <div className="job-card-invoice-row">
+                <strong className="job-card-invoice-number">{linkedInvoice.invoiceNumber || 'Faktura'}</strong>
+                <strong className="job-card-invoice-gross">{formatMoney(invoiceGross)} <small>brutto</small></strong>
+              </div>
+              <div className="job-card-invoice-row">
+                <span className={invoiceRemaining > 0.01 ? 'invoice-status-unpaid' : 'invoice-status-paid'}>
+                  {invoiceStatusLabel}
+                </span>
+                {invoiceStatusLabel === 'Częściowo zapłacona' ? (
+                  <small className="invoice-remaining">Pozostało: {formatMoney(invoiceRemaining)}</small>
+                ) : (
+                  <span />
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="job-card-invoice-row">
+              <span className="job-card-no-invoice">Brak faktury</span>
+              <span />
             </div>
           )}
         </div>
@@ -13838,6 +13841,17 @@ function formatCreatedAt(
 
 }
 
+
+function formatDeadlineShort(date) {
+  if (!date) return ''
+  const parts = String(date).split('-')
+  if (parts.length !== 3) return String(date)
+  const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru']
+  const monthIndex = Number(parts[1]) - 1
+  const day = Number(parts[2])
+  if (!Number.isFinite(day) || monthIndex < 0 || monthIndex > 11) return String(date)
+  return `do ${day} ${months[monthIndex]}`
+}
 
 function formatDate(
   date

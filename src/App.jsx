@@ -5309,11 +5309,9 @@ function JobDetails({
   }
 
   const individualProfitHours = currentProfitShares.map((share) => {
-    const member = timeByEmployee.find(
-      (item) => String(item.user_id) === String(share.employeeId)
-    )
-    const hours = (member?.minutes || 0) / 60
-    const profit = jobProfit * (Number(share.percentage || 0) / 100)
+    const percentage = Number(share.percentage || 0)
+    const hours = (teamLaborMinutes / 60) * (percentage / 100)
+    const profit = jobProfit * (percentage / 100)
     return {
       ...share,
       hours,

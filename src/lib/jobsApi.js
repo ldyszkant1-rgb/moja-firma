@@ -99,6 +99,15 @@ function mapSupabaseJobToAppJob(job) {
         ? job.assigned_employee_ids
         : [],
 
+    assignedTeamId:
+      job.assigned_team_id || null,
+
+    plannedStartDate:
+      job.planned_start_date || null,
+
+    plannedEndDate:
+      job.planned_end_date || null,
+
     priority: ['normal', 'high', 'urgent'].includes(job.priority)
       ? job.priority
       : 'normal',
@@ -191,6 +200,15 @@ function mapAppJobToSupabaseJob(job) {
       Array.isArray(job.assignedEmployeeIds)
         ? job.assignedEmployeeIds
         : [],
+
+    assigned_team_id:
+      job.assignedTeamId || null,
+
+    planned_start_date:
+      job.plannedStartDate || null,
+
+    planned_end_date:
+      job.plannedEndDate || null,
 
     priority:
       ['normal', 'high', 'urgent'].includes(job.priority)

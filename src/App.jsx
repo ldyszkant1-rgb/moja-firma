@@ -9793,24 +9793,20 @@ function FinancePage({
 
       // VAT rozliczony wcześniej nie jest wpłatą klienta, ale zmniejsza
       // kwotę, która nadal pozostaje do zapłaty z faktury.
+      // Pozostałe netto i VAT zachowują proporcję wynikającą z faktury.
       const vatSettled = Math.min(
         vat,
         Math.max(0, Number(invoice.vatSettledAmount || 0))
       )
 
-      // Wpłaty klienta najpierw pokrywają netto, a dopiero nadwyżka
-      // może pokrywać VAT. Dzięki temu po rozliczeniu całego VAT-u
-      // pozostała należność jest pokazana jako samo netto.
-      const netPaidByCustomer = Math.min(net, Math.max(0, customerPaid))
-      const vatPaidByCustomer = Math.min(
-        Math.max(0, vat - vatSettled),
-        Math.max(0, customerPaid - net)
-      )
-
-      const remainingNet = Math.max(0, net - netPaidByCustomer)
-      const remainingVat = Math.max(0, vat - vatSettled - vatPaidByCustomer)
-      const remaining = Math.max(0, remainingNet + remainingVat)
       const paid = Math.min(gross, customerPaid + vatSettled)
+      const remaining = Math.max(0, gross - paid)
+      const remainingNet = gross > 0
+        ? remaining * (net / gross)
+        : 0
+      const remainingVat = gross > 0
+        ? remaining * (vat / gross)
+        : 0
       const dueDate = invoice.dueDate || null
       const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
@@ -10304,7 +10300,8 @@ function FinancePage({
                       <span>{item.clientName}</span>
                     </div>
                     <div className="receivable-amount">
-                      <strong>{formatMoney(item.remaining)} brutto</strong>
+                      <strong>Pozostało: {formatMoney(item.remaining)}</strong>
+                      <small>z {formatMoney(item.invoiceValue)} brutto</small>
                     </div>
                   </div>
                   <div className="receivable-row-bottom">
@@ -11098,7 +11095,6 @@ function FinancePage({
           onClick={() => setShowHistory((value) => !value)}
         >
           <div>
-            <div className="finance-overview-label">HISTORIA</div>
             <h2>Historia finansów</h2>
             <span>Wszystkie zapisane koszty — od najnowszych</span>
           </div>

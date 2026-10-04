@@ -5057,6 +5057,46 @@ function JobDetails({
   const [editedJob, setEditedJob] =
     useState(job)
 
+  const [jobTeams, setJobTeams] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadJobTeams = async () => {
+      try {
+        const [{ data: teamRows, error: teamError }, { data: memberRows, error: memberError }] = await Promise.all([
+          supabase.from('teams').select('id,name').order('created_at', { ascending: true }),
+          supabase.from('team_members').select('team_id,user_id'),
+        ])
+        if (teamError) throw teamError
+        if (memberError) throw memberError
+
+        const membersByTeam = (memberRows || []).reduce((acc, item) => {
+          const key = String(item.team_id)
+          acc[key] = [...(acc[key] || []), String(item.user_id)]
+          return acc
+        }, {})
+
+        if (!cancelled) {
+          setJobTeams((teamRows || []).map((team) => ({
+            ...team,
+            memberIds: membersByTeam[String(team.id)] || [],
+          })))
+        }
+      } catch (error) {
+        console.error('Nie udało się wczytać ekip dla roboty:', error)
+        if (!cancelled) setJobTeams([])
+      }
+    }
+
+    loadJobTeams()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+
 
   const [editing, setEditing] =
     useState(false)
@@ -6636,6 +6676,37 @@ function JobDetails({
               Ekipa przypisana do roboty
             </div>
 
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '7px', color: '#1f2f46' }}>
+                Stała ekipa
+              </div>
+              <select
+                value={editedJob.assignedTeamId || ''}
+                onChange={(e) => {
+                  const teamId = e.target.value || null
+                  const selectedTeam = jobTeams.find((team) => String(team.id) === String(teamId))
+                  setEditedJob({
+                    ...editedJob,
+                    assignedTeamId: teamId,
+                    assignedEmployeeIds: selectedTeam?.memberIds || [],
+                  })
+                }}
+                style={settingsInputStyle}
+              >
+                <option value="">— bez stałej ekipy —</option>
+                {jobTeams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} · {team.memberIds.length} {team.memberIds.length === 1 ? 'osoba' : 'osoby'}
+                  </option>
+                ))}
+              </select>
+              {jobTeams.length === 0 && (
+                <div style={{ marginTop: '6px', fontSize: '12px', color: '#718096' }}>
+                  Najpierw utwórz ekipę w Ustawieniach → Pracownicy i dostęp.
+                </div>
+              )}
+            </div>
+
             {organizationMembers.length === 0 ? (
               <div style={{ fontSize: '13px', color: '#718096' }}>
                 Brak pracowników firmy do przypisania.
@@ -6709,6 +6780,12 @@ function JobDetails({
           {editedJob.clientId && (
             <div className="job-client-detail">
               👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.shortName || (clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
+            </div>
+          )}
+
+          {editedJob.assignedTeamId && (
+            <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 700, color: '#35516f' }}>
+              👷 {jobTeams.find((team) => String(team.id) === String(editedJob.assignedTeamId))?.name || 'Przypisana ekipa'}
             </div>
           )}
 

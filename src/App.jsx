@@ -10468,12 +10468,12 @@ function FinancePage({
           <div className="finance-kpi-card finance-kpi-profit">
             <span>ZYSK</span>
             <strong>{formatMoney(profit)}</strong>
-            <small>Przychód minus koszty</small>
+            <small>Otrzymane netto − koszty</small>
           </div>
           <div className="finance-kpi-card finance-kpi-split">
             <span>DO PODZIAŁU 50/50</span>
             <strong>{formatMoney(splitAmount)}</strong>
-            <small>Na osobę</small>
+            <small>Na osobę · netto</small>
           </div>
         </div>
 

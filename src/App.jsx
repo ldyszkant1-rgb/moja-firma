@@ -2455,7 +2455,7 @@ function App() {
       try {
         const { data, error } = await supabase
           .from('organization_members')
-          .select('user_id,organization_id,role,display_name,email,created_at')
+          .select('user_id,organization_id,role,display_name,email,created_at,hourly_rate')
           .order('created_at', { ascending: true })
         if (error) throw error
         if (!cancelled) setOrganizationMembers(data || [])
@@ -11401,6 +11401,8 @@ function TeamSettings({ authSession }) {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('employee')
   const [showTeam, setShowTeam] = useState(false)
+  const [editingRateId, setEditingRateId] = useState(null)
+  const [editingRateValue, setEditingRateValue] = useState('')
 
   const currentUserId = authSession?.user?.id
 
@@ -11473,6 +11475,29 @@ function TeamSettings({ authSession }) {
     } catch (error) {
       console.error('Nie udało się zmienić roli:', error)
       await showCustomAlert('Nie udało się zmienić roli pracownika.')
+    }
+  }
+
+  const saveHourlyRate = async (member) => {
+    const rate = Number(String(editingRateValue ?? '').replace(',', '.').trim())
+    if (!Number.isFinite(rate) || rate < 0) {
+      await showCustomAlert('Stawka godzinowa musi być liczbą większą lub równą 0.')
+      return
+    }
+    try {
+      const { error } = await supabase
+        .from('organization_members')
+        .update({ hourly_rate: rate })
+        .eq('user_id', member.user_id)
+      if (error) throw error
+      setMembers((current) => current.map((item) =>
+        item.user_id === member.user_id ? { ...item, hourly_rate: rate } : item
+      ))
+      setEditingRateId(null)
+      setEditingRateValue('')
+    } catch (error) {
+      console.error('Nie udało się zapisać stawki godzinowej:', error)
+      await showCustomAlert('Nie udało się zapisać stawki godzinowej.')
     }
   }
 
@@ -11568,25 +11593,50 @@ function TeamSettings({ authSession }) {
             {loading && <div style={{ fontSize: '13px', opacity: 0.65 }}>Wczytywanie…</div>}
             {!loading && members.map((member) => (
               <div key={member.user_id} style={teamRowStyle}>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <strong>{member.display_name || member.email || 'Użytkownik'}</strong>
                   <div style={{ fontSize: '12px', opacity: 0.65, marginTop: 3 }}>
                     {member.email || 'Brak e-maila'} · {member.role === 'owner' ? 'Właściciel' : member.role === 'admin' ? 'Administrator' : 'Pracownik'}
                   </div>
+                  <div style={{ marginTop: '7px', fontSize: '13px', fontWeight: 700, color: '#35516f' }}>
+                    Stawka: {formatMoney(Number(member.hourly_rate || 0))} / godz.
+                  </div>
                 </div>
-                {canManage && member.user_id !== currentUserId && member.role !== 'owner' && (
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                    <select
-                      value={member.role}
-                      onChange={(event) => changeRole(member, event.target.value)}
-                      style={{ ...settingsInputStyle, minHeight: '38px', padding: '7px 10px', width: 'auto' }}
-                    >
-                      <option value="employee">Pracownik</option>
-                      <option value="admin">Administrator</option>
-                    </select>
-                    <button type="button" className="back-button" onClick={() => removeMember(member)}>
-                      Usuń
-                    </button>
+                {canManage && (
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {editingRateId === member.user_id ? (
+                      <>
+                        <input
+                          value={editingRateValue}
+                          onChange={(event) => setEditingRateValue(event.target.value)}
+                          inputMode="decimal"
+                          placeholder="zł/godz."
+                          style={{ ...settingsInputStyle, minHeight: '38px', width: '105px' }}
+                        />
+                        <button type="button" className="save-button" onClick={() => saveHourlyRate(member)}>Zapisz</button>
+                        <button type="button" className="back-button" onClick={() => { setEditingRateId(null); setEditingRateValue('') }}>Anuluj</button>
+                      </>
+                    ) : (
+                      <button type="button" className="back-button" onClick={() => {
+                        setEditingRateId(member.user_id)
+                        setEditingRateValue(String(member.hourly_rate ?? 0))
+                      }}>Stawka</button>
+                    )}
+                    {member.user_id !== currentUserId && member.role !== 'owner' && (
+                      <>
+                        <select
+                          value={member.role}
+                          onChange={(event) => changeRole(member, event.target.value)}
+                          style={{ ...settingsInputStyle, minHeight: '38px', padding: '7px 10px', width: 'auto' }}
+                        >
+                          <option value="employee">Pracownik</option>
+                          <option value="admin">Administrator</option>
+                        </select>
+                        <button type="button" className="back-button" onClick={() => removeMember(member)}>
+                          Usuń
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

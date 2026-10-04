@@ -5294,6 +5294,18 @@ function JobDetails({
   const effectiveJobCosts = totalJobCosts - manualLaborCosts + effectiveLaborCost
   const jobRevenue = calculateTotal(editedJob)
   const jobProfit = jobRevenue - effectiveJobCosts
+  const jobMargin = jobRevenue > 0 ? (jobProfit / jobRevenue) * 100 : 0
+  const laborShareOfRevenue = jobRevenue > 0 ? (effectiveLaborCost / jobRevenue) * 100 : 0
+  const materialOtherCost = totalJobCosts - manualLaborCosts
+  const profitabilityStatus = jobRevenue <= 0
+    ? 'Brak przychodu'
+    : jobProfit < 0
+      ? 'Strata'
+      : jobMargin < 15
+        ? 'Niska marża'
+        : jobMargin < 30
+          ? 'Dobra marża'
+          : 'Bardzo dobra marża'
 
   const activeTimerFor = (employeeId, timeType) =>
     jobTimeEntries.find(
@@ -8151,6 +8163,77 @@ function JobDetails({
               <span>Zysk / roboczogodzina</span>
               <strong>{teamLaborMinutes > 0 ? formatMoney(jobProfit / (teamLaborMinutes / 60)) + ' / h' : '—'}</strong>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RENTOWNOŚĆ ROBOTY */}
+      <div className="detail-card">
+        <div className="notes-header">
+          <div>
+            <div className="small-label">RENTOWNOŚĆ</div>
+            <h2>Wynik tej realizacji</h2>
+          </div>
+          <strong style={{
+            color: jobProfit < 0 ? '#b42318' : jobMargin >= 30 ? '#159447' : '#12234f',
+            fontSize: '13px',
+          }}>
+            {profitabilityStatus}
+          </strong>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gap: '8px',
+          marginTop: '10px',
+        }}>
+          {[
+            ['PRZYCHÓD', jobRevenue],
+            ['KOSZTY', effectiveJobCosts],
+            ['ROBOCIZNA', effectiveLaborCost],
+            ['ZYSK', jobProfit],
+          ].map(([label, value]) => (
+            <div key={label} style={{
+              padding: '12px',
+              borderRadius: '12px',
+              background: '#f6f9fc',
+              border: '1px solid #e5ebf1',
+            }}>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#718096' }}>{label}</div>
+              <strong style={{
+                display: 'block',
+                marginTop: '4px',
+                fontSize: '17px',
+                color: label === 'ZYSK' && value < 0 ? '#b42318' : '#12234f',
+              }}>
+                {formatMoney(value)}
+              </strong>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: '9px',
+          padding: '10px 12px',
+          borderRadius: '11px',
+          background: '#fff',
+          border: '1px solid #e5ebf1',
+          display: 'grid',
+          gap: '6px',
+          fontSize: '12px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <span>Marża</span>
+            <strong>{jobRevenue > 0 ? jobMargin.toFixed(1) + '%' : '—'}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <span>Materiały / inne</span>
+            <strong>{formatMoney(materialOtherCost)}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <span>Robocizna / przychód</span>
+            <strong>{jobRevenue > 0 ? laborShareOfRevenue.toFixed(1) + '%' : '—'}</strong>
           </div>
         </div>
       </div>

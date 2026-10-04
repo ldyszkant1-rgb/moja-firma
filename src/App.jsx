@@ -13047,27 +13047,39 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     if (!dayPlans.length) return
     const ok = await showCustomConfirm('Usunąć wszystkie wpisy z dnia ' + formatDate(date) + '?')
     if (!ok) return
-    const ids = dayPlans.map((plan) => plan.id)
-    const { error } = await supabase
-      .from('calendar_plans')
-      .delete()
-      .in('id', ids)
+    const { data: deletedCount, error } = await supabase.rpc('delete_calendar_day', {
+      p_plan_date: date,
+    })
     if (error) {
+      console.error('Nie udało się usunąć planu dnia:', error)
       await showCustomAlert('Nie udało się usunąć planu dnia.')
       return
     }
-    setPlans((current) => current.filter((item) => !ids.includes(item.id)))
+    if (Number(deletedCount) < dayPlans.length) {
+      console.warn('Usunięto mniej wpisów niż widocznych w dniu:', {
+        visible: dayPlans.length,
+        deleted: deletedCount,
+      })
+    }
+    await loadPlans()
   }
 
   const removePlan = async (plan) => {
     const ok = await showCustomConfirm('Usunąć wpis „' + plan.title + '” z terminarza?')
     if (!ok) return
-    const { error } = await supabase.from('calendar_plans').delete().eq('id', plan.id)
+    const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
+      p_plan_id: plan.id,
+    })
     if (error) {
+      console.error('Nie udało się usunąć wpisu:', error)
       await showCustomAlert('Nie udało się usunąć wpisu.')
       return
     }
-    setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
+    if (!deleted) {
+      await showCustomAlert('Nie udało się usunąć wpisu. Odśwież terminarz i spróbuj ponownie.')
+      return
+    }
+    await loadPlans()
   }
 
   const moveJob = async (job, targetDate) => {

@@ -5215,7 +5215,9 @@ function JobDetails({
     jobTimeEntries.find(
       (entry) =>
         !entry.endedAt &&
-        String(entry.employeeId) === String(employeeId) &&
+        (employeeId === 'team'
+          ? !entry.employeeId
+          : String(entry.employeeId) === String(employeeId)) &&
         entry.timeType === timeType
     ) || null
 

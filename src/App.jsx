@@ -12925,12 +12925,10 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const loadPlans = async () => {
     if (!organizationId) return
-    const { data, error } = await supabase
-      .from('calendar_plans')
-      .select('id,user_id,job_id,plan_type,plan_date,title,note,hours_worked')
-      .gte('plan_date', toDateString(weekStart))
-      .lte('plan_date', toDateString(weekEnd))
-      .order('plan_date')
+    const { data, error } = await supabase.rpc('list_calendar_plans', {
+      p_start_date: toDateString(weekStart),
+      p_end_date: toDateString(weekEnd),
+    })
     if (error) {
       console.error('Nie udało się wczytać terminarza:', error)
       return

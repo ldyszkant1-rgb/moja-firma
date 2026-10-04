@@ -13058,7 +13058,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           {type === 'job' ? (
             <select value={jobId} onChange={(e) => setJobId(e.target.value)} style={settingsInputStyle}>
               <option value="">Wybierz robotę</option>
-              {jobs.map((job) => <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>)}
+              {jobs.filter((job) => String(job.progress || '').toLowerCase() === 'w toku').map((job) => <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>)}
             </select>
           ) : (
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nazwa, np. Urlop wypoczynkowy" style={settingsInputStyle} />

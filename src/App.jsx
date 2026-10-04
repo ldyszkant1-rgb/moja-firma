@@ -12880,6 +12880,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [plans, setPlans] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
   const [type, setType] = useState('job')
   const [jobId, setJobId] = useState('')
   const [userId, setUserId] = useState('')

@@ -9927,7 +9927,7 @@ function FinancePage({
     overdueReceivables > 0
       ? {
           type: 'danger',
-          icon: '🔴',
+          icon: 'danger',
           title: 'Zaległe płatności',
           text: `Do odzyskania: ${formatMoney(overdueReceivables)}`,
           action: 'receivables',
@@ -9936,7 +9936,7 @@ function FinancePage({
     receivables.length > 0 && overdueReceivables <= 0
       ? {
           type: 'warning',
-          icon: '🟠',
+          icon: 'warning',
           title: 'Oczekujące płatności',
           text: `Do otrzymania: ${formatMoney(totalReceivables)}`,
           action: 'receivables',
@@ -9954,7 +9954,7 @@ function FinancePage({
     hasPartnerSettlement && Math.abs(partnerCostBalance) > 0.01
       ? {
           type: 'info',
-          icon: '🔵',
+          icon: 'info',
           title: 'Nierozliczone koszty wspólników',
           text: `${balanceDirection}: ${formatMoney(balanceAmount)}`,
           action: 'partner',
@@ -10008,6 +10008,8 @@ function FinancePage({
     1,
     ...trendMonths.flatMap((item) => [item.revenue, item.costs])
   )
+
+  const hasTrendData = trendMonths.some((item) => item.revenue > 0 || item.costs > 0)
 
   const recordPartnerTransfer = async (amount) => {
     const safeAmount = Number(amount || 0)
@@ -10261,9 +10263,12 @@ function FinancePage({
         {receivables.length > 0 ? (
           <div className="receivables-list">
             {receivables.map((item) => {
+              const overdueDays = item.isOverdue
+                ? Math.max(1, Math.ceil((new Date(getTodayString()) - new Date(item.dueDate)) / 86400000))
+                : 0
               const dueLabel = item.isOverdue
-                ? 'Zaległość • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
-                : 'Termin • ' + new Date(item.dueDate).toLocaleDateString('pl-PL')
+                ? `Zaległość ${overdueDays} dni`
+                : `Termin ${new Date(item.dueDate).toLocaleDateString('pl-PL')}`
               return (
                 <button type="button" className="receivable-row" key={item.id} onClick={() => item.invoiceId ? onOpenInvoice?.(item.invoiceId) : onOpenJob?.(item.job)}>
                   <div className="receivable-main">
@@ -10271,10 +10276,10 @@ function FinancePage({
                     <span>{item.clientName}</span>
                   </div>
                   <div className="receivable-amount">
-                    <strong>{formatMoney(item.remainingNet)} netto</strong>
-                    <span style={{ display: 'block', fontSize: '12px', opacity: 0.72 }}>{formatMoney(item.remainingVat)} VAT • {formatMoney(item.remaining)} brutto</span>
+                    <strong>{formatMoney(item.remaining)} brutto</strong>
+                    <span>{formatMoney(item.remainingNet)} netto / {formatMoney(item.remainingVat)} VAT</span>
                     <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>
-                      {item.isOverdue ? dueLabel + ' • ' + Math.max(1, Math.ceil((new Date(getTodayString()) - new Date(item.dueDate)) / 86400000)) + ' dni' : dueLabel}
+                      {dueLabel}
                     </span>
                   </div>
                   <span className="receivable-arrow">→</span>
@@ -10580,23 +10585,23 @@ function FinancePage({
             </div>
 
             <div className="finance-trend-chart">
-              {trendMonths.map((item) => (
-                <div className="finance-trend-column" key={item.key}>
-                  <div className="finance-trend-bars">
-                    <div
-                      className="finance-trend-bar finance-trend-bar-revenue"
-                      style={{ height: `${Math.max(6, (item.revenue / trendMax) * 100)}%` }}
-                      title={`Otrzymane: ${formatMoney(item.revenue)}`}
-                    />
-                    <div
-                      className="finance-trend-bar finance-trend-bar-costs"
-                      style={{ height: `${Math.max(4, (item.costs / trendMax) * 100)}%` }}
-                      title={`Koszty: ${formatMoney(item.costs)}`}
-                    />
+              {!hasTrendData ? (
+                <div className="finance-trend-empty">Brak danych</div>
+              ) : (
+                trendMonths.map((item) => (
+                  <div className={`finance-trend-column${item.key === selectedMonthKey ? ' is-current' : ''}`} key={item.key}>
+                    <div className="finance-trend-value">{formatMoney(item.revenue)}</div>
+                    <div className="finance-trend-bars">
+                      <div
+                        className="finance-trend-bar finance-trend-bar-revenue"
+                        style={{ height: `${Math.max(6, (item.revenue / trendMax) * 100)}%` }}
+                        title={`Otrzymane: ${formatMoney(item.revenue)}`}
+                      />
+                    </div>
+                    <span>{item.label}</span>
                   </div>
-                  <span>{item.label}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <div className="finance-trend-legend">
               <span><i className="finance-trend-dot finance-trend-dot-revenue" /> Otrzymane</span>
@@ -10625,7 +10630,11 @@ function FinancePage({
               <div className="finance-alert-list">
                 {monthAlerts.map((alert, index) => (
                   <div className={`finance-alert-item finance-alert-${alert.type}`} key={`${alert.title}-${index}`}>
-                    <span className="finance-alert-icon">{alert.icon}</span>
+                    <span className="finance-alert-icon" aria-hidden="true">
+                      {alert.type === 'danger'
+                        ? <AlertTriangle size={18} strokeWidth={1.75} />
+                        : <Wallet size={18} strokeWidth={1.75} />}
+                    </span>
                     <div>
                       <strong>{alert.title}</strong>
                       <small>{alert.text}</small>

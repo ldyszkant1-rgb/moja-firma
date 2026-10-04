@@ -12910,6 +12910,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [endDate, setEndDate] = useState(toDateString(new Date()))
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
+  const [hoursWorked, setHoursWorked] = useState('')
   const [draggedJobId, setDraggedJobId] = useState(null)
   const [movingJobId, setMovingJobId] = useState(null)
 
@@ -12921,7 +12922,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     if (!organizationId) return
     const { data, error } = await supabase
       .from('calendar_plans')
-      .select('id,user_id,job_id,plan_type,plan_date,title,note')
+      .select('id,user_id,job_id,plan_type,plan_date,title,note,hours_worked')
       .eq('organization_id', organizationId)
       .gte('plan_date', toDateString(weekStart))
       .lte('plan_date', toDateString(weekEnd))
@@ -13002,6 +13003,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         plan_date: toDateString(date),
         title: finalTitle,
         note: note.trim() || null,
+        hours_worked: hoursWorked === '' ? null : Number(hoursWorked),
       })
     }
 
@@ -13016,6 +13018,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           p_plan_date: row.plan_date,
           p_title: row.title,
           p_note: row.note,
+          p_hours_worked: row.hours_worked,
         })
         if (error) throw error
         if (!data) throw new Error('Baza nie zwróciła zapisanego wpisu.')
@@ -13030,6 +13033,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       setShowForm(false)
       setTitle('')
       setNote('')
+      setHoursWorked('')
       await showCustomAlert(rows.length > 1 ? 'Plan został wpisany na cały wybrany okres.' : 'Plan został zapisany.')
     } catch (error) {
       console.error('Nie udało się zapisać planu:', error)
@@ -13037,6 +13041,22 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     } finally {
       setSaving(false)
     }
+  }
+
+  const removeDayPlans = async (date, dayPlans) => {
+    if (!dayPlans.length) return
+    const ok = await showCustomConfirm('Usunąć wszystkie wpisy z dnia ' + formatDate(date) + '?')
+    if (!ok) return
+    const ids = dayPlans.map((plan) => plan.id)
+    const { error } = await supabase
+      .from('calendar_plans')
+      .delete()
+      .in('id', ids)
+    if (error) {
+      await showCustomAlert('Nie udało się usunąć planu dnia.')
+      return
+    }
+    setPlans((current) => current.filter((item) => !ids.includes(item.id)))
   }
 
   const removePlan = async (plan) => {
@@ -13121,7 +13141,21 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
             <label style={{ fontSize: '12px', color: '#64748b' }}>Od<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
             <label style={{ fontSize: '12px', color: '#64748b' }}>Do<input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
           </div>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny pracy
+              <input
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                value={hoursWorked}
+                onChange={(e) => setHoursWorked(e.target.value)}
+                placeholder="np. 4"
+                style={{ ...settingsInputStyle, marginTop: '4px' }}
+              />
+            </label>
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={{ ...settingsInputStyle, alignSelf: 'end' }} />
+          </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" onClick={() => setShowForm(false)} className="back-button">Anuluj</button>
             <button type="button" disabled={saving} onClick={(event) => { void savePlan(event) }} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz plan'}</button>
@@ -13146,13 +13180,19 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                 <span style={{ color: isToday ? '#1670c5' : '#718096', fontSize: '12px', fontWeight: 800 }}>{formatDate(date).slice(0, 5)}</span>
               </div>
 
-              <button type="button" onClick={() => openFormForDay(date)} style={{ width: '100%', border: '1px dashed #b8c9d8', background: '#fff', color: '#526174', borderRadius: '9px', padding: '7px', fontSize: '11px', fontWeight: 800, marginBottom: '7px' }}>＋ Wpisz dzień</button>
+              <div style={{ display: 'grid', gridTemplateColumns: dayPlans.length ? '1fr auto' : '1fr', gap: '6px', marginBottom: '7px' }}>
+                <button type="button" onClick={() => openFormForDay(date)} style={{ width: '100%', border: '1px dashed #b8c9d8', background: '#fff', color: '#526174', borderRadius: '9px', padding: '7px', fontSize: '11px', fontWeight: 800 }}>＋ Wpisz dzień</button>
+                {dayPlans.length > 0 && (
+                  <button type="button" onClick={() => removeDayPlans(date, dayPlans)} style={{ border: '1px solid #f0b5b5', background: '#fff7f7', color: '#c53030', borderRadius: '9px', padding: '7px 8px', fontSize: '10px', fontWeight: 800 }}>Usuń dzień</button>
+                )}
+              </div>
 
               <div style={{ display: 'grid', gap: '6px' }}>
                 {dayPlans.map((plan) => (
                   <div key={plan.id} style={{ border: plan.plan_type === 'vacation' ? '1px solid #8bc7a7' : '1px solid #d7e1eb', background: plan.plan_type === 'vacation' ? '#effaf4' : '#fff', borderRadius: '10px', padding: '8px' }}>
                     <div style={{ fontSize: '12px', fontWeight: 800, color: '#12234f' }}>{planIcon[plan.plan_type] || '📌'} {plan.title}</div>
                     <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>{getMemberName(plan.user_id)}</div>
+                    {plan.hours_worked != null && <div style={{ marginTop: '3px', fontSize: '11px', color: '#1670c5', fontWeight: 800 }}>⏱️ {Number(plan.hours_worked).toLocaleString('pl-PL', { maximumFractionDigits: 2 })} h</div>}
                     {plan.note && <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>{plan.note}</div>}
                     <button type="button" onClick={() => removePlan(plan)} style={{ marginTop: '5px', border: 'none', background: 'transparent', color: '#c53030', fontSize: '10px', fontWeight: 800, padding: 0 }}>Usuń</button>
                   </div>

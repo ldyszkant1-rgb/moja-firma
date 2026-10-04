@@ -4599,6 +4599,7 @@ body {
 .finance-page .finance-kpi-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -4612,6 +4613,10 @@ body {
   background: #fff;
   box-shadow: 0 8px 24px rgba(27, 62, 95, .07);
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .finance-page .finance-kpi-card > span {
@@ -4631,7 +4636,8 @@ body {
 
 .finance-page .finance-kpi-card small {
   display: block;
-  margin-top: 5px;
+  margin-top: auto;
+  padding-top: 7px;
   color: #64748b;
   font-size: 10px;
   line-height: 1.35;
@@ -4706,6 +4712,10 @@ body {
 }
 
 .finance-page .finance-payment-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 11px 0;
   border-bottom: 1px solid #edf1f5;
 }
@@ -4729,7 +4739,8 @@ body {
   font-size: 15px;
   font-weight: 800;
   white-space: nowrap;
-  align-self: flex-end;
+  align-self: auto;
+  margin-left: auto;
 }
 
 .finance-page .finance-payment-progress {
@@ -4966,6 +4977,7 @@ body {
   max-width: 100%;
   color: #64748b;
   font-size: 8px;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5051,18 +5063,19 @@ body {
 .finance-page .finance-year-summary-grid,
 .finance-page .finance-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 0;
   margin-top: 14px;
 }
 
 .finance-page .finance-year-summary-grid > div,
 .finance-page .finance-summary > div {
   min-width: 0;
-  padding: 11px;
-  border: 1px solid #edf1f5;
-  border-radius: 14px;
-  background: #fbfdff;
+  padding: 11px 0;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  border-radius: 0;
+  background: transparent;
 }
 
 .finance-page .finance-year-summary-grid small,
@@ -5104,9 +5117,18 @@ body {
   height: 40px;
 }
 
+.finance-page .finance-cost-card .cost-empty-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
 .finance-page .finance-cost-card .cost-empty-state strong {
-  color: #64748b;
+  color: #0f172a;
   font-size: 13px;
+  font-weight: 800;
 }
 
 .finance-page .finance-cost-card .cost-empty-state span {
@@ -5114,7 +5136,7 @@ body {
   font-size: 11px;
 }
 
-.finance-page .finance-cost-card .cost-empty-state + * {
+.finance-page .finance-cost-card .cost-empty-state + .cost-add-button-modern {
   margin-top: 8px;
 }
 
@@ -5124,6 +5146,17 @@ body {
 
 .finance-page .finance-completed-card > .finance-cost-header {
   align-items: center;
+}
+
+.finance-page .finance-completed-amount {
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.finance-page .finance-completed-amount small {
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 600;
 }
 
 .finance-page .finance-completed-card > div:not(.finance-cost-header) {
@@ -5177,6 +5210,84 @@ body {
 .finance-page .finance-cost-card .cost-edit-button,
 .finance-page .finance-cost-card .cost-delete-button {
   color: #64748b;
+}
+
+.finance-page .finance-history-card {
+  margin-top: 0;
+}
+
+.finance-page .finance-history-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.finance-page .finance-history-toggle h2 {
+  margin: 3px 0 4px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.finance-page .finance-history-toggle span:not(.finance-overview-label) {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.finance-page .finance-history-arrow {
+  flex: 0 0 auto;
+  color: #0787e8;
+}
+
+.finance-page .finance-summary > div:last-child {
+  border-bottom: 0;
+}
+
+.finance-page .finance-summary .finance-inline-unit {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.finance-page .cost-add-button-modern {
+  width: auto;
+  min-height: 32px;
+  height: 32px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #0787e8;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-page .cost-add-button-modern svg {
+  width: 16px;
+  height: 16px;
+}
+
+.finance-page .finance-month-card {
+  position: relative;
+}
+
+.finance-page .finance-command-center > .detail-card {
+  margin-bottom: 12px;
 }
 
 @media (max-width: 760px) {

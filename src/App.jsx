@@ -3091,129 +3091,6 @@ function StartPage({
         </div>
       </section>
 
-      <section className="dashboard-workday-section">
-        <div className="dashboard-workday-header">
-          <div>
-            <div className="small-label">DZIEŃ PRACY</div>
-            <h2>Najważniejsze dzisiaj</h2>
-            <p>Tylko sprawy, które naprawdę wymagają Twojej uwagi.</p>
-          </div>
-          <button type="button" className="section-link" onClick={() => onJobs('active')}>
-            Wszystkie realizacje →
-          </button>
-        </div>
-
-        {(() => {
-          const importantJobs = activeJobs
-            .map((job) => {
-              const tasks = Array.isArray(job.notes) ? job.notes.filter(Boolean) : []
-              const pendingTasks = tasks.filter((task) => !task.done)
-              const jobInvoices = dashboardInvoicesByJob.get(String(job.id)) || []
-
-              const overdueInvoice = jobInvoices.find((invoice) => {
-                const net = Math.max(0, Number(invoice.netAmount || 0))
-                const paid = Math.min(net, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
-                return net - paid > 0.01 && invoice.dueDate && invoice.dueDate < today
-              })
-
-              const openInvoice = jobInvoices.find((invoice) => {
-                const net = Math.max(0, Number(invoice.netAmount || 0))
-                const paid = Math.min(net, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
-                return net - paid > 0.01
-              })
-
-              const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
-              const jobPriority = String(job.priority || 'normal').toLowerCase()
-
-              const actionPriority =
-                jobPriority === 'urgent' ? 4 :
-                overdueInvoice ? 3 :
-                jobPriority === 'high' ? 2 :
-                pendingTasks.length > 0 ? 1 :
-                openInvoice ? 1 :
-                0
-
-              return {
-                job,
-                pendingTasks,
-                overdueInvoice,
-                openInvoice,
-                progress,
-                actionPriority,
-              }
-            })
-            .filter((item) => item.actionPriority > 0)
-            .sort((a, b) => {
-              if (b.actionPriority !== a.actionPriority) return b.actionPriority - a.actionPriority
-              if (b.pendingTasks.length !== a.pendingTasks.length) {
-                return b.pendingTasks.length - a.pendingTasks.length
-              }
-              return a.progress - b.progress
-            })
-            .slice(0, 5)
-
-          return importantJobs.length === 0 ? (
-            <div className="dashboard-workday-empty">
-              <span>✓</span>
-              <div>
-                <strong>Brak pilnych spraw</strong>
-                <small>Aktywne realizacje są pod kontrolą. Wszystkie znajdziesz poniżej w sekcji „W toku”.</small>
-              </div>
-            </div>
-          ) : (
-            <div className="dashboard-workday-grid">
-              {importantJobs.map(({ job, pendingTasks, overdueInvoice, openInvoice, progress }) => (
-                <article className="dashboard-workday-card" key={job.id}>
-                  <button type="button" className="dashboard-workday-main" onClick={() => onOpenJob(job)}>
-                    <div className="dashboard-workday-top">
-                      <div>
-                        <strong>{job.name}</strong>
-                        <span>{job.location || 'Brak lokalizacji'}</span>
-                      </div>
-                      <span className="dashboard-workday-progress">{progress}%</span>
-                    </div>
-
-                    <div className="dashboard-workday-progress-track">
-                      <div style={{ width: progress + '%' }} />
-                    </div>
-
-                    <div className="dashboard-workday-statuses">
-                      {overdueInvoice ? (
-                        <span className="dashboard-workday-status dashboard-workday-status-danger">
-                          ⏰ Faktura po terminie
-                        </span>
-                      ) : openInvoice ? (
-                        <span className="dashboard-workday-status dashboard-workday-status-finance">
-                          🧾 Płatność oczekuje
-                        </span>
-                      ) : (
-                        <span className="dashboard-workday-status dashboard-workday-status-ok">
-                          ✓ Bez zaległej płatności
-                        </span>
-                      )}
-
-                      {pendingTasks.length > 0 ? (
-                        <span className="dashboard-workday-task-count">
-                          🔧 {pendingTasks.length} {pendingTasks.length === 1 ? 'zadanie' : 'zadań'}
-                        </span>
-                      ) : (
-                        <span className="dashboard-workday-task-count dashboard-workday-task-done">
-                          ✓ Zadania wykonane
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  <button type="button" className="dashboard-workday-open" onClick={() => onOpenJob(job)}>
-                    Otwórz realizację <span>→</span>
-                  </button>
-                </article>
-              ))}
-            </div>
-          )
-        })()}
-      </section>
-
       <section>
         <div className="section-title">
           <h2>W toku</h2>
@@ -3228,9 +3105,22 @@ function StartPage({
           )}
 
           {[...activeJobs]
-            .sort(
-              (a, b) => Number(b.progress || 0) - Number(a.progress || 0)
-            )
+            .sort((a, b) => {
+              const priorityOrder = {
+                urgent: 3,
+                high: 2,
+                normal: 1,
+              }
+
+              const aPriority = priorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
+              const bPriority = priorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
+
+              if (bPriority !== aPriority) {
+                return bPriority - aPriority
+              }
+
+              return Number(b.progress || 0) - Number(a.progress || 0)
+            })
             .slice(0, 5)
             .map((job) => (
               <JobCard

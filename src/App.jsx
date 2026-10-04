@@ -3046,7 +3046,7 @@ function StartPage({
 
       <section className="dashboard-today-section">
         <div className="dashboard-today-header">
-          <div>
+          <div className="dashboard-section-heading">
             <div className="small-label">DZISIAJ</div>
             <h2>Do zrobienia</h2>
           </div>
@@ -3129,7 +3129,7 @@ function StartPage({
 
       <section className="general-reminders-section">
         <div className="section-title">
-          <div>
+          <div className="dashboard-section-heading">
             <div className="small-label">OGÓLNE</div>
             <h2>Przypomnienia</h2>
           </div>

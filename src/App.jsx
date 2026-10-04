@@ -5169,6 +5169,11 @@ function JobDetails({
       return
     }
 
+    if (costForm.costType === 'hours' && !costForm.employeeId) {
+      showCustomAlert('Wybierz pracownika dla kosztu robocizny.')
+      return
+    }
+
     try {
       const payload = {
         id: editingCostId || undefined,

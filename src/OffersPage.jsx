@@ -382,7 +382,7 @@ export default function OffersPage({
                 <button
                   type="button"
                   className="edit-button"
-                  onClick={() => printOffer(offer, (clients || []).find((client) => String(client.id) === String(offer.clientId)))}
+                  onClick={() => printOffer(offer, (clients || []).find((client) => String(client.id) === String(offer.clientId)), settings)}
                 >
                   📄 PDF / Drukuj
                 </button>

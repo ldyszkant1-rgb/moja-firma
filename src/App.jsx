@@ -5187,8 +5187,32 @@ function JobDetails({
     (sum, cost) => sum + Number(cost.totalCost || 0),
     0
   )
+  const manualLaborCosts = jobCosts
+    .filter((cost) => cost.costType === 'hours')
+    .reduce((sum, cost) => sum + Number(cost.totalCost || 0), 0)
+
+  const assignedEmployeeDetails = (editedJob.assignedEmployeeIds || [])
+    .map((id) => (organizationMembers || []).find(
+      (member) => String(member.user_id) === String(id)
+    ))
+    .filter(Boolean)
+
+  const automaticLaborCost = assignedEmployeeDetails.length > 0
+    ? assignedEmployeeDetails.reduce(
+        (sum, member) => sum + (
+          (teamElapsedMinutes / 60) * Number(member.hourly_rate || 0)
+        ),
+        0
+      )
+    : 0
+
+  const effectiveLaborCost = manualLaborCosts > 0
+    ? manualLaborCosts
+    : automaticLaborCost
+
+  const effectiveJobCosts = totalJobCosts - manualLaborCosts + effectiveLaborCost
   const jobRevenue = calculateTotal(editedJob)
-  const jobProfit = jobRevenue - totalJobCosts
+  const jobProfit = jobRevenue - effectiveJobCosts
 
   const [jobTimeEntries, setJobTimeEntries] = useState([])
   const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState('team')
@@ -5248,8 +5272,15 @@ function JobDetails({
       .reduce((sum, entry) => sum + getEntryMinutes(entry), 0)
     return acc
   }, {})
+  const assignedTeamMembers = (editedJob.assignedEmployeeIds || [])
+    .map((id) => (organizationMembers || []).find(
+      (member) => String(member.user_id) === String(id)
+    ))
+    .filter(Boolean)
+
   const teamElapsedMinutes = totalTrackedMinutes
-  const teamLaborMinutes = teamElapsedMinutes * 2
+  const teamSize = assignedTeamMembers.length
+  const teamLaborMinutes = teamElapsedMinutes * teamSize
 
   const activeTimerFor = (employeeId, timeType) =>
     jobTimeEntries.find(
@@ -7794,7 +7825,9 @@ function JobDetails({
         </div>
 
         <div style={{ padding: '11px 13px', borderRadius: '12px', background: '#f6f9fc', border: '1px solid #e5ebf1', color: '#12234f', fontWeight: 800 }}>
-          👥 Ekipa — 2 osoby
+          👥 Ekipa — {teamSize > 0
+            ? (teamSize + ' ' + (teamSize === 1 ? 'osoba' : 'osoby'))
+            : 'brak przypisanej ekipy'}
         </div>
 
         <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
@@ -7837,7 +7870,7 @@ function JobDetails({
                 <strong>{formatDuration(teamElapsedMinutes)}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#edf9f1' }}>
-                <span>Roboczogodziny (2 osoby)</span>
+                <span>Roboczogodziny ({teamSize} {teamSize === 1 ? 'osoba' : 'osób'})</span>
                 <strong>{formatDuration(teamLaborMinutes)}</strong>
               </div>
             </div>
@@ -7970,9 +8003,15 @@ function JobDetails({
         </div>
 
         <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '13px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-            <span>Zysk / roboczogodzina</span>
-            <strong>{teamLaborMinutes > 0 ? formatMoney(jobProfit / (teamLaborMinutes / 60)) + ' / h' : '—'}</strong>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Koszt robocizny</span>
+              <strong>{formatMoney(effectiveLaborCost)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Zysk / roboczogodzina</span>
+              <strong>{teamLaborMinutes > 0 ? formatMoney(jobProfit / (teamLaborMinutes / 60)) + ' / h' : '—'}</strong>
+            </div>
           </div>
         </div>
       </div>
@@ -8086,7 +8125,7 @@ function JobDetails({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '14px 0' }}>
           <div className="finance-kpi-card"><small>WARTOŚĆ</small><strong>{formatMoney(jobRevenue)}</strong></div>
-          <div className="finance-kpi-card"><small>KOSZTY</small><strong>{formatMoney(totalJobCosts)}</strong></div>
+          <div className="finance-kpi-card"><small>KOSZTY</small><strong>{formatMoney(effectiveJobCosts)}</strong></div>
           <div className="finance-kpi-card"><small>ZYSK</small><strong>{formatMoney(jobProfit)}</strong></div>
         </div>
 

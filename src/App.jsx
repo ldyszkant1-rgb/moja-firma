@@ -10471,6 +10471,12 @@ function SettingsPage({
                 <div><strong>anonymous:</strong> {String(accessDiagnostic.anonymous)}</div>
                 <div><strong>organizacje:</strong> {accessDiagnostic.memberships.length}</div>
                 <div><strong>jobs widoczne:</strong> {accessDiagnostic.jobsCount ?? 'brak'}</div>
+                {accessDiagnostic.jobsActiveCount != null && (
+                  <div><strong>jobs aktywne:</strong> {accessDiagnostic.jobsActiveCount}</div>
+                )}
+                {accessDiagnostic.jobsSampleOrganizationId && (
+                  <div><strong>org pierwszej roboty:</strong> {accessDiagnostic.jobsSampleOrganizationId}</div>
+                )}
                 {accessDiagnostic.membershipError && <div style={{ color: '#a22' }}><strong>membership error:</strong> {accessDiagnostic.membershipError}</div>}
                 {accessDiagnostic.jobsError && <div style={{ color: '#a22' }}><strong>jobs error:</strong> {accessDiagnostic.jobsError}</div>}
                 {accessDiagnostic.memberships.map((item, index) => (

@@ -94,6 +94,50 @@ function parseDecimal(value) {
   return Number.isFinite(number) ? number : 0
 }
 
+function workedHoursToDecimal(hours, minutes) {
+  const hoursText = String(hours ?? '').trim()
+  const minutesText = String(minutes ?? '').trim()
+
+  if (hoursText === '' && minutesText === '') return null
+
+  const h = hoursText === '' ? 0 : Number(hoursText)
+  const m = minutesText === '' ? 0 : Number(minutesText)
+
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return null
+  if (h < 0 || h > 24 || m < 0 || m > 59) return null
+  if (h === 24 && m !== 0) return null
+
+  return h + m / 60
+}
+
+function splitWorkedHours(value) {
+  if (value === null || value === undefined || value === '') {
+    return { hours: '', minutes: '' }
+  }
+
+  const totalMinutes = Math.round(Number(value) * 60)
+  if (!Number.isFinite(totalMinutes)) {
+    return { hours: '', minutes: '' }
+  }
+
+  return {
+    hours: String(Math.floor(totalMinutes / 60)),
+    minutes: String(totalMinutes % 60),
+  }
+}
+
+function formatWorkedHours(value) {
+  const parts = splitWorkedHours(value)
+  if (parts.hours === '' && parts.minutes === '') return ''
+  const hours = Number(parts.hours) || 0
+  const minutes = Number(parts.minutes) || 0
+
+  if (minutes === 0) return `${hours} h`
+  if (hours === 0) return `${minutes} min`
+  return `${hours} h ${minutes} min`
+}
+
 
 /* =====================================================
    DANE STARTOWE
@@ -12916,6 +12960,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [hoursWorked, setHoursWorked] = useState('')
+  const [minutesWorked, setMinutesWorked] = useState('')
+  const [editingPlan, setEditingPlan] = useState(null)
+  const [editHours, setEditHours] = useState('')
+  const [editMinutes, setEditMinutes] = useState('')
+  const [editNote, setEditNote] = useState('')
   const [draggedJobId, setDraggedJobId] = useState(null)
   const [movingJobId, setMovingJobId] = useState(null)
 
@@ -12997,6 +13046,12 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       return
     }
 
+    const workedHoursValue = workedHoursToDecimal(hoursWorked, minutesWorked)
+    if ((hoursWorked !== '' || minutesWorked !== '') && workedHoursValue === null) {
+      setSaveMessage('Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.')
+      return
+    }
+
     const selectedJob = jobs.find((job) => String(job.id) === String(jobId))
     const finalTitle = type === 'job'
       ? (selectedJob?.name || 'Robota')
@@ -13018,7 +13073,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         plan_date: toDateString(date),
         title: finalTitle,
         note: note.trim() || null,
-        hours_worked: hoursWorked === '' ? null : Number(hoursWorked),
+        hours_worked: workedHoursValue,
       })
     }
 
@@ -13057,10 +13112,63 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       setTitle('')
       setNote('')
       setHoursWorked('')
+      setMinutesWorked('')
       await showCustomAlert(rows.length > 1 ? 'Plan został wpisany na cały wybrany okres.' : 'Plan został zapisany.')
     } catch (error) {
       console.error('Nie udało się zapisać planu:', error)
       await showCustomAlert('Nie udało się zapisać planu.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openEditPlan = (plan) => {
+    const time = splitWorkedHours(plan.hours_worked)
+    setEditingPlan(plan)
+    setEditHours(time.hours)
+    setEditMinutes(time.minutes)
+    setEditNote(plan.note || '')
+  }
+
+  const closeEditPlan = () => {
+    setEditingPlan(null)
+    setEditHours('')
+    setEditMinutes('')
+    setEditNote('')
+  }
+
+  const saveEditedPlan = async (event) => {
+    event.preventDefault()
+    if (!editingPlan) return
+
+    const workedHoursValue = workedHoursToDecimal(editHours, editMinutes)
+    if ((editHours !== '' || editMinutes !== '') && workedHoursValue === null) {
+      await showCustomAlert('Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const { data, error } = await supabase.rpc('update_calendar_plan', {
+        p_plan_id: editingPlan.id,
+        p_hours_worked: workedHoursValue,
+        p_note: editNote.trim() || null,
+      })
+
+      if (error) throw error
+      if (!data) throw new Error('Baza nie zwróciła zmienionego wpisu.')
+
+      setPlans((current) =>
+        current.map((plan) =>
+          String(plan.id) === String(editingPlan.id) ? data : plan
+        )
+      )
+
+      closeEditPlan()
+      await showCustomAlert('Wpis został zaktualizowany.')
+    } catch (error) {
+      console.error('Nie udało się edytować wpisu:', error)
+      await showCustomAlert(error?.message || 'Nie udało się zaktualizować wpisu.')
     } finally {
       setSaving(false)
     }
@@ -13162,6 +13270,51 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         <button type="button" onClick={() => { setSaveMessage(''); setSaving(false); setStartDate(toDateString(weekStart)); setEndDate(toDateString(weekEnd)); setShowForm(true) }} style={{ ...calendarSmallButtonStyle, background: '#168fe5', color: '#fff', borderColor: '#168fe5' }}>＋ Zaplanuj zakres</button>
       </div>
 
+      {editingPlan && (
+        <form onSubmit={saveEditedPlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px', border: '1px solid #b9d8ee', background: '#f7fbff' }}>
+          <strong style={{ color: '#12234f' }}>✏️ Edytuj wpis — {editingPlan.title}</strong>
+          <div style={{ color: '#718096', fontSize: '12px' }}>
+            {formatDate(String(editingPlan.plan_date))} · zmień czas pracy lub notatkę.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny
+              <input
+                type="number"
+                min="0"
+                max="24"
+                step="1"
+                value={editHours}
+                onChange={(e) => setEditHours(e.target.value)}
+                placeholder="np. 4"
+                style={{ ...settingsInputStyle, marginTop: '4px' }}
+              />
+            </label>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Minuty
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={editMinutes}
+                onChange={(e) => setEditMinutes(e.target.value)}
+                placeholder="np. 30"
+                style={{ ...settingsInputStyle, marginTop: '4px' }}
+              />
+            </label>
+          </div>
+          <input
+            value={editNote}
+            onChange={(e) => setEditNote(e.target.value)}
+            placeholder="Notatka (opcjonalnie)"
+            style={settingsInputStyle}
+          />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" onClick={closeEditPlan} className="back-button">Anuluj</button>
+            <button type="submit" disabled={saving} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz zmiany'}</button>
+          </div>
+        </form>
+      )}
+
       {showForm && (
         <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
           <strong style={{ color: '#12234f' }}>＋ Nowy plan</strong>
@@ -13194,20 +13347,35 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
             <label style={{ fontSize: '12px', color: '#64748b' }}>Od<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
             <label style={{ fontSize: '12px', color: '#64748b' }}>Do<input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny pracy
+          <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 0.9fr 1.4fr', gap: '9px' }}>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny
               <input
                 type="number"
                 min="0"
                 max="24"
-                step="0.25"
+                step="1"
                 value={hoursWorked}
                 onChange={(e) => setHoursWorked(e.target.value)}
                 placeholder="np. 4"
                 style={{ ...settingsInputStyle, marginTop: '4px' }}
               />
             </label>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>Minuty
+              <input
+                type="number"
+                min="0"
+                max="59"
+                step="1"
+                value={minutesWorked}
+                onChange={(e) => setMinutesWorked(e.target.value)}
+                placeholder="np. 30"
+                style={{ ...settingsInputStyle, marginTop: '4px' }}
+              />
+            </label>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={{ ...settingsInputStyle, alignSelf: 'end' }} />
+          </div>
+          <div style={{ color: '#718096', fontSize: '11px' }}>
+            Możesz wpisać np. <strong>4 h 30 min</strong>. Minuty mogą być od 0 do 59.
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" onClick={() => setShowForm(false)} className="back-button">Anuluj</button>
@@ -13250,9 +13418,12 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                   <div key={plan.id} style={{ border: plan.plan_type === 'vacation' ? '1px solid #8bc7a7' : '1px solid #d7e1eb', background: plan.plan_type === 'vacation' ? '#effaf4' : '#fff', borderRadius: '10px', padding: '8px' }}>
                     <div style={{ fontSize: '12px', fontWeight: 800, color: '#12234f' }}>{planIcon[plan.plan_type] || '📌'} {plan.title}</div>
                     <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>{getMemberName(plan.user_id)}</div>
-                    {plan.hours_worked != null && <div style={{ marginTop: '3px', fontSize: '11px', color: '#1670c5', fontWeight: 800 }}>⏱️ {Number(plan.hours_worked).toLocaleString('pl-PL', { maximumFractionDigits: 2 })} h</div>}
+                    {plan.hours_worked != null && <div style={{ marginTop: '3px', fontSize: '11px', color: '#1670c5', fontWeight: 800 }}>⏱️ {formatWorkedHours(plan.hours_worked)}</div>}
                     {plan.note && <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>{plan.note}</div>}
-                    <button type="button" onClick={() => removePlan(plan)} style={{ marginTop: '5px', border: 'none', background: 'transparent', color: '#c53030', fontSize: '10px', fontWeight: 800, padding: 0 }}>Usuń</button>
+                    <div style={{ display: 'flex', gap: '9px', alignItems: 'center', marginTop: '6px' }}>
+                      <button type="button" onClick={() => openEditPlan(plan)} style={{ border: 'none', background: 'transparent', color: '#1670c5', fontSize: '10px', fontWeight: 800, padding: 0 }}>✏️ Edytuj</button>
+                      <button type="button" onClick={() => removePlan(plan)} style={{ border: 'none', background: 'transparent', color: '#c53030', fontSize: '10px', fontWeight: 800, padding: 0 }}>Usuń</button>
+                    </div>
                   </div>
                 ))}
 

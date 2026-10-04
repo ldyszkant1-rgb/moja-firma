@@ -154,16 +154,16 @@ function formatDisplayMoney(value) {
 }
 
 function capitalizeWordsForSave(value) {
-  return String(value ?? '')
-    .trim()
-    .split(/\s+/)
-    .map((word) =>
-      word.replace(
-        /[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/,
-        (char) => char.toUpperCase()
-      )
-    )
-    .join(' ')
+  const text = String(value ?? '').trim()
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
+}
+
+function getInvoiceRemaining(invoice) {
+  const gross = Math.max(0, Number(invoice?.grossAmount || 0))
+  const paid = Math.max(0, Number(invoice?.paidAmount || 0))
+  const vatSettled = Math.max(0, Number(invoice?.vatSettledAmount || 0))
+
+  return Math.max(0, gross - vatSettled - paid)
 }
 
 function capitalizeDisplay(value) {
@@ -2988,9 +2988,11 @@ function StartPage({
   const dashboardReceivables = invoices
     .filter((invoice) => invoice.status !== 'Zapłacona' && invoice.status !== 'Anulowana' && Number(invoice.grossAmount || 0) > 0)
     .map((invoice) => {
-      const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const paid = Math.min(gross, Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0)))
-      const remaining = Math.max(0, gross - paid)
+      const paid = Math.max(0, Number(dashboardPaidByInvoice.get(String(invoice.id)) || 0))
+      const remaining = getInvoiceRemaining({
+        ...invoice,
+        paidAmount: paid,
+      })
       return {
         invoice,
         remaining,
@@ -3000,25 +3002,6 @@ function StartPage({
     .filter((item) => item.remaining > 0.01)
 
   const dashboardReceivablesGross = dashboardReceivables.reduce((sum, item) => sum + item.remaining, 0)
-
-  useEffect(() => {
-    console.table(
-      dashboardReceivables.map(({ invoice, remaining }) => {
-        const payments = allJobPayments
-          .filter((payment) => String(payment.invoiceId || '') === String(invoice.id))
-          .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
-
-        return {
-          numer: invoice.invoiceNumber || '(brak numeru)',
-          status: invoice.status || '',
-          brutto: Number(invoice.grossAmount || 0),
-          wpłaty: payments,
-          'pozostało': remaining,
-          realizacja: jobs.find((job) => String(job.id) === String(invoice.jobId))?.name || '',
-        }
-      })
-    )
-  }, [dashboardReceivablesGross, invoices, allJobPayments, jobs])
 
   const pendingGeneral = (generalReminders || []).filter((item) => !item.done)
 
@@ -3815,7 +3798,7 @@ function JobCard({
   const invoiceVatSettled = Number(linkedInvoice?.vatSettledAmount || 0)
   const invoiceGross = Number(linkedInvoice?.grossAmount || 0)
   const invoiceSettledTotal = invoicePaid + invoiceVatSettled
-  const invoiceRemaining = Math.max(0, invoiceGross - invoiceSettledTotal)
+  const invoiceRemaining = getInvoiceRemaining(linkedInvoice)
   const invoiceStatusLabel = linkedInvoice
     ? invoiceRemaining <= 0.01
       ? 'Zapłacona'

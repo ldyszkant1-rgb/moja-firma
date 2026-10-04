@@ -5417,12 +5417,13 @@ function JobDetails({
     const percentage = Number(share.percentage || 0)
     const hours = (teamLaborMinutes / 60) * (percentage / 100)
     const profit = jobProfit * (percentage / 100)
-    return {
-      ...share,
-      hours,
-      profit,
-      hourly: hours > 0 ? profit / hours : 0,
-    }
+    const assignedMember = assignedEmployeeLabor.find(
+      (member) =>
+        String(member.user_id) === String(share.employeeId) ||
+        String(member.display_name || '').trim().toLowerCase() === String(share.employeeName || '').trim().toLowerCase()
+    )
+    const laborCost = assignedMember?.laborCost || 0
+    return { ...share, hours, profit, laborCost, hourly: hours > 0 ? profit / hours : 0 }
   })
 
   const resetCostForm = () => {
@@ -8098,9 +8099,23 @@ function JobDetails({
                 <strong>{share.employeeName}</strong>
                 <strong>{formatMoney(share.profit)}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px', fontSize: '12px', color: '#718096' }}>
-                <span>{share.percentage}% zysku • {formatDuration(share.hours * 60)}</span>
-                <strong style={{ color: '#12234f' }}>{share.hours > 0 ? formatMoney(share.hourly) + ' / h' : 'brak czasu'}</strong>
+              <div style={{ display: 'grid', gap: '5px', marginTop: '7px', fontSize: '12px', color: '#718096' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>Udział zysku ({share.percentage}%)</span>
+                  <strong>{formatMoney(share.profit)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>Koszt robocizny</span>
+                  <strong>{formatMoney(share.laborCost)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>Roboczogodziny udziału</span>
+                  <span>{formatDuration(share.hours * 60)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', paddingTop: '5px', borderTop: '1px solid #e5ebf1' }}>
+                  <span>Zysk / roboczogodz.</span>
+                  <strong style={{ color: '#12234f' }}>{share.hours > 0 ? formatMoney(share.hourly) + ' / h' : '—'}</strong>
+                </div>
               </div>
             </div>
           ))}

@@ -37,9 +37,21 @@ function mapPayload(cost, organizationId) {
 }
 
 async function getOrganizationId() {
-  const { data, error } = await supabase.rpc('current_organization_id')
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
+  const userId = userData?.user?.id
+  if (!userId) throw new Error('Brak zalogowanego użytkownika.')
+
+  const { data, error } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .single()
+
   if (error) throw error
-  return data
+  return data.organization_id
 }
 
 export async function getJobCosts(jobId) {

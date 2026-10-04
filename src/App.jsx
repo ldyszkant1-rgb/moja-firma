@@ -8109,8 +8109,28 @@ function JobDetails({
         <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '13px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
           <div style={{ display: 'grid', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Przychód</span>
+              <strong>{formatMoney(jobRevenue)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Koszty materiałów / inne</span>
+              <strong>{formatMoney(totalJobCosts - manualLaborCosts)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
               <span>Koszt robocizny</span>
               <strong>{formatMoney(effectiveLaborCost)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', paddingTop: '7px', borderTop: '1px solid #b9e3c7' }}>
+              <strong>ZYSK ROBOTY</strong>
+              <strong>{formatMoney(jobProfit)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Marża</span>
+              <strong>{jobRevenue > 0 ? (jobProfit / jobRevenue * 100).toFixed(1) + '%' : '—'}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <span>Roboczogodziny</span>
+              <strong>{formatDuration(teamLaborMinutes)} min</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
               <span>Zysk / roboczogodzina</span>

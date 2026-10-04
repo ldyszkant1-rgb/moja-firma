@@ -8823,20 +8823,30 @@ function FinancePage({
       const gross = Math.max(0, Number(invoice.grossAmount || 0))
       const net = Math.max(0, Number(invoice.netAmount || 0))
       const vat = Math.max(0, Number(invoice.vatAmount || (gross - net)))
-      const paid = invoice.jobId
+      const customerPaid = invoice.jobId
         ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
         : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
 
-      // Należność pokazujemy w dwóch wartościach:
-      // BRUTTO = ile klient ma jeszcze faktycznie zapłacić,
-      // NETTO = kwota bez VAT,
-      // VAT = część pozostałej należności przypadająca na VAT.
-      // Dzięki temu użytkownik od razu widzi, ile pieniędzy jest jego,
-      // a ile stanowi VAT.
-      const remaining = Math.max(0, gross - paid)
-      const netRatio = gross > 0 ? Math.min(1, net / gross) : 1
-      const remainingNet = Math.min(remaining, remaining * netRatio)
-      const remainingVat = Math.max(0, remaining - remainingNet)
+      // VAT rozliczony wcześniej nie jest wpłatą klienta, ale zmniejsza
+      // kwotę, która nadal pozostaje do zapłaty z faktury.
+      const vatSettled = Math.min(
+        vat,
+        Math.max(0, Number(invoice.vatSettledAmount || 0))
+      )
+
+      // Wpłaty klienta najpierw pokrywają netto, a dopiero nadwyżka
+      // może pokrywać VAT. Dzięki temu po rozliczeniu całego VAT-u
+      // pozostała należność jest pokazana jako samo netto.
+      const netPaidByCustomer = Math.min(net, Math.max(0, customerPaid))
+      const vatPaidByCustomer = Math.min(
+        Math.max(0, vat - vatSettled),
+        Math.max(0, customerPaid - net)
+      )
+
+      const remainingNet = Math.max(0, net - netPaidByCustomer)
+      const remainingVat = Math.max(0, vat - vatSettled - vatPaidByCustomer)
+      const remaining = Math.max(0, remainingNet + remainingVat)
+      const paid = Math.min(gross, customerPaid + vatSettled)
       const dueDate = invoice.dueDate || null
       const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()

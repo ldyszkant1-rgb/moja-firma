@@ -3834,8 +3834,42 @@ function JobCard({
   const tasks = (Array.isArray(job.notes) ? job.notes : []).filter(Boolean)
   const pendingTasks = tasks.filter((task) => !task.done)
   const completedTaskCount = tasks.filter((task) => task.done).length
-  const visibleTasks = tasks.filter((task) => !task.done).slice(0, 3)
-  const completedTasks = tasks.filter((task) => task.done)
+  const today = getTodayString()
+  const taskPriorityOrder = { urgent: 3, high: 2, normal: 1 }
+
+  const sortTasks = (a, b) => {
+    if (Boolean(a.done) !== Boolean(b.done)) {
+      return a.done ? 1 : -1
+    }
+
+    const priorityA = taskPriorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
+    const priorityB = taskPriorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
+
+    if (priorityA !== priorityB) {
+      return priorityB - priorityA
+    }
+
+    const dateA = a.reminderEnabled && a.date ? a.date : ''
+    const dateB = b.reminderEnabled && b.date ? b.date : ''
+    const overdueA = !a.done && dateA && dateA < today ? 1 : 0
+    const overdueB = !b.done && dateB && dateB < today ? 1 : 0
+
+    if (overdueA !== overdueB) {
+      return overdueB - overdueA
+    }
+
+    if (dateA !== dateB) {
+      if (!dateA) return 1
+      if (!dateB) return -1
+      return dateA.localeCompare(dateB)
+    }
+
+    return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+  }
+
+  const sortedTasks = [...tasks].sort(sortTasks)
+  const visibleTasks = sortedTasks.filter((task) => !task.done).slice(0, 3)
+  const completedTasks = sortedTasks.filter((task) => task.done)
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
   const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
@@ -7430,7 +7464,34 @@ function JobDetails({
 
         <div className="notes-list notes-list-modern">
 
-          {(editedJob.notes || []).map(
+          {[...(editedJob.notes || [])]
+            .sort((a, b) => {
+              if (Boolean(a.done) !== Boolean(b.done)) {
+                return a.done ? 1 : -1
+              }
+
+              const priorityOrder = { urgent: 3, high: 2, normal: 1 }
+              const priorityA = priorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
+              const priorityB = priorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
+
+              if (priorityA !== priorityB) return priorityB - priorityA
+
+              const dateA = a.reminderEnabled && a.date ? a.date : ''
+              const dateB = b.reminderEnabled && b.date ? b.date : ''
+              const today = getTodayString()
+              const overdueA = !a.done && dateA && dateA < today ? 1 : 0
+              const overdueB = !b.done && dateB && dateB < today ? 1 : 0
+
+              if (overdueA !== overdueB) return overdueB - overdueA
+              if (dateA !== dateB) {
+                if (!dateA) return 1
+                if (!dateB) return -1
+                return dateA.localeCompare(dateB)
+              }
+
+              return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
+            })
+            .map(
             (note) => (
 
               <div
@@ -7566,6 +7627,37 @@ function JobDetails({
                       : `${formatDate(note.date || '')}${note.time ? ` • ${note.time}` : ''}`
                     }
                   </div>
+
+                  {note.reminderEnabled && note.date && (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginTop: '7px',
+                        padding: '5px 9px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        color: note.date < getTodayString() && !note.done
+                          ? '#b42318'
+                          : note.date === getTodayString() && !note.done
+                            ? '#9a6800'
+                            : '#68758a',
+                        background: note.date < getTodayString() && !note.done
+                          ? '#fff0ee'
+                          : note.date === getTodayString() && !note.done
+                            ? '#fff8e8'
+                            : '#f1f5f9',
+                      }}
+                    >
+                      {note.date < getTodayString() && !note.done
+                        ? '⚠ PO TERMINIE'
+                        : note.date === getTodayString() && !note.done
+                          ? '📅 DZISIAJ'
+                          : ('📅 ' + formatDate(note.date) + (note.time ? ' • ' + note.time : ''))}
+                    </div>
+                  )}
 
                   {note.reminderEnabled && (
 

@@ -6619,6 +6619,78 @@ function JobDetails({
             <option value="urgent">🔴 Pilny priorytet</option>
           </select>
 
+          <div style={{
+            marginTop: '4px',
+            padding: '14px',
+            borderRadius: '14px',
+            background: '#f7faff',
+            border: '1px solid #dce7f1',
+          }}>
+            <div style={{
+              fontSize: '12px',
+              fontWeight: 800,
+              color: '#64748b',
+              marginBottom: '9px',
+              textTransform: 'uppercase',
+            }}>
+              Ekipa przypisana do roboty
+            </div>
+
+            {organizationMembers.length === 0 ? (
+              <div style={{ fontSize: '13px', color: '#718096' }}>
+                Brak pracowników firmy do przypisania.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {organizationMembers.map((member) => {
+                  const checked = (editedJob.assignedEmployeeIds || [])
+                    .map(String)
+                    .includes(String(member.user_id))
+                  return (
+                    <label
+                      key={member.user_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 11px',
+                        borderRadius: '11px',
+                        background: checked ? '#eaf5ff' : '#fff',
+                        border: checked ? '1px solid #8bc7f4' : '1px solid #e1e8ef',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const current = Array.isArray(editedJob.assignedEmployeeIds)
+                            ? editedJob.assignedEmployeeIds.map(String)
+                            : []
+                          const next = e.target.checked
+                            ? [...new Set([...current, String(member.user_id)])]
+                            : current.filter((id) => id !== String(member.user_id))
+                          setEditedJob({
+                            ...editedJob,
+                            assignedEmployeeIds: next,
+                          })
+                        }}
+                        style={{ width: '18px', height: '18px' }}
+                      />
+                      <span style={{ fontWeight: 700, color: '#1f2f46' }}>
+                        {member.display_name || member.email || 'Pracownik'}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#718096' }}>
+              Możesz przypisać jedną lub kilka osób. Zmiana zapisze się razem z robotą.
+            </div>
+          </div>
+
         </div>
 
       ) : (
@@ -6637,6 +6709,38 @@ function JobDetails({
           {editedJob.clientId && (
             <div className="job-client-detail">
               👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.shortName || (clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
+            </div>
+          )}
+
+          {(editedJob.assignedEmployeeIds || []).length > 0 && (
+            <div style={{
+              marginTop: '8px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px',
+            }}>
+              {(editedJob.assignedEmployeeIds || []).map((id) => {
+                const member = (organizationMembers || []).find(
+                  (item) => String(item.user_id) === String(id)
+                )
+                return (
+                  <span
+                    key={id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '5px 9px',
+                      borderRadius: '999px',
+                      background: '#eef6ff',
+                      color: '#1769aa',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                    }}
+                  >
+                    👷 {member?.display_name || member?.email || 'Pracownik'}
+                  </span>
+                )
+              })}
             </div>
           )}
 

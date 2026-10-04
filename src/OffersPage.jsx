@@ -36,7 +36,7 @@ function statusStyle(status) {
   return { background: '#e9f5ff', color: '#087fce' }
 }
 
-function printOffer(offer, client) {
+function printOffer(offer, client, settings = {}) {
   if (typeof window === 'undefined') return
 
   const popup = window.open('', '_blank', 'width=900,height=1100')

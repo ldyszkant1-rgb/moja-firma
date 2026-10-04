@@ -2656,7 +2656,7 @@ return (
 
 
         {activePage === 'calendar' && (
-          <CalendarPage jobs={jobs} onOpenJob={setSelectedJob} />
+          <CalendarPage jobs={jobs} onOpenJob={setSelectedJob} onUpdateJob={updateJob} />
         )}
 
         {activePage === 'jobs' && (

@@ -5196,6 +5196,7 @@ function JobDetails({
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
   const [profitShareSaving, setProfitShareSaving] = useState(false)
+  const [expandedEmployeeHistoryId, setExpandedEmployeeHistoryId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -7893,32 +7894,85 @@ function JobDetails({
           <div style={{ marginTop: '16px' }}>
             <div className="small-label">ROZLICZENIE EKIPY</div>
             <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
-              {assignedEmployeeLabor.map((member) => (
-                <div
-                  key={member.user_id}
-                  style={{
-                    padding: '11px 12px',
-                    borderRadius: '12px',
-                    background: '#f8fafc',
-                    border: '1px solid #e5ebf1',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                    <strong>{member.display_name || member.email || 'Pracownik'}</strong>
-                    <strong>{formatMoney(member.laborCost)}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px', fontSize: '12px', color: '#718096' }}>
-                    <span>Udział: {formatDuration(member.hours * 60)}</span>
-                    <span>{formatMoney(member.hourlyRate)} / h</span>
-                  </div>
-                  {member.directMinutes > 0 && (
-                    <div style={{ marginTop: '7px', paddingTop: '7px', borderTop: '1px solid #e5ebf1', display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '11px', color: '#718096' }}>
-                      <span>Własne wpisy: {formatDuration(member.directMinutes)}</span>
-                      <strong>{formatMoney(member.directLaborCost)}</strong>
+              {assignedEmployeeLabor.map((member) => {
+                const isExpanded = String(expandedEmployeeHistoryId || '') === String(member.user_id)
+                const memberHistory = jobTimeEntries.filter(
+                  (entry) =>
+                    !entry.employeeId ||
+                    String(entry.employeeId) === String(member.user_id)
+                )
+                const memberHistoryMinutes = memberHistory.reduce(
+                  (sum, entry) => sum + getEntryMinutes(entry),
+                  0
+                )
+                const memberHistoryCost = (memberHistoryMinutes / 60) * member.hourlyRate
+
+                return (
+                  <div
+                    key={member.user_id}
+                    style={{
+                      padding: '11px 12px',
+                      borderRadius: '12px',
+                      background: '#f8fafc',
+                      border: '1px solid #e5ebf1',
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="document-button"
+                      onClick={() => setExpandedEmployeeHistoryId(isExpanded ? null : member.user_id)}
+                      style={{ width: '100%', textAlign: 'left', padding: '0', border: '0', background: 'transparent' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                        <strong>{member.display_name || member.email || 'Pracownik'}</strong>
+                        <span style={{ fontSize: '18px' }}>{isExpanded ? '⌃' : '⌄'}</span>
+                      </div>
+                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '7px', fontSize: '12px', color: '#718096' }}>
+                      <span>Udział: {formatDuration(member.hours * 60)}</span>
+                      <span>{formatMoney(member.hourlyRate)} / h</span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '4px' }}>
+                      <strong>Koszt: {formatMoney(member.laborCost)}</strong>
+                      {member.directMinutes > 0 && (
+                        <span style={{ fontSize: '11px', color: '#718096' }}>
+                          Własne: {formatDuration(member.directMinutes)}
+                        </span>
+                      )}
+                    </div>
+
+                    {isExpanded && (
+                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e5ebf1' }}>
+                        <div style={{ fontSize: '11px', color: '#718096', marginBottom: '7px', fontWeight: 800 }}>
+                          HISTORIA PRACY • {formatDuration(memberHistoryMinutes)} • {formatMoney(memberHistoryCost)}
+                        </div>
+                        <div style={{ display: 'grid', gap: '6px' }}>
+                          {memberHistory.map((entry) => (
+                            <div
+                              key={entry.id}
+                              style={{
+                                padding: '8px 9px',
+                                borderRadius: '9px',
+                                background: '#fff',
+                                border: '1px solid #edf1f5',
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                                <strong>{getTimeLabel(entry.timeType)}</strong>
+                                <strong>{formatDuration(getEntryMinutes(entry))}</strong>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginTop: '3px', fontSize: '10px', color: '#718096' }}>
+                                <span>{entry.employeeId ? 'Własny wpis' : 'Ekipa'}</span>
+                                <span>{entry.startedAt ? formatCreatedAt(entry.startedAt) : ''}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '11px 12px', borderRadius: '12px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
                 <strong>Razem koszt ekipy</strong>
                 <strong>{formatMoney(automaticLaborCost)}</strong>

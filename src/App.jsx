@@ -5264,21 +5264,10 @@ function JobDetails({
         await stopJobTimer(entry)
       }
 
-      // Usuwamy po ID i od razu żądamy zwrotu usuniętego rekordu.
-      // Dzięki temu od razu wiemy, czy Supabase faktycznie wykonał DELETE.
-      const { data: deletedRow, error: deleteError } = await supabase
-        .from('job_time_entries')
-        .delete()
-        .eq('id', entry.id)
-        .eq('job_id', editedJob.id)
-        .select('id')
-        .maybeSingle()
-
-      if (deleteError) throw deleteError
-
-      if (!deletedRow?.id) {
-        throw new Error('Supabase nie usunął wpisu czasu (brak usuniętego rekordu).')
-      }
+      // Usuwanie wykonujemy przez bezpieczną funkcję RPC w Supabase.
+      // Omijamy problem DELETE + RLS/PostgREST, który może zwrócić pusty
+      // wynik mimo poprawnego wpisu.
+      await deleteJobTimeEntry(entry.id)
 
       // Najpierw usuwamy go lokalnie, żeby UI reagował natychmiast.
       setJobTimeEntries((current) =>

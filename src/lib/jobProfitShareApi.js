@@ -4,7 +4,7 @@ function mapShare(row) {
   return {
     id: row.id,
     jobId: row.job_id,
-    employeeId: row.employee_id || 'team',
+    employeeId: row.employee_id || `participant:${row.id}`,
     employeeName: row.employee_name || '',
     percentage: Number(row.percentage || 0),
     createdAt: row.created_at || null,
@@ -47,7 +47,7 @@ export async function saveJobProfitShares(jobId, shares) {
     .map((share) => ({
       organization_id: organizationId,
       job_id: jobId,
-      employee_id: share.employeeId === 'team' ? null : share.employeeId,
+      employee_id: String(share.employeeId || '').startsWith('participant:') || String(share.employeeId || '').startsWith('profit:') ? null : share.employeeId,
       employee_name: String(share.employeeName || '').trim(),
       percentage: Math.max(0, Math.min(100, Number(share.percentage || 0))),
     }))

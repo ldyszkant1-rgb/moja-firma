@@ -12930,6 +12930,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     next.setDate(next.getDate() + amount)
     return next
   }
+  const getMonthStart = (date) => new Date(date.getFullYear(), date.getMonth(), 1)
   const getMonday = (date) => {
     const result = new Date(date)
     result.setHours(0, 0, 0, 0)
@@ -12946,7 +12947,9 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     return start <= end ? { start, end } : { start: end, end: start }
   }
 
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
+  const today = toDateString(new Date())
+  const [monthCursor, setMonthCursor] = useState(() => getMonthStart(new Date()))
+  const [selectedDate, setSelectedDate] = useState(today)
   const [plans, setPlans] = useState([])
   const [calendarExclusions, setCalendarExclusions] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -12955,8 +12958,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [type, setType] = useState('job')
   const [jobId, setJobId] = useState('')
   const [userId, setUserId] = useState('')
-  const [startDate, setStartDate] = useState(toDateString(new Date()))
-  const [endDate, setEndDate] = useState(toDateString(new Date()))
+  const [startDate, setStartDate] = useState(today)
+  const [endDate, setEndDate] = useState(today)
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [hoursWorked, setHoursWorked] = useState('')
@@ -12968,26 +12971,42 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [draggedJobId, setDraggedJobId] = useState(null)
   const [movingJobId, setMovingJobId] = useState(null)
 
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-  const weekEnd = days[6]
-  const today = toDateString(new Date())
+  const gridStart = getMonday(getMonthStart(monthCursor))
+  const gridEnd = addDays(gridStart, 41)
+  const calendarDays = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
+  const monthTitle = monthCursor.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
+  const selectedPlans = plans.filter((plan) => String(plan.plan_date) === String(selectedDate))
+  const selectedDay = makeDate(selectedDate)
+  const selectedJobs = jobs.filter((job) => {
+    const range = getRange(job)
+    if (!range) return false
+    const excluded = calendarExclusions.some(
+      (item) =>
+        String(item.job_id) === String(job.id) &&
+        String(item.excluded_date) === String(selectedDate)
+    )
+    return selectedDay >= range.start && selectedDay <= range.end && !excluded
+  })
 
   const loadPlans = async () => {
     if (!organizationId) return
+
     const { data, error } = await supabase.rpc('list_calendar_plans', {
-      p_start_date: toDateString(weekStart),
-      p_end_date: toDateString(weekEnd),
+      p_start_date: toDateString(gridStart),
+      p_end_date: toDateString(gridEnd),
     })
+
     if (error) {
       console.error('Nie udało się wczytać terminarza:', error)
       return
     }
+
     setPlans(data || [])
 
     const { data: exclusions, error: exclusionsError } = await supabase.rpc('list_calendar_job_exclusions', {
       p_organization_id: organizationId,
-      p_start_date: toDateString(weekStart),
-      p_end_date: toDateString(weekEnd),
+      p_start_date: toDateString(gridStart),
+      p_end_date: toDateString(gridEnd),
     })
 
     if (exclusionsError) {
@@ -13009,7 +13028,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', refresh)
     }
-  }, [organizationId, weekStart.getTime()])
+  }, [organizationId, gridStart.getTime()])
 
   const getMemberName = (id) => {
     if (!id) return 'Cała ekipa'
@@ -13026,11 +13045,44 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     other: '📌',
   }
 
+  const getDayPlans = (date) =>
+    plans.filter((plan) => String(plan.plan_date) === String(date))
+
+  const getDayJobs = (date) => {
+    const day = makeDate(date)
+    return jobs.filter((job) => {
+      const range = getRange(job)
+      if (!range || day < range.start || day > range.end) return false
+      return !calendarExclusions.some(
+        (item) =>
+          String(item.job_id) === String(job.id) &&
+          String(item.excluded_date) === String(date)
+      )
+    })
+  }
+
+  const openFormForDay = (date) => {
+    setSaveMessage('')
+    setSaving(false)
+    setSelectedDate(date)
+    setStartDate(date)
+    setEndDate(date)
+    setShowForm(true)
+  }
+
   const savePlan = async (event) => {
     event.preventDefault()
     setSaveMessage('')
-    if (!organizationId) { setSaveMessage('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.'); return }
-    if (!startDate || !endDate) { setSaveMessage('Wybierz zakres dat.'); return }
+
+    if (!organizationId) {
+      setSaveMessage('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.')
+      return
+    }
+    if (!startDate || !endDate) {
+      setSaveMessage('Wybierz zakres dat.')
+      return
+    }
+
     const start = makeDate(startDate)
     const end = makeDate(endDate)
     if (start > end) {
@@ -13066,7 +13118,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     const rows = []
     for (let date = new Date(start); date <= end; date = addDays(date, 1)) {
       rows.push({
-        organization_id: organizationId,
         user_id: userId || null,
         job_id: type === 'job' ? jobId : null,
         plan_type: type,
@@ -13094,10 +13145,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         if (!data) throw new Error('Baza nie zwróciła zapisanego wpisu.')
         savedRows.push(data)
       }
-      const data = savedRows
-      // Po zapisie pobieramy stan bezpośrednio z Supabase. Dzięki temu
-      // terminarz po zmianie zakładki/odświeżeniu pokazuje dokładnie to,
-      // co znajduje się w bazie, a nie tylko lokalny stan Reacta.
+
       setPlans((current) => {
         const withoutSaved = current.filter(
           (item) => !savedRows.some((saved) => String(saved.id) === String(item.id))
@@ -13106,6 +13154,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           String(a.plan_date).localeCompare(String(b.plan_date))
         )
       })
+
       await loadPlans()
       setSaveMessage(rows.length > 1 ? 'Plan zapisany na cały wybrany okres.' : 'Plan zapisany.')
       setShowForm(false)
@@ -13116,7 +13165,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       await showCustomAlert(rows.length > 1 ? 'Plan został wpisany na cały wybrany okres.' : 'Plan został zapisany.')
     } catch (error) {
       console.error('Nie udało się zapisać planu:', error)
-      await showCustomAlert('Nie udało się zapisać planu.')
+      await showCustomAlert(error?.message || 'Nie udało się zapisać planu.')
     } finally {
       setSaving(false)
     }
@@ -13176,17 +13225,18 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const removeDayPlans = async (date, dayPlans) => {
     if (!dayPlans.length) return
+
     const ids = new Set(dayPlans.map((plan) => String(plan.id)))
     setPlans((current) => current.filter((plan) => !ids.has(String(plan.id))))
 
     const { data: deletedCount, error } = await supabase.rpc('delete_calendar_day', {
       p_plan_date: date,
     })
+
     if (error || Number(deletedCount) !== dayPlans.length) {
       console.error('Nie udało się usunąć planu dnia:', error, { deletedCount, expected: dayPlans.length })
       await loadPlans()
       await showCustomAlert(error?.message || 'Nie udało się usunąć wszystkich wpisów z tego dnia.')
-      return
     }
   }
 
@@ -13196,11 +13246,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
       p_plan_id: plan.id,
     })
+
     if (error || !deleted) {
       console.error('Nie udało się usunąć wpisu:', error, { deleted })
       await loadPlans()
       await showCustomAlert(error?.message || 'Nie udało się usunąć wpisu.')
-      return
     }
   }
 
@@ -13234,6 +13284,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const moveJob = async (job, targetDate) => {
     const range = getRange(job)
     if (!range || !onUpdateJob) return
+
     const duration = Math.round((range.end.getTime() - range.start.getTime()) / 86400000)
     setMovingJobId(job.id)
     try {
@@ -13247,67 +13298,399 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     }
   }
 
-  const openFormForDay = (date) => {
-    setSaveMessage('')
-    setSaving(false)
-    setStartDate(date)
-    setEndDate(date)
-    setShowForm(true)
+  const changeMonth = (amount) => {
+    setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1))
+  }
+
+  const goToday = () => {
+    const now = new Date()
+    const date = toDateString(now)
+    setMonthCursor(getMonthStart(now))
+    setSelectedDate(date)
   }
 
   return (
     <div>
-      <div className="small-label">TERMINARZ 3.0</div>
-      <h1 style={{ marginBottom: '6px' }}>Planowanie pracy</h1>
+      <div className="small-label">TERMINARZ 4.0</div>
+      <h1 style={{ marginBottom: '6px' }}>Kalendarz pracy</h1>
       <div style={{ color: '#718096', fontSize: '13px', marginBottom: '14px' }}>
-        Wpisujecie ręcznie, gdzie pracowaliście danego dnia, albo planujecie cały tydzień z góry. Urlopy i inne nieobecności są w tym samym kalendarzu.
+        Normalny kalendarz miesięczny. Kliknij dzień, aby zobaczyć lub wpisać pracę i godziny.
       </div>
 
-      <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '12px' }}>
-        <button type="button" onClick={() => setWeekStart((d) => addDays(d, -7))} style={calendarSmallButtonStyle}>← Poprzedni</button>
-        <button type="button" onClick={() => setWeekStart(getMonday(new Date()))} style={calendarSmallButtonStyle}>Dzisiaj</button>
-        <button type="button" onClick={() => setWeekStart((d) => addDays(d, 7))} style={calendarSmallButtonStyle}>Następny →</button>
-        <button type="button" onClick={() => { setSaveMessage(''); setSaving(false); setStartDate(toDateString(weekStart)); setEndDate(toDateString(weekEnd)); setShowForm(true) }} style={{ ...calendarSmallButtonStyle, background: '#168fe5', color: '#fff', borderColor: '#168fe5' }}>＋ Zaplanuj zakres</button>
+      <div style={{
+        background: '#f8fbfe',
+        border: '1px solid #dce7f1',
+        borderRadius: '18px',
+        padding: '12px',
+        marginBottom: '14px',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          marginBottom: '12px',
+        }}>
+          <button type="button" onClick={() => changeMonth(-1)} style={calendarMonthNavButtonStyle}>‹</button>
+
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{
+              color: '#12234f',
+              fontSize: '22px',
+              fontWeight: 900,
+              textTransform: 'capitalize',
+              lineHeight: 1.15,
+            }}>
+              {monthTitle}
+            </div>
+            <button type="button" onClick={goToday} style={{
+              border: 'none',
+              background: 'transparent',
+              color: '#1670c5',
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '4px 8px',
+              cursor: 'pointer',
+            }}>
+              Dzisiaj
+            </button>
+          </div>
+
+          <button type="button" onClick={() => changeMonth(1)} style={calendarMonthNavButtonStyle}>›</button>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: '4px',
+          marginBottom: '4px',
+        }}>
+          {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((dayName, index) => (
+            <div key={dayName} style={{
+              textAlign: 'center',
+              color: index >= 5 ? '#8b96a8' : '#66758a',
+              fontSize: '10px',
+              fontWeight: 900,
+              padding: '4px 0',
+            }}>
+              {dayName}
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: '4px',
+        }}>
+          {calendarDays.map((day) => {
+            const date = toDateString(day)
+            const dayPlans = getDayPlans(date)
+            const dayJobs = getDayJobs(date)
+            const isCurrentMonth = day.getMonth() === monthCursor.getMonth()
+            const isToday = date === today
+            const isSelected = date === selectedDate
+            const hasHours = dayPlans.some((plan) => plan.hours_worked != null && Number(plan.hours_worked) > 0)
+            const hasPlans = dayPlans.length > 0 || dayJobs.length > 0
+
+            return (
+              <button
+                key={date}
+                type="button"
+                onClick={() => setSelectedDate(date)}
+                style={{
+                  minWidth: 0,
+                  minHeight: '74px',
+                  padding: '6px 4px',
+                  borderRadius: '11px',
+                  border: isSelected
+                    ? '2px solid #168fe5'
+                    : isToday
+                      ? '2px solid #8fc7ef'
+                      : '1px solid #e2e8f0',
+                  background: isSelected
+                    ? '#eef8ff'
+                    : isToday
+                      ? '#f6fbff'
+                      : '#ffffff',
+                  color: isCurrentMonth ? '#12234f' : '#a6afbc',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '25px',
+                  height: '25px',
+                  margin: '0 auto 3px',
+                  borderRadius: '50%',
+                  background: isToday ? '#168fe5' : 'transparent',
+                  color: isToday ? '#fff' : 'inherit',
+                  fontSize: '12px',
+                  fontWeight: 900,
+                }}>
+                  {day.getDate()}
+                </div>
+
+                <div style={{
+                  minHeight: '22px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '3px',
+                  flexWrap: 'wrap',
+                }}>
+                  {dayJobs.length > 0 && <span style={calendarDotStyle('#168fe5')} title="Zaplanowana robota" />}
+                  {dayPlans.some((plan) => plan.plan_type === 'vacation') && <span style={calendarDotStyle('#35a85a')} title="Urlop" />}
+                  {dayPlans.some((plan) => plan.plan_type !== 'vacation' && plan.plan_type !== 'job') && <span style={calendarDotStyle('#8b96a8')} title="Nieobecność / inne" />}
+                  {hasHours && <span style={calendarDotStyle('#f59e0b')} title="Wpisane godziny" />}
+                </div>
+
+                {hasPlans && (
+                  <div style={{
+                    marginTop: '2px',
+                    textAlign: 'center',
+                    color: isSelected ? '#1670c5' : '#718096',
+                    fontSize: '8px',
+                    fontWeight: 800,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {dayPlans.length + dayJobs.length} wpis.
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: '10px',
+          marginTop: '11px',
+          paddingTop: '9px',
+          borderTop: '1px solid #e4ebf2',
+          color: '#66758a',
+          fontSize: '9px',
+          fontWeight: 700,
+        }}>
+          <span><i style={calendarDotStyle('#168fe5')} /> robota</span>
+          <span><i style={calendarDotStyle('#35a85a')} /> urlop</span>
+          <span><i style={calendarDotStyle('#8b96a8')} /> inne</span>
+          <span><i style={calendarDotStyle('#f59e0b')} /> godziny</span>
+        </div>
+      </div>
+
+      <div className="detail-card" style={{
+        marginBottom: '14px',
+        border: '1px solid #dce7f1',
+        background: '#ffffff',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          marginBottom: '10px',
+        }}>
+          <div>
+            <div style={{ color: '#718096', fontSize: '11px', fontWeight: 800 }}>WYBRANY DZIEŃ</div>
+            <strong style={{ color: '#12234f', fontSize: '18px' }}>{formatDate(selectedDate)}</strong>
+          </div>
+          <button
+            type="button"
+            onClick={() => openFormForDay(selectedDate)}
+            style={{
+              border: 'none',
+              background: '#168fe5',
+              color: '#fff',
+              borderRadius: '11px',
+              padding: '10px 12px',
+              fontSize: '12px',
+              fontWeight: 900,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ＋ Dodaj wpis
+          </button>
+        </div>
+
+        {selectedPlans.length === 0 && selectedJobs.length === 0 && (
+          <div style={{
+            padding: '18px 10px',
+            textAlign: 'center',
+            color: '#9aa6b5',
+            background: '#f8fbfe',
+            borderRadius: '12px',
+            fontSize: '12px',
+          }}>
+            Brak wpisów na ten dzień
+          </div>
+        )}
+
+        {selectedPlans.length > 0 && (
+          <div style={{ display: 'grid', gap: '7px', marginBottom: selectedJobs.length ? '9px' : 0 }}>
+            {selectedPlans.map((plan) => (
+              <div key={plan.id} style={{
+                border: plan.plan_type === 'vacation' ? '1px solid #9ed5b1' : '1px solid #d7e1eb',
+                background: plan.plan_type === 'vacation' ? '#effaf4' : '#f8fbfe',
+                borderRadius: '11px',
+                padding: '9px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: '#12234f', fontSize: '13px', fontWeight: 900 }}>
+                      {planIcon[plan.plan_type] || '📌'} {plan.title}
+                    </div>
+                    <div style={{ color: '#718096', fontSize: '10px', marginTop: '3px' }}>
+                      {getMemberName(plan.user_id)}
+                    </div>
+                    {plan.hours_worked != null && (
+                      <div style={{ color: '#1670c5', fontSize: '12px', fontWeight: 900, marginTop: '4px' }}>
+                        ⏱️ {formatWorkedHours(plan.hours_worked)}
+                      </div>
+                    )}
+                    {plan.note && (
+                      <div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>{plan.note}</div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                    <button type="button" onClick={() => openEditPlan(plan)} style={calendarTextButtonStyle}>✏️ Edytuj</button>
+                    <button type="button" onClick={() => removePlan(plan)} style={{ ...calendarTextButtonStyle, color: '#c53030' }}>Usuń</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => void removeDayPlans(selectedDate, selectedPlans)}
+              style={{
+                justifySelf: 'start',
+                border: '1px solid #f0b5b5',
+                background: '#fff7f7',
+                color: '#c53030',
+                borderRadius: '9px',
+                padding: '7px 9px',
+                fontSize: '10px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Usuń wszystkie wpisy tego dnia
+            </button>
+          </div>
+        )}
+
+        {selectedJobs.length > 0 && (
+          <div style={{ display: 'grid', gap: '7px' }}>
+            {selectedJobs.map((job) => {
+              const range = getRange(job)
+              const starts = range && toDateString(range.start) === selectedDate
+              const moving = String(movingJobId) === String(job.id + ':' + selectedDate)
+
+              return (
+                <div key={'job-' + job.id} style={{
+                  border: '1px solid #d6e3ef',
+                  background: '#fff',
+                  borderRadius: '11px',
+                  padding: '9px',
+                  opacity: moving ? 0.55 : 1,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenJob(job)}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                      width: '100%',
+                      textAlign: 'left',
+                      color: '#12234f',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <strong style={{ fontSize: '13px' }}>🏗️ {job.name}</strong>
+                    <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>
+                      📍 {job.location || 'Brak lokalizacji'}
+                    </div>
+                  </button>
+
+                  {starts && (
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '7px' }}>
+                      <button
+                        type="button"
+                        onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }}
+                        style={calendarMoveButtonStyle}
+                      >
+                        ← Przesuń
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }}
+                        style={calendarMoveButtonStyle}
+                      >
+                        Przesuń →
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={moving}
+                    onClick={() => void removeJobDayFromCalendar(job, selectedDate)}
+                    style={{
+                      width: '100%',
+                      minHeight: '30px',
+                      marginTop: '7px',
+                      border: '1px solid #f0b5b5',
+                      background: '#fff7f7',
+                      color: '#c53030',
+                      borderRadius: '8px',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      cursor: moving ? 'default' : 'pointer',
+                    }}
+                  >
+                    🗑 Usuń ten dzień z kalendarza
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {editingPlan && (
-        <form onSubmit={saveEditedPlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px', border: '1px solid #b9d8ee', background: '#f7fbff' }}>
+        <form onSubmit={saveEditedPlan} className="detail-card" style={{
+          marginBottom: '14px',
+          display: 'grid',
+          gap: '10px',
+          border: '1px solid #b9d8ee',
+          background: '#f7fbff',
+        }}>
           <strong style={{ color: '#12234f' }}>✏️ Edytuj wpis — {editingPlan.title}</strong>
           <div style={{ color: '#718096', fontSize: '12px' }}>
             {formatDate(String(editingPlan.plan_date))} · zmień czas pracy lub notatkę.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny
-              <input
-                type="number"
-                min="0"
-                max="24"
-                step="1"
-                value={editHours}
-                onChange={(e) => setEditHours(e.target.value)}
-                placeholder="np. 4"
-                style={{ ...settingsInputStyle, marginTop: '4px' }}
-              />
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Godziny
+              <input type="number" min="0" max="24" step="1" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="np. 4" style={{ ...settingsInputStyle, marginTop: '4px' }} />
             </label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Minuty
-              <input
-                type="number"
-                min="0"
-                max="59"
-                step="1"
-                value={editMinutes}
-                onChange={(e) => setEditMinutes(e.target.value)}
-                placeholder="np. 30"
-                style={{ ...settingsInputStyle, marginTop: '4px' }}
-              />
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Minuty
+              <input type="number" min="0" max="59" step="1" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="np. 30" style={{ ...settingsInputStyle, marginTop: '4px' }} />
             </label>
           </div>
-          <input
-            value={editNote}
-            onChange={(e) => setEditNote(e.target.value)}
-            placeholder="Notatka (opcjonalnie)"
-            style={settingsInputStyle}
-          />
+          <input value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" onClick={closeEditPlan} className="back-button">Anuluj</button>
             <button type="submit" disabled={saving} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz zmiany'}</button>
@@ -13317,8 +13700,24 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
       {showForm && (
         <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
-          <strong style={{ color: '#12234f' }}>＋ Nowy plan</strong>
-          {saveMessage && <div style={{ padding: '10px', borderRadius: '10px', background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5', color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534', fontWeight: 800, fontSize: '13px' }}>{saveMessage}</div>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+            <strong style={{ color: '#12234f' }}>＋ Nowy wpis</strong>
+            <button type="button" onClick={() => setShowForm(false)} className="back-button">Zamknij</button>
+          </div>
+
+          {saveMessage && (
+            <div style={{
+              padding: '10px',
+              borderRadius: '10px',
+              background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5',
+              color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534',
+              fontWeight: 800,
+              fontSize: '13px',
+            }}>
+              {saveMessage}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
             <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }} style={settingsInputStyle}>
               <option value="job">🏗️ Robota</option>
@@ -13335,147 +13734,100 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
               ))}
             </select>
           </div>
+
           {type === 'job' ? (
             <select value={jobId} onChange={(e) => setJobId(e.target.value)} style={settingsInputStyle}>
               <option value="">Wybierz robotę</option>
-              {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>)}
+              {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => (
+                <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+              ))}
             </select>
           ) : (
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nazwa, np. Urlop wypoczynkowy" style={settingsInputStyle} />
           )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Od<input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Do<input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} /></label>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 0.9fr 1.4fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Godziny
-              <input
-                type="number"
-                min="0"
-                max="24"
-                step="1"
-                value={hoursWorked}
-                onChange={(e) => setHoursWorked(e.target.value)}
-                placeholder="np. 4"
-                style={{ ...settingsInputStyle, marginTop: '4px' }}
-              />
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Od
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} />
             </label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>Minuty
-              <input
-                type="number"
-                min="0"
-                max="59"
-                step="1"
-                value={minutesWorked}
-                onChange={(e) => setMinutesWorked(e.target.value)}
-                placeholder="np. 30"
-                style={{ ...settingsInputStyle, marginTop: '4px' }}
-              />
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Do
+              <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} />
             </label>
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={{ ...settingsInputStyle, alignSelf: 'end' }} />
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Godziny
+              <input type="number" min="0" max="24" step="1" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} placeholder="np. 4" style={{ ...settingsInputStyle, marginTop: '4px' }} />
+            </label>
+            <label style={{ fontSize: '12px', color: '#64748b' }}>
+              Minuty
+              <input type="number" min="0" max="59" step="1" value={minutesWorked} onChange={(e) => setMinutesWorked(e.target.value)} placeholder="np. 30" style={{ ...settingsInputStyle, marginTop: '4px' }} />
+            </label>
+          </div>
+
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
+
           <div style={{ color: '#718096', fontSize: '11px' }}>
-            Możesz wpisać np. <strong>4 h 30 min</strong>. Minuty mogą być od 0 do 59.
+            Możesz wpisać np. <strong>4 h 30 min</strong>. Godziny i minuty zapisują się do konkretnego dnia.
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" onClick={() => setShowForm(false)} className="back-button">Anuluj</button>
-            <button type="button" disabled={saving} onClick={(event) => { void savePlan(event) }} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz plan'}</button>
-          </div>
+
+          <button type="submit" disabled={saving} className="save-button">
+            {saving ? 'Zapisywanie…' : 'Zapisz wpis'}
+          </button>
         </form>
       )}
 
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
-        {days.map((day) => {
-          const date = toDateString(day)
-          const dayPlans = plans.filter((plan) => String(plan.plan_date) === date)
-          const dayJobs = jobs.filter((job) => {
-            const range = getRange(job)
-            const excluded = calendarExclusions.some(
-              (item) =>
-                String(item.job_id) === String(job.id) &&
-                String(item.excluded_date) === String(date)
-            )
-            return range && day >= range.start && day <= range.end && !excluded
-          })
-          const isToday = date === today
-
-          return (
-            <div key={date} style={{ flex: '0 0 190px', minHeight: '390px', border: isToday ? '2px solid #5ba6e6' : '1px solid #dce7f1', background: isToday ? '#f5faff' : '#f8fbfe', borderRadius: '15px', padding: '9px', boxSizing: 'border-box' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <strong style={{ color: '#12234f', fontSize: '13px' }}>{['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][day.getDay()]}</strong>
-                <span style={{ color: isToday ? '#1670c5' : '#718096', fontSize: '12px', fontWeight: 800 }}>{formatDate(date).slice(0, 5)}</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: dayPlans.length ? '1fr auto' : '1fr', gap: '6px', marginBottom: '7px' }}>
-                <button type="button" onClick={() => openFormForDay(date)} style={{ width: '100%', border: '1px dashed #b8c9d8', background: '#fff', color: '#526174', borderRadius: '9px', padding: '7px', fontSize: '11px', fontWeight: 800 }}>＋ Wpisz dzień</button>
-                {dayPlans.length > 0 && (
-                  <button type="button" onClick={() => removeDayPlans(date, dayPlans)} style={{ border: '1px solid #f0b5b5', background: '#fff7f7', color: '#c53030', borderRadius: '9px', padding: '7px 8px', fontSize: '10px', fontWeight: 800 }}>Usuń dzień</button>
-                )}
-              </div>
-
-              <div style={{ display: 'grid', gap: '6px' }}>
-                {dayPlans.map((plan) => (
-                  <div key={plan.id} style={{ border: plan.plan_type === 'vacation' ? '1px solid #8bc7a7' : '1px solid #d7e1eb', background: plan.plan_type === 'vacation' ? '#effaf4' : '#fff', borderRadius: '10px', padding: '8px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#12234f' }}>{planIcon[plan.plan_type] || '📌'} {plan.title}</div>
-                    <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>{getMemberName(plan.user_id)}</div>
-                    {plan.hours_worked != null && <div style={{ marginTop: '3px', fontSize: '11px', color: '#1670c5', fontWeight: 800 }}>⏱️ {formatWorkedHours(plan.hours_worked)}</div>}
-                    {plan.note && <div style={{ marginTop: '4px', fontSize: '10px', color: '#64748b' }}>{plan.note}</div>}
-                    <div style={{ display: 'flex', gap: '9px', alignItems: 'center', marginTop: '6px' }}>
-                      <button type="button" onClick={() => openEditPlan(plan)} style={{ border: 'none', background: 'transparent', color: '#1670c5', fontSize: '10px', fontWeight: 800, padding: 0 }}>✏️ Edytuj</button>
-                      <button type="button" onClick={() => removePlan(plan)} style={{ border: 'none', background: 'transparent', color: '#c53030', fontSize: '10px', fontWeight: 800, padding: 0 }}>Usuń</button>
-                    </div>
-                  </div>
-                ))}
-
-                {dayJobs.map((job) => {
-                  const range = getRange(job)
-                  const starts = range && toDateString(range.start) === date
-                  const moving = String(movingJobId) === String(job.id + ':' + date)
-                  return (
-                    <div key={'job-' + job.id} draggable={!moving} onDragStart={() => setDraggedJobId(job.id)} onDragEnd={() => setDraggedJobId(null)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (draggedJobId) { const dragged = jobs.find((item) => String(item.id) === String(draggedJobId)); if (dragged) void moveJob(dragged, date); setDraggedJobId(null) } }} style={{ border: '1px solid #d6e3ef', background: '#fff', borderRadius: '10px', padding: '8px', opacity: moving ? 0.5 : 1 }}>
-                      <button type="button" onClick={() => onOpenJob(job)} style={{ border: 'none', background: 'transparent', padding: 0, width: '100%', textAlign: 'left', color: '#12234f', cursor: 'pointer' }}>
-                        <strong style={{ fontSize: '12px' }}>🏗️ {job.name}</strong>
-                        <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>📍 {job.location || 'Brak lokalizacji'}</div>
-                      </button>
-                      {starts && (
-                        <div style={{ display: 'flex', gap: '5px', marginTop: '6px' }}>
-                          <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }} style={calendarMoveButtonStyle}>←</button>
-                          <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }} style={calendarMoveButtonStyle}>→</button>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        disabled={moving}
-                        onClick={() => void removeJobDayFromCalendar(job, date)}
-                        style={{
-                          width: '100%',
-                          minHeight: '30px',
-                          marginTop: '6px',
-                          border: '1px solid #f0b5b5',
-                          background: '#fff7f7',
-                          color: '#c53030',
-                          borderRadius: '8px',
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          cursor: moving ? 'default' : 'pointer',
-                          opacity: moving ? 0.55 : 1,
-                        }}
-                      >
-                        🗑 Usuń ten dzień
-                      </button>
-                    </div>
-                  )
-                })}
-
-                {dayPlans.length === 0 && dayJobs.length === 0 && <div style={{ color: '#a0aec0', fontSize: '11px', textAlign: 'center', padding: '20px 4px' }}>Brak planu</div>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {saveMessage && !showForm && (
+        <div style={{
+          marginBottom: '12px',
+          padding: '10px',
+          borderRadius: '10px',
+          background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5',
+          color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534',
+          fontWeight: 800,
+          fontSize: '13px',
+        }}>
+          {saveMessage}
+        </div>
+      )}
     </div>
   )
 }
+const calendarMonthNavButtonStyle = {
+  width: '40px',
+  height: '40px',
+  border: '1px solid #d7e1eb',
+  background: '#ffffff',
+  color: '#12234f',
+  borderRadius: '12px',
+  fontSize: '26px',
+  lineHeight: 1,
+  fontWeight: 800,
+  cursor: 'pointer',
+}
+
+const calendarTextButtonStyle = {
+  border: 'none',
+  background: 'transparent',
+  color: '#1670c5',
+  fontSize: '10px',
+  fontWeight: 800,
+  padding: 0,
+  cursor: 'pointer',
+}
+
+const calendarDotStyle = (color) => ({
+  display: 'inline-block',
+  width: '6px',
+  height: '6px',
+  borderRadius: '50%',
+  background: color,
+  flexShrink: 0,
+})
+
 
 const calendarSmallButtonStyle = {
   border: '1px solid #d7e1eb',

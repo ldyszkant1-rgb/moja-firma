@@ -1857,6 +1857,8 @@ function App() {
         updatedJob.name
       )
 
+      return true
+
     } catch (error) {
 
       console.error(
@@ -1867,6 +1869,8 @@ function App() {
       showCustomAlert(
         'Realizacja została zmieniona lokalnie, ale nie udało się zapisać zmiany w Supabase.'
       )
+
+      return false
 
     }
 
@@ -13085,18 +13089,15 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeJobFromCalendar = async (job) => {
     if (!job?.id || !onUpdateJob) return
 
-    const ok = await showCustomConfirm(
-      'Usunąć „' + (job.name || 'robotę') + '” z kalendarza?\\n\\nRealizacja nie zostanie usunięta — zniknie tylko z terminarza.'
-    )
-    if (!ok) return
-
     setMovingJobId(job.id)
     try {
-      await onUpdateJob({
+      const saved = await onUpdateJob({
         ...job,
         plannedStartDate: null,
         plannedEndDate: null,
       })
+
+      if (saved === false) return
     } finally {
       setMovingJobId(null)
     }

@@ -9,6 +9,10 @@ import JobDocuments from './JobDocuments'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
+  getJobCosts,
+  createJobCost,
+  updateJobCost,
+  deleteJobCost,
   createSupabaseJob,
   updateSupabaseJob,
   getJobs,

@@ -4768,7 +4768,7 @@ body {
 
 .finance-page .finance-warning-value,
 .finance-page .finance-year-warning {
-  color: #dc2626 !important;
+  color: #dc2626;
 }
 
 .finance-page .finance-success-value,
@@ -4873,12 +4873,12 @@ body {
 }
 
 .finance-page .client-payment-overdue {
-  color: #dc2626 !important;
+  color: #dc2626;
   font-weight: 700;
 }
 
 .finance-page .client-payment-due {
-  color: #64748b !important;
+  color: #64748b;
 }
 
 .finance-page .receivable-arrow {
@@ -4912,7 +4912,7 @@ body {
 }
 
 .finance-page .finance-command-center > .detail-card {
-  margin: 0 0 12px !important;
+  margin: 0 0 12px;
 }
 
 .finance-page .finance-command-center > .detail-card button:not(.finance-month-arrow) {
@@ -5213,7 +5213,7 @@ body {
 
   .finance-page .receivables-total {
     width: 100%;
-    align-items: flex-start !important;
+    align-items: flex-start;
     text-align: left;
   }
 

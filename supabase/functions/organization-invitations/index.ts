@@ -108,6 +108,31 @@ Deno.serve(async (req: Request) => {
       return Response.json({ ok: true, organizationId: organization.id }, { headers: corsHeaders })
     }
 
+    if (action === 'list-my-invitations') {
+      const { data: invitations, error: invitationsError } = await admin
+        .from('organization_invitations')
+        .select('id,organization_id,email,role,status,expires_at,organizations(name)')
+        .eq('email', email)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+
+      if (invitationsError) throw invitationsError
+
+      return Response.json({
+        ok: true,
+        invitations: (invitations || []).map((invite) => ({
+          id: invite.id,
+          organization_id: invite.organization_id,
+          email: invite.email,
+          role: invite.role,
+          status: invite.status,
+          expires_at: invite.expires_at,
+          organization_name: invite.organizations?.name || 'Twoja firma',
+        })),
+      }, { headers: corsHeaders })
+    }
+
     const { data: membership } = await admin
       .from('organization_members')
       .select('organization_id,role')

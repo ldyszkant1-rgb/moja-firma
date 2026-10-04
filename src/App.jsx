@@ -3853,7 +3853,7 @@ function JobCard({
             </span>
           )}
 
-          {job.endDate && <span className="job-deadline">{formatDate(job.endDate)}</span>}
+          {job.plannedEndDate && <span className="job-deadline">{formatDate(job.plannedEndDate)}</span>}
         </div>
 
         <div className="job-card-progress">

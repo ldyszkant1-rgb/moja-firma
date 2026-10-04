@@ -9945,7 +9945,7 @@ function FinancePage({
     completedJobsThisMonth.length > 0 && monthPayments.length === 0
       ? {
           type: 'warning',
-          icon: '🟠',
+          icon: 'warning',
           title: 'Brak zaksięgowanych płatności',
           text: `${completedJobsThisMonth.length} zakończonych robót w tym miesiącu`,
           action: 'jobs',
@@ -10258,7 +10258,7 @@ function FinancePage({
         </div>
         <div className="receivables-summary">
           <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'} • netto + VAT + brutto</span>
-          {overdueReceivables > 0 && <strong>🔴 Zaległe: {formatMoney(overdueReceivables)}</strong>}
+          {overdueReceivables > 0 && <strong className="receivables-overdue-pill"><span aria-hidden="true" />Zaległe: {formatMoney(overdueReceivables)}</strong>}
         </div>
         {receivables.length > 0 ? (
           <div className="receivables-list">
@@ -10288,7 +10288,7 @@ function FinancePage({
             })}
           </div>
         ) : (
-          <div className="receivables-empty">🎉 Wszystkie należności są rozliczone.</div>
+          <div className="receivables-empty">Wszystkie należności są rozliczone.</div>
         )}
       </section>
 

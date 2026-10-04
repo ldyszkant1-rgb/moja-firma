@@ -13079,7 +13079,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" onClick={() => setShowForm(false)} className="back-button">Anuluj</button>
-            <button type="submit" disabled={saving} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz plan'}</button>
+            <button type="button" disabled={saving} onClick={(event) => { void savePlan(event) }} className="save-button">{saving ? 'Zapisywanie…' : 'Zapisz plan'}</button>
           </div>
         </form>
       )}

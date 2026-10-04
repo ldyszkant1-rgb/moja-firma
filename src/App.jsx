@@ -13082,6 +13082,26 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     await loadPlans()
   }
 
+  const removeJobFromCalendar = async (job) => {
+    if (!job?.id || !onUpdateJob) return
+
+    const ok = await showCustomConfirm(
+      'Usunąć „' + (job.name || 'robotę') + '” z kalendarza?\\n\\nRealizacja nie zostanie usunięta — zniknie tylko z terminarza.'
+    )
+    if (!ok) return
+
+    setMovingJobId(job.id)
+    try {
+      await onUpdateJob({
+        ...job,
+        plannedStartDate: null,
+        plannedEndDate: null,
+      })
+    } finally {
+      setMovingJobId(null)
+    }
+  }
+
   const moveJob = async (job, targetDate) => {
     const range = getRange(job)
     if (!range || !onUpdateJob) return
@@ -13226,6 +13246,26 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                           <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }} style={calendarMoveButtonStyle}>→</button>
                         </div>
                       )}
+                      <button
+                        type="button"
+                        disabled={moving}
+                        onClick={() => void removeJobFromCalendar(job)}
+                        style={{
+                          width: '100%',
+                          minHeight: '30px',
+                          marginTop: '6px',
+                          border: '1px solid #f0b5b5',
+                          background: '#fff7f7',
+                          color: '#c53030',
+                          borderRadius: '8px',
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          cursor: moving ? 'default' : 'pointer',
+                          opacity: moving ? 0.55 : 1,
+                        }}
+                      >
+                        🗑 Usuń z kalendarza
+                      </button>
                     </div>
                   )
                 })}

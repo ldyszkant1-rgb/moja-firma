@@ -9943,9 +9943,10 @@ function SettingsPage({
           .from('organization_members')
           .select('organization_id,role,display_name')
 
-        const { count: jobsCount, error: jobsError } = await supabase
+        const { data: visibleJobs, error: jobsError } = await supabase
           .from('jobs')
-          .select('id', { count: 'exact', head: true })
+          .select('id,organization_id,deleted_at')
+          .limit(50)
 
         if (!cancelled) {
           setAccessDiagnostic({
@@ -9954,7 +9955,11 @@ function SettingsPage({
             anonymous: Boolean(userData?.user?.is_anonymous),
             memberships: memberships || [],
             membershipError: membershipError?.message || null,
-            jobsCount: jobsCount ?? null,
+            jobsCount: Array.isArray(visibleJobs) ? visibleJobs.length : null,
+            jobsSampleOrganizationId: visibleJobs?.[0]?.organization_id || null,
+            jobsActiveCount: Array.isArray(visibleJobs)
+              ? visibleJobs.filter((job) => !job.deleted_at).length
+              : null,
             jobsError: jobsError?.message || null,
           })
         }

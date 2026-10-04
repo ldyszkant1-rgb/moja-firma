@@ -1763,6 +1763,8 @@ function App() {
 
       clientId: null,
 
+      priority: 'normal',
+
       quantities: {
         mb: '',
         m2: '',
@@ -2141,6 +2143,7 @@ function App() {
       name: offer.name || '',
       location: offer.location || 'Brak lokalizacji',
       clientId: offer.clientId || null,
+      priority: 'normal',
       status: 'W toku',
       progress: 0,
       completed: false,
@@ -2228,6 +2231,9 @@ function App() {
 
       clientId:
         newJob.clientId || null,
+
+      priority:
+        newJob.priority || 'normal',
 
       status: 'W toku',
 
@@ -3988,6 +3994,23 @@ function JobCard({
             <span aria-hidden="true">{stage === 'Zakończone' ? '✓' : '●'}</span>
             {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage.toUpperCase()}
           </span>
+
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginTop: '5px',
+              fontSize: '11px',
+              fontWeight: 800,
+              color: job.priority === 'urgent' ? '#b42318' : job.priority === 'high' ? '#9a6800' : '#21804a',
+              background: job.priority === 'urgent' ? '#fff0ee' : job.priority === 'high' ? '#fff8e8' : '#edf9f1',
+              borderRadius: '999px',
+              padding: '4px 8px',
+            }}
+          >
+            {job.priority === 'urgent' ? '🔴 PILNY' : job.priority === 'high' ? '🟠 WYSOKI' : '🟢 NORMALNY'}
+          </span>
         </div>
 
         <div className="job-card-progress">
@@ -4754,6 +4777,16 @@ function NewJobPage({
             {(clients || []).map((client) => (
               <option key={client.id} value={client.id}>{client.shortName || client.name}</option>
             ))}
+          </select>
+
+          <select
+            className="job-new-input"
+            value={newJob.priority || 'normal'}
+            onChange={(e) => change('priority', e.target.value)}
+          >
+            <option value="normal">🟢 Normalny priorytet</option>
+            <option value="high">🟠 Wysoki priorytet</option>
+            <option value="urgent">🔴 Pilny priorytet</option>
           </select>
 
         </div>
@@ -6301,6 +6334,21 @@ function JobDetails({
             {(clients || []).map((client) => (
               <option key={client.id} value={client.id}>{client.name}</option>
             ))}
+          </select>
+
+          <select
+            className="note-text-input job-edit-input"
+            value={editedJob.priority || 'normal'}
+            onChange={(e) =>
+              setEditedJob({
+                ...editedJob,
+                priority: e.target.value,
+              })
+            }
+          >
+            <option value="normal">🟢 Normalny priorytet</option>
+            <option value="high">🟠 Wysoki priorytet</option>
+            <option value="urgent">🔴 Pilny priorytet</option>
           </select>
 
         </div>

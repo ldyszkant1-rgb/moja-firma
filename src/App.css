@@ -1632,7 +1632,7 @@ section {
 
     min-height: 91px;
 
-    grid-column: 1 / -1 !important;
+    grid-column: auto;
 
     padding: 12px;
 
@@ -2204,7 +2204,7 @@ section {
     font-weight: 600;
   }
 
-  .small-label {
+  .sub-page .small-label {
     margin: 0 0 5px;
     text-align: center;
     font-size: 12px;
@@ -4261,9 +4261,10 @@ body {
 
 /* FINAL DASHBOARD DETAILS — 2026-10-04 */
 .dashboard-value-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  margin-bottom: 18px !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
 }
 .dashboard-value-card {
   min-height: 0 !important;
@@ -4415,4 +4416,12 @@ body {
   .dashboard-value-card span {
     font-size: 11px !important;
   }
+}
+
+
+/* Dashboard alignment — source-level fix */
+.dashboard-today-header,
+.general-reminders-section .section-title {
+  margin-left: 0;
+  margin-right: 0;
 }

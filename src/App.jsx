@@ -7410,6 +7410,9 @@ function JobDetails({
                   unit: costType === 'hours' ? 'godz.' : (costForm.unit === 'godz.' ? 'szt.' : costForm.unit),
                   employeeId: costType === 'hours' ? costForm.employeeId : '',
                   employeeName: costType === 'hours' ? costForm.employeeName : '',
+                  unitCost: costType === 'hours' && costForm.employeeId
+                    ? String(organizationMembers.find((member) => String(member.user_id) === String(costForm.employeeId))?.hourly_rate ?? costForm.unitCost)
+                    : costForm.unitCost,
                 })
               }}
             >
@@ -7432,6 +7435,7 @@ function JobDetails({
                     employeeName: employee?.display_name || employee?.email || '',
                     description: costForm.description || (employee?.display_name ? `Robocizna — ${employee.display_name}` : 'Robocizna'),
                     unit: 'godz.',
+                    unitCost: employee?.hourly_rate != null ? String(employee.hourly_rate) : costForm.unitCost,
                   })
                 }}
               >

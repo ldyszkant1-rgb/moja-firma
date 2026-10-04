@@ -12975,7 +12975,15 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         .from('calendar_plans')
         .insert(rows)
         .select('id,user_id,job_id,plan_type,plan_date,title,note')
-      if (error) throw error
+      if (error) {
+        console.error('Nie udało się zapisać planu:', error)
+        await showCustomAlert('Błąd zapisu terminarza: ' + (error.message || 'Nieznany błąd.'))
+        return
+      }
+      if (!data || data.length === 0) {
+        await showCustomAlert('Plan nie został zapisany — baza nie zwróciła zapisanego wpisu.')
+        return
+      }
       setPlans((current) => [...current, ...(data || [])])
       setShowForm(false)
       setTitle('')

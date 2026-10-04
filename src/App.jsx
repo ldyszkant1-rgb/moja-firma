@@ -12928,7 +12928,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     const { data, error } = await supabase
       .from('calendar_plans')
       .select('id,user_id,job_id,plan_type,plan_date,title,note,hours_worked')
-      .eq('organization_id', organizationId)
       .gte('plan_date', toDateString(weekStart))
       .lte('plan_date', toDateString(weekEnd))
       .order('plan_date')
@@ -12941,7 +12940,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     const { data: exclusions, error: exclusionsError } = await supabase
       .from('calendar_job_exclusions')
       .select('job_id,excluded_date')
-      .eq('organization_id', organizationId)
       .gte('excluded_date', toDateString(weekStart))
       .lte('excluded_date', toDateString(weekEnd))
 
@@ -13047,6 +13045,14 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       // Po zapisie pobieramy stan bezpośrednio z Supabase. Dzięki temu
       // terminarz po zmianie zakładki/odświeżeniu pokazuje dokładnie to,
       // co znajduje się w bazie, a nie tylko lokalny stan Reacta.
+      setPlans((current) => {
+        const withoutSaved = current.filter(
+          (item) => !savedRows.some((saved) => String(saved.id) === String(item.id))
+        )
+        return [...withoutSaved, ...savedRows].sort((a, b) =>
+          String(a.plan_date).localeCompare(String(b.plan_date))
+        )
+      })
       await loadPlans()
       setSaveMessage(rows.length > 1 ? 'Plan zapisany na cały wybrany okres.' : 'Plan zapisany.')
       setShowForm(false)

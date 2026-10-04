@@ -5151,18 +5151,10 @@ function JobDetails({
   const jobProfit = jobRevenue - totalJobCosts
 
   const [jobTimeEntries, setJobTimeEntries] = useState([])
-  const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState(
-    organizationMembers?.[0]?.user_id || ''
-  )
+  const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState('team')
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
   const [profitShareSaving, setProfitShareSaving] = useState(false)
-
-  useEffect(() => {
-    if (!selectedTimeEmployeeId && organizationMembers?.[0]?.user_id) {
-      setSelectedTimeEmployeeId(organizationMembers[0].user_id)
-    }
-  }, [organizationMembers, selectedTimeEmployeeId])
 
   useEffect(() => {
     let cancelled = false
@@ -5216,12 +5208,8 @@ function JobDetails({
       .reduce((sum, entry) => sum + getEntryMinutes(entry), 0)
     return acc
   }, {})
-  const timeByEmployee = organizationMembers.map((member) => ({
-    ...member,
-    minutes: jobTimeEntries
-      .filter((entry) => String(entry.employeeId) === String(member.user_id))
-      .reduce((sum, entry) => sum + getEntryMinutes(entry), 0),
-  })).filter((member) => member.minutes > 0)
+  const teamElapsedMinutes = totalTrackedMinutes
+  const teamLaborMinutes = teamElapsedMinutes * 2
 
   const activeTimerFor = (employeeId, timeType) =>
     jobTimeEntries.find(
@@ -5232,19 +5220,13 @@ function JobDetails({
     ) || null
 
   const startTimer = async (timeType) => {
-    if (!selectedTimeEmployeeId) {
-      showCustomAlert('Wybierz osobę, której czas chcesz mierzyć.')
-      return
-    }
+    if (selectedTimeEmployeeId !== 'team') return
     if (activeTimerFor(selectedTimeEmployeeId, timeType)) return
-    const member = organizationMembers.find(
-      (item) => String(item.user_id) === String(selectedTimeEmployeeId)
-    )
     try {
       const saved = await startJobTimer({
         jobId: editedJob.id,
-        employeeId: selectedTimeEmployeeId,
-        employeeName: member?.display_name || member?.email || 'Pracownik',
+        employeeId: null,
+        employeeName: 'Ekipa',
         timeType,
       })
       setJobTimeEntries((current) => [saved, ...current])
@@ -7609,18 +7591,9 @@ function JobDetails({
           ))}
         </div>
 
-        <select
-          className="note-text-input"
-          value={selectedTimeEmployeeId}
-          onChange={(e) => setSelectedTimeEmployeeId(e.target.value)}
-        >
-          <option value="">Wybierz osobę</option>
-          {(organizationMembers || []).map((member) => (
-            <option key={member.user_id} value={member.user_id}>
-              {member.display_name || member.email || 'Pracownik'}
-            </option>
-          ))}
-        </select>
+        <div style={{ padding: '11px 13px', borderRadius: '12px', background: '#f6f9fc', border: '1px solid #e5ebf1', color: '#12234f', fontWeight: 800 }}>
+          👥 Ekipa — 2 osoby
+        </div>
 
         <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
           {[
@@ -7653,16 +7626,18 @@ function JobDetails({
           })}
         </div>
 
-        {timeByEmployee.length > 0 && (
+        {jobTimeEntries.length > 0 && (
           <div style={{ marginTop: '16px' }}>
-            <div className="small-label">ROBOCZOGODZINY</div>
+            <div className="small-label">ROBOCZOGODZINY EKIPY</div>
             <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
-              {timeByEmployee.map((member) => (
-                <div key={member.user_id} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
-                  <span>{member.display_name || member.email || 'Pracownik'}</span>
-                  <strong>{formatDuration(member.minutes)}</strong>
-                </div>
-              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
+                <span>Ekipa — czas rzeczywisty</span>
+                <strong>{formatDuration(teamElapsedMinutes)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#edf9f1' }}>
+                <span>Roboczogodziny (2 osoby)</span>
+                <strong>{formatDuration(teamLaborMinutes)}</strong>
+              </div>
             </div>
           </div>
         )}
@@ -7787,7 +7762,7 @@ function JobDetails({
         <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '13px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
             <span>Zysk / roboczogodzina</span>
-            <strong>{totalTrackedMinutes > 0 ? formatMoney(jobProfit / (totalTrackedMinutes / 60)) + ' / h' : '—'}</strong>
+            <strong>{teamLaborMinutes > 0 ? formatMoney(jobProfit / (teamLaborMinutes / 60)) + ' / h' : '—'}</strong>
           </div>
         </div>
       </div>

@@ -9595,6 +9595,17 @@ function FinancePage({
 
   const yearProfit = yearRevenueNet - yearCosts
 
+  const formatCount = (count, one, few, many = few) => {
+    const value = Math.abs(Number(count) || 0)
+    const mod10 = value % 10
+    const mod100 = value % 100
+    if (value === 1) return one
+    if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
+      return few
+    }
+    return many
+  }
+
 
   /*
    * FINANSE — PROSTA LOGIKA ROZLICZENIA
@@ -10277,19 +10288,36 @@ function FinancePage({
                 ? `Zaległość ${overdueDays} dni`
                 : `Termin ${new Date(item.dueDate).toLocaleDateString('pl-PL')}`
               return (
-                <button type="button" className="receivable-row" key={item.id} onClick={() => item.invoiceId ? onOpenInvoice?.(item.invoiceId) : onOpenJob?.(item.job)}>
-                  <div className="receivable-main">
-                    <strong>{item.invoiceNumber || item.job.name || 'Bez nazwy'}</strong>
-                    <span>{item.clientName}</span>
+                <button
+                  type="button"
+                  className="receivable-row"
+                  key={item.id}
+                  onClick={() =>
+                    item.invoiceId
+                      ? onOpenInvoice?.(item.invoiceId)
+                      : onOpenJob?.(item.job)
+                  }
+                >
+                  <div className="receivable-row-top">
+                    <div className="receivable-main">
+                      <strong>{item.invoiceNumber || item.job.name || 'Bez nazwy'}</strong>
+                      <span>{item.clientName}</span>
+                    </div>
+                    <div className="receivable-amount">
+                      <strong>{formatMoney(item.remaining)} brutto</strong>
+                    </div>
                   </div>
-                  <div className="receivable-amount">
-                    <strong>{formatMoney(item.remaining)} brutto</strong>
-                    <span>{formatMoney(item.remainingNet)} netto / {formatMoney(item.remainingVat)} VAT</span>
+                  <div className="receivable-row-bottom">
+                    <span>
+                      {formatMoney(item.remainingNet)} netto / {formatMoney(item.remainingVat)} VAT
+                    </span>
                     <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>
                       {dueLabel}
                     </span>
+                    <span className="receivable-arrow" aria-hidden="true">
+                      <ChevronRight size={18} strokeWidth={1.75} />
+                    </span>
                   </div>
-                  <span className="receivable-arrow">→</span>
                 </button>
               )
             })}
@@ -11017,14 +11045,7 @@ function FinancePage({
         </div>
 
         {completedJobsThisMonth.length === 0 ? (
-          <div
-            style={{
-              padding: '14px',
-              borderRadius: '14px',
-              background: '#f6f8fb',
-              marginTop: '12px',
-            }}
-          >
+          <div className="finance-completed-empty">
             Brak zakończonych robót w tym miesiącu.
           </div>
         ) : (
@@ -11075,17 +11096,6 @@ function FinancePage({
           type="button"
           className="finance-history-toggle"
           onClick={() => setShowHistory((value) => !value)}
-          style={{
-            width: '100%',
-            border: 'none',
-            background: 'transparent',
-            padding: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
         >
           <div>
             <div className="finance-overview-label">HISTORIA</div>
@@ -11180,13 +11190,13 @@ function FinancePage({
           <div>
             <span>Otrzymane</span>
             <strong>{formatMoney(yearRevenue)}</strong>
-            <small>{yearPayments.length === 1 ? "1 płatność" : `${yearPayments.length} płatności`}</small>
+            <small>{formatCount(yearPayments.length, '1 płatność', `${yearPayments.length} płatności`)}</small>
           </div>
 
           <div>
             <span>Koszty</span>
             <strong>{formatMoney(yearCosts)}</strong>
-            <small>{yearCostsList.length === 1 ? "1 wpis" : yearCostsList.length >= 2 && yearCostsList.length <= 4 ? `${yearCostsList.length} wpisy` : `${yearCostsList.length} wpisów`}</small>
+            <small>{formatCount(yearCostsList.length, '1 wpis', `${yearCostsList.length} wpisy`, `${yearCostsList.length} wpisów`)}</small>
           </div>
 
           <div>

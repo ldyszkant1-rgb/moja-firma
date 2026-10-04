@@ -5279,7 +5279,9 @@ function JobDetails({
     .filter(Boolean)
 
   const teamElapsedMinutes = totalTrackedMinutes
-  const teamSize = assignedTeamMembers.length
+  // Zachowujemy dotychczasowe zachowanie 2-osobowej ekipy,
+  // dopóki konkretna ekipa nie zostanie przypisana do realizacji.
+  const teamSize = assignedTeamMembers.length || 2
   const teamLaborMinutes = teamElapsedMinutes * teamSize
 
   const activeTimerFor = (employeeId, timeType) =>

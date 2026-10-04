@@ -12360,6 +12360,7 @@ function TeamsSettings({ organizationId, members, canManage }) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
 
   const loadTeams = async () => {
     setLoading(true)
@@ -12928,20 +12929,21 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const savePlan = async (event) => {
     event.preventDefault()
-    if (!organizationId) { await showCustomAlert('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.'); return }
-    if (!startDate || !endDate) { await showCustomAlert('Wybierz zakres dat.'); return }
+    setSaveMessage('')
+    if (!organizationId) { setSaveMessage('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.'); return }
+    if (!startDate || !endDate) { setSaveMessage('Wybierz zakres dat.'); return }
     const start = makeDate(startDate)
     const end = makeDate(endDate)
     if (start > end) {
-      await showCustomAlert('Data końcowa nie może być wcześniejsza od początkowej.')
+      setSaveMessage('Data końcowa nie może być wcześniejsza od początkowej.')
       return
     }
     if (type === 'job' && !jobId) {
-      await showCustomAlert('Wybierz robotę.')
+      setSaveMessage('Wybierz robotę.')
       return
     }
     if (type !== 'job' && !userId) {
-      await showCustomAlert('Wybierz pracownika.')
+      setSaveMessage('Wybierz pracownika.')
       return
     }
 
@@ -12987,6 +12989,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       }
       const data = savedRows
       setPlans((current) => [...current, ...(data || [])])
+      setSaveMessage(rows.length > 1 ? 'Plan zapisany na cały wybrany okres.' : 'Plan zapisany.')
       setShowForm(false)
       setTitle('')
       setNote('')
@@ -13050,6 +13053,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       {showForm && (
         <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
           <strong style={{ color: '#12234f' }}>＋ Nowy plan</strong>
+          {saveMessage && <div style={{ padding: '10px', borderRadius: '10px', background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5', color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534', fontWeight: 800, fontSize: '13px' }}>{saveMessage}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
             <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }} style={settingsInputStyle}>
               <option value="job">🏗️ Robota</option>

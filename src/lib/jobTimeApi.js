@@ -100,13 +100,32 @@ export async function stopJobTimer(entry) {
 export async function deleteJobTimeEntry(id) {
   if (!id) throw new Error('Brak ID wpisu czasu.')
 
-  const { data, error } = await supabase.rpc('delete_job_time_entry', {
-    p_id: id,
-  })
+  let rpcError = null
+  try {
+    const { data, error } = await supabase.rpc('delete_job_time_entry', {
+      p_id: id,
+    })
+    if (!error && data === true) return true
+    rpcError = error || new Error('RPC nie usunęło wpisu.')
+  } catch (error) {
+    rpcError = error
+  }
 
-  if (error) throw error
-  if (!data) {
-    throw new Error('Wpis czasu nie został znaleziony albo nie należy do tej firmy.')
+  // Fallback dla starszego wdrożenia / opóźnionego cache API.
+  const organizationId = await getOrganizationId()
+  const { data, error } = await supabase
+    .from('job_time_entries')
+    .delete()
+    .eq('id', id)
+    .eq('organization_id', organizationId)
+    .select('id')
+
+  if (error) {
+    throw error
+  }
+
+  if (!data?.some((row) => String(row.id) === String(id))) {
+    throw rpcError || new Error('Wpis czasu nie został usunięty.')
   }
 
   return true

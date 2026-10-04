@@ -5260,6 +5260,7 @@ function JobDetails({
       if (!entry.endedAt) await stopJobTimer(entry)
       await deleteJobTimeEntry(entry.id)
       setJobTimeEntries((current) => current.filter((item) => String(item.id) !== String(entry.id)))
+      setTimeTick(Date.now())
     } catch (error) {
       console.error('Nie udało się usunąć wpisu czasu:', error)
       showCustomAlert('Nie udało się usunąć wpisu czasu. Spróbuj ponownie.')
@@ -5270,9 +5271,14 @@ function JobDetails({
     if (jobProfitShares.length > 0) return jobProfitShares
     return [
       {
-        employeeId: 'team',
-        employeeName: 'Ekipa',
-        percentage: 100,
+        employeeId: 'profit:lukasz',
+        employeeName: 'Łukasz',
+        percentage: 50,
+      },
+      {
+        employeeId: 'profit:pawel',
+        employeeName: 'Paweł',
+        percentage: 50,
       },
     ]
   }

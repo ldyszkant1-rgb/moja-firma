@@ -5105,6 +5105,116 @@ function JobDetails({
   const linkedInvoice = (invoices || []).find(
     (invoice) => String(invoice.jobId) === String(job.id)
   ) || null
+  const [jobCosts, setJobCosts] = useState([])
+  const [showCostForm, setShowCostForm] = useState(false)
+  const [editingCostId, setEditingCostId] = useState(null)
+  const [costForm, setCostForm] = useState({
+    costType: 'material',
+    description: '',
+    quantity: '1',
+    unit: 'szt.',
+    unitCost: '',
+    costDate: getTodayString(),
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    getJobCosts(job.id)
+      .then((costs) => {
+        if (!cancelled) setJobCosts(costs)
+      })
+      .catch((error) => console.error('Nie udało się wczytać kosztów realizacji:', error))
+    return () => { cancelled = true }
+  }, [job.id])
+
+  const totalJobCosts = jobCosts.reduce(
+    (sum, cost) => sum + Number(cost.totalCost || 0),
+    0
+  )
+  const jobRevenue = calculateTotal(editedJob)
+  const jobProfit = jobRevenue - totalJobCosts
+
+  const resetCostForm = () => {
+    setCostForm({
+      costType: 'material',
+      description: '',
+      quantity: '1',
+      unit: 'szt.',
+      unitCost: '',
+      costDate: getTodayString(),
+    })
+    setEditingCostId(null)
+    setShowCostForm(false)
+  }
+
+  const saveJobCost = async () => {
+    const description = String(costForm.description || '').trim()
+    const quantity = parseDecimal(costForm.quantity)
+    const unitCost = parseDecimal(costForm.unitCost)
+
+    if (!description) {
+      showCustomAlert('Podaj nazwę kosztu.')
+      return
+    }
+    if (quantity <= 0 || unitCost < 0) {
+      showCustomAlert('Podaj prawidłową ilość i koszt jednostkowy.')
+      return
+    }
+
+    try {
+      const payload = {
+        id: editingCostId || undefined,
+        jobId: editedJob.id,
+        costType: costForm.costType,
+        description,
+        quantity,
+        unit: costForm.unit || 'szt.',
+        unitCost,
+        costDate: costForm.costDate || null,
+      }
+
+      const saved = editingCostId
+        ? await updateJobCost(payload)
+        : await createJobCost(payload)
+
+      setJobCosts((current) =>
+        editingCostId
+          ? current.map((item) => String(item.id) === String(saved.id) ? saved : item)
+          : [saved, ...current]
+      )
+      resetCostForm()
+    } catch (error) {
+      console.error('Nie udało się zapisać kosztu realizacji:', error)
+      showCustomAlert('Nie udało się zapisać kosztu. Spróbuj ponownie.')
+    }
+  }
+
+  const startEditJobCost = (cost) => {
+    setEditingCostId(cost.id)
+    setCostForm({
+      costType: cost.costType || 'other',
+      description: cost.description || '',
+      quantity: String(cost.quantity ?? 1),
+      unit: cost.unit || 'szt.',
+      unitCost: String(cost.unitCost ?? 0),
+      costDate: cost.costDate || '',
+    })
+    setShowCostForm(true)
+  }
+
+  const removeJobCost = async (cost) => {
+    const confirmed = await showCustomConfirm('Usunąć ten koszt z realizacji?')
+    if (!confirmed) return
+
+    try {
+      await deleteJobCost(cost.id)
+      setJobCosts((current) => current.filter((item) => String(item.id) !== String(cost.id)))
+    } catch (error) {
+      console.error('Nie udało się usunąć kosztu realizacji:', error)
+      showCustomAlert('Nie udało się usunąć kosztu. Spróbuj ponownie.')
+    }
+  }
+
   const saveChanges = async () => {
     if (!editedJob.name.trim()) {
 

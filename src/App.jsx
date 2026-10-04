@@ -11912,6 +11912,183 @@ function SettingsPage({
 }
 
 
+function TeamsSettings({ organizationId, members, canManage }) {
+  const [teams, setTeams] = useState([])
+  const [teamMembers, setTeamMembers] = useState([])
+  const [teamName, setTeamName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const loadTeams = async () => {
+    setLoading(true)
+    try {
+      const [{ data: teamRows, error: teamError }, { data: memberRows, error: memberError }] = await Promise.all([
+        supabase.from('teams').select('id,name,organization_id,created_at').order('created_at', { ascending: true }),
+        supabase.from('team_members').select('team_id,user_id').order('created_at', { ascending: true }),
+      ])
+      if (teamError) throw teamError
+      if (memberError) throw memberError
+      setTeams(teamRows || [])
+      setTeamMembers(memberRows || [])
+    } catch (error) {
+      console.error('Nie udało się wczytać ekip:', error)
+      await showCustomAlert('Nie udało się wczytać ekip.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (organizationId) loadTeams()
+  }, [organizationId])
+
+  const createTeam = async (event) => {
+    event.preventDefault()
+    const name = teamName.trim()
+    if (!name || !organizationId || !canManage) return
+
+    setSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .insert({ organization_id: organizationId, name })
+        .select('id,name,organization_id,created_at')
+        .single()
+      if (error) throw error
+      setTeams((current) => [...current, data])
+      setTeamName('')
+    } catch (error) {
+      console.error('Nie udało się utworzyć ekipy:', error)
+      await showCustomAlert('Nie udało się utworzyć ekipy.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const toggleMember = async (teamId, userId, checked) => {
+    if (!canManage) return
+    try {
+      if (checked) {
+        const { error } = await supabase
+          .from('team_members')
+          .insert({ team_id: teamId, organization_id: organizationId, user_id: userId })
+        if (error && error.code !== '23505') throw error
+        setTeamMembers((current) => (
+          current.some((item) => item.team_id === teamId && String(item.user_id) === String(userId))
+            ? current
+            : [...current, { team_id: teamId, user_id: userId }]
+        ))
+      } else {
+        const { error } = await supabase
+          .from('team_members')
+          .delete()
+          .eq('team_id', teamId)
+          .eq('user_id', userId)
+        if (error) throw error
+        setTeamMembers((current) => current.filter(
+          (item) => !(item.team_id === teamId && String(item.user_id) === String(userId))
+        ))
+      }
+    } catch (error) {
+      console.error('Nie udało się zmienić składu ekipy:', error)
+      await showCustomAlert('Nie udało się zmienić składu ekipy.')
+    }
+  }
+
+  const deleteTeam = async (team) => {
+    if (!canManage) return
+    const confirmed = await showCustomConfirm(`Usunąć ekipę „${team.name}”?`)
+    if (!confirmed) return
+    try {
+      const { error } = await supabase.from('teams').delete().eq('id', team.id)
+      if (error) throw error
+      setTeams((current) => current.filter((item) => item.id !== team.id))
+      setTeamMembers((current) => current.filter((item) => item.team_id !== team.id))
+    } catch (error) {
+      console.error('Nie udało się usunąć ekipy:', error)
+      await showCustomAlert('Nie udało się usunąć ekipy.')
+    }
+  }
+
+  if (!organizationId) return null
+
+  return (
+    <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+      <strong>👷 Ekipy</strong>
+      <div style={{ marginTop: '5px', fontSize: '13px', opacity: 0.7, lineHeight: 1.5 }}>
+        Twórz stałe zespoły, np. „Ekipa 1” = Łukasz + Paweł. Później całą ekipę będzie można przypisać jednym kliknięciem do roboty.
+      </div>
+
+      {canManage && (
+        <form onSubmit={createTeam} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', marginTop: '12px' }}>
+          <input
+            value={teamName}
+            onChange={(event) => setTeamName(event.target.value)}
+            placeholder="Nazwa ekipy, np. Ekipa 1"
+            style={settingsInputStyle}
+          />
+          <button className="save-button" type="submit" disabled={saving || !teamName.trim()}>
+            {saving ? '...' : 'Dodaj'}
+          </button>
+        </form>
+      )}
+
+      {loading && <div style={{ marginTop: '12px', fontSize: '13px', opacity: 0.65 }}>Wczytywanie ekip…</div>}
+
+      {!loading && teams.length === 0 && (
+        <div style={{ marginTop: '12px', fontSize: '13px', opacity: 0.65 }}>
+          Nie masz jeszcze żadnej ekipy.
+        </div>
+      )}
+
+      {!loading && teams.map((team) => {
+        const ids = teamMembers
+          .filter((item) => item.team_id === team.id)
+          .map((item) => String(item.user_id))
+
+        return (
+          <div key={team.id} style={{ marginTop: '12px', padding: '12px', border: '1px solid #dce7f1', borderRadius: '12px', background: '#f8fbfe' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+              <div>
+                <strong>{team.name}</strong>
+                <div style={{ fontSize: '12px', opacity: 0.65, marginTop: 3 }}>
+                  {ids.length} {ids.length === 1 ? 'osoba' : 'osoby'} w ekipie
+                </div>
+              </div>
+              {canManage && (
+                <button type="button" className="back-button" onClick={() => deleteTeam(team)}>
+                  Usuń
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gap: '7px', marginTop: '10px' }}>
+              {(members || []).map((member) => {
+                const checked = ids.includes(String(member.user_id))
+                return (
+                  <label key={member.user_id} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 9px', borderRadius: '9px', background: checked ? '#eaf5ff' : '#fff', border: checked ? '1px solid #8bc7f4' : '1px solid #e1e8ef', cursor: canManage ? 'pointer' : 'default' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={!canManage}
+                      onChange={(event) => toggleMember(team.id, member.user_id, event.target.checked)}
+                      style={{ width: '17px', height: '17px' }}
+                    />
+                    <span style={{ fontWeight: 650 }}>
+                      {member.display_name || member.email || 'Pracownik'}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+
 function TeamSettings({ authSession }) {
   const [members, setMembers] = useState([])
   const [invitations, setInvitations] = useState([])
@@ -12084,6 +12261,12 @@ function TeamSettings({ authSession }) {
           <div style={{ fontSize: '13px', opacity: 0.7, lineHeight: 1.6 }}>
             Dodawaj pracowników do swojej firmy i określaj, czy mają dostęp administratora, czy tylko dostęp pracownika.
           </div>
+
+          <TeamsSettings
+            organizationId={currentMember?.organization_id}
+            members={members}
+            canManage={canManage}
+          />
 
           {canManage && (
             <form onSubmit={sendInvite} style={{ display: 'grid', gap: '10px', marginTop: '16px' }}>

@@ -5260,22 +5260,18 @@ function JobDetails({
     if (!confirmed) return
 
     try {
-      if (!entry.endedAt) {
-        await stopJobTimer(entry)
-      }
-
-      // Usuwanie wykonujemy przez bezpieczną funkcję RPC w Supabase.
-      // Omijamy problem DELETE + RLS/PostgREST, który może zwrócić pusty
-      // wynik mimo poprawnego wpisu.
+      // „Usuń” zawsze usuwa cały wpis — także aktywny.
+      // Nie zatrzymujemy go wcześniej, ponieważ zatrzymanie mogłoby
+      // zablokować usunięcie wpisu.
       await deleteJobTimeEntry(entry.id)
 
-      // Najpierw usuwamy go lokalnie, żeby UI reagował natychmiast.
+      // Natychmiast usuwamy wpis z UI.
       setJobTimeEntries((current) =>
         current.filter((item) => String(item.id) !== String(entry.id))
       )
       setTimeTick(Date.now())
 
-      // Potwierdzamy stan z bazy.
+      // Potwierdzamy stan bezpośrednio z bazy.
       const refreshedEntries = await getJobTimeEntries(editedJob.id)
       setJobTimeEntries(refreshedEntries)
     } catch (error) {

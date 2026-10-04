@@ -5265,15 +5265,15 @@ function JobDetails({
       // zablokować usunięcie wpisu.
       await deleteJobTimeEntry(entry.id)
 
-      // Natychmiast usuwamy wpis z UI.
+      // Usuwamy wpis z UI dopiero po potwierdzeniu z bazy.
+      // Nie wykonujemy tutaj ponownego pobrania historii — dzięki temu
+      // usunięty wpis nie może zostać przywrócony przez opóźniony odczyt.
       setJobTimeEntries((current) =>
         current.filter((item) => String(item.id) !== String(entry.id))
       )
       setTimeTick(Date.now())
 
-      // Potwierdzamy stan bezpośrednio z bazy.
-      const refreshedEntries = await getJobTimeEntries(editedJob.id)
-      setJobTimeEntries(refreshedEntries)
+      await showCustomAlert('Wpis czasu został usunięty.')
     } catch (error) {
       console.error('Nie udało się usunąć wpisu czasu:', error)
       showCustomAlert(

@@ -5212,6 +5212,37 @@ body {
   color: #64748b;
 }
 
+.finance-page .receivables-total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+}
+
+.finance-page .receivables-total > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.finance-page .receivables-total > div > span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.finance-page .receivables-total > div > strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.finance-page .receivables-total > div:last-child > strong {
+  font-size: 16px;
+  font-weight: 800;
+}
+
 .finance-page .finance-history-card {
   margin-top: 0;
 }

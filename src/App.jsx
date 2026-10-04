@@ -7394,18 +7394,80 @@ function JobDetails({
 
         {showCostForm && (
           <div className="note-form note-form-modern">
-            <select className="note-text-input" value={costForm.costType} onChange={(e) => setCostForm({ ...costForm, costType: e.target.value })}>
+            <select
+              className="note-text-input"
+              value={costForm.costType}
+              onChange={(e) => {
+                const costType = e.target.value
+                setCostForm({
+                  ...costForm,
+                  costType,
+                  unit: costType === 'hours' ? 'godz.' : (costForm.unit === 'godz.' ? 'szt.' : costForm.unit),
+                  employeeId: costType === 'hours' ? costForm.employeeId : '',
+                  employeeName: costType === 'hours' ? costForm.employeeName : '',
+                })
+              }}
+            >
               <option value="material">Materiał</option>
               <option value="hours">Robocizna / godziny</option>
               <option value="other">Inny koszt</option>
             </select>
 
-            <input className="note-text-input" type="text" placeholder="Np. kanał, materiał, transport..." value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })} />
+            {costForm.costType === 'hours' && (
+              <select
+                className="note-text-input"
+                value={costForm.employeeId || ''}
+                onChange={(e) => {
+                  const employee = organizationMembers.find(
+                    (member) => String(member.user_id) === String(e.target.value)
+                  )
+                  setCostForm({
+                    ...costForm,
+                    employeeId: employee?.user_id || '',
+                    employeeName: employee?.display_name || employee?.email || '',
+                    description: costForm.description || (employee?.display_name ? `Robocizna — ${employee.display_name}` : 'Robocizna'),
+                    unit: 'godz.',
+                  })
+                }}
+              >
+                <option value="">Wybierz pracownika</option>
+                {organizationMembers.map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.display_name || member.email || 'Pracownik'}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <input
+              className="note-text-input"
+              type="text"
+              placeholder={costForm.costType === 'hours' ? 'Opis robocizny' : 'Np. kanał, materiał, transport...'}
+              value={costForm.description}
+              onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-              <input className="note-text-input" inputMode="decimal" placeholder="Ilość" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })} />
-              <input className="note-text-input" placeholder="Jednostka" value={costForm.unit} onChange={(e) => setCostForm({ ...costForm, unit: e.target.value })} />
-              <input className="note-text-input" inputMode="decimal" placeholder="Cena jedn." value={costForm.unitCost} onChange={(e) => setCostForm({ ...costForm, unitCost: e.target.value })} />
+              <input
+                className="note-text-input"
+                inputMode="decimal"
+                placeholder={costForm.costType === 'hours' ? 'Liczba godzin' : 'Ilość'}
+                value={costForm.quantity}
+                onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })}
+              />
+              <input
+                className="note-text-input"
+                placeholder="Jednostka"
+                value={costForm.unit}
+                onChange={(e) => setCostForm({ ...costForm, unit: e.target.value })}
+              />
+              <input
+                className="note-text-input"
+                inputMode="decimal"
+                placeholder={costForm.costType === 'hours' ? 'Stawka / godz.' : 'Cena jedn.'}
+                value={costForm.unitCost}
+                onChange={(e) => setCostForm({ ...costForm, unitCost: e.target.value })}
+              />
             </div>
 
             <input className="note-date-input" type="date" value={costForm.costDate} onChange={(e) => setCostForm({ ...costForm, costDate: e.target.value })} />
@@ -7437,6 +7499,7 @@ function JobDetails({
                   <strong>{cost.description}</strong>
                   <div style={{ marginTop: '4px', fontSize: '12px', color: '#718096' }}>
                     {cost.costType === 'material' ? 'Materiał' : cost.costType === 'hours' ? 'Robocizna' : 'Inny koszt'}
+                    {cost.employeeName ? ' • 👤 ' + cost.employeeName : ''}
                     {' • '}{cost.quantity} {cost.unit} × {formatMoney(cost.unitCost)}
                     {cost.costDate ? ' • ' + formatDate(cost.costDate) : ''}
                   </div>

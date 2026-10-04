@@ -5264,11 +5264,20 @@ function JobDetails({
   const assignedEmployeeLabor = assignedTeamMembers.map((member) => {
     const hours = teamElapsedMinutes / 60
     const hourlyRate = Number(member.hourly_rate || 0)
+    const employeeEntries = jobTimeEntries.filter(
+      (entry) => String(entry.employeeId || '') === String(member.user_id)
+    )
+    const directMinutes = employeeEntries.reduce(
+      (sum, entry) => sum + getEntryMinutes(entry),
+      0
+    )
     return {
       ...member,
       hours,
       hourlyRate,
       laborCost: hours * hourlyRate,
+      directMinutes,
+      directLaborCost: (directMinutes / 60) * hourlyRate,
     }
   })
 
@@ -7899,9 +7908,15 @@ function JobDetails({
                     <strong>{formatMoney(member.laborCost)}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '5px', fontSize: '12px', color: '#718096' }}>
-                    <span>Czas: {formatDuration(member.hours * 60)}</span>
+                    <span>Udział: {formatDuration(member.hours * 60)}</span>
                     <span>{formatMoney(member.hourlyRate)} / h</span>
                   </div>
+                  {member.directMinutes > 0 && (
+                    <div style={{ marginTop: '7px', paddingTop: '7px', borderTop: '1px solid #e5ebf1', display: 'flex', justifyContent: 'space-between', gap: '10px', fontSize: '11px', color: '#718096' }}>
+                      <span>Własne wpisy: {formatDuration(member.directMinutes)}</span>
+                      <strong>{formatMoney(member.directLaborCost)}</strong>
+                    </div>
+                  )}
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '11px 12px', borderRadius: '12px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>

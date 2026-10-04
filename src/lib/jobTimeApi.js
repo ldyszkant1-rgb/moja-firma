@@ -100,24 +100,17 @@ export async function stopJobTimer(entry) {
 export async function deleteJobTimeEntry(id) {
   if (!id) throw new Error('Brak ID wpisu czasu.')
 
-  // Usuwanie jest chronione przez RLS w Supabase:
-  // DELETE może objąć wyłącznie wpis z bieżącej organizacji.
-  // Nie pobieramy tutaj organization_id z organization_members,
-  // ponieważ starsze urządzenia Aeroinstal korzystają z przypisania
-  // urządzenia i organizacja jest rozpoznawana przez current_organization_id().
-  const { data, error } = await supabase
-    .from('job_time_entries')
-    .delete()
-    .eq('id', id)
-    .select('id')
+  // Jedna ścieżka usuwania dla wszystkich urządzeń Aeroinstal.
+  // Funkcja RPC działa SECURITY DEFINER i sama ogranicza usunięcie
+  // do bieżącej organizacji.
+  const { data, error } = await supabase.rpc('delete_job_time_entry', {
+    p_id: id,
+  })
 
   if (error) throw error
 
-  const deleted = Array.isArray(data)
-    && data.some((row) => String(row.id) === String(id))
-
-  if (!deleted) {
-    throw new Error('Wpis czasu nie został usunięty. Baza nie zwróciła usuniętego rekordu.')
+  if (data !== true) {
+    throw new Error('Wpis czasu nie został usunięty. Nie znaleziono wpisu w bieżącej organizacji.')
   }
 
   return true

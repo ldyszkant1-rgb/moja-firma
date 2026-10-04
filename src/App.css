@@ -4257,3 +4257,162 @@ body {
     padding: 10px !important;
   }
 }
+
+
+/* FINAL DASHBOARD DETAILS — 2026-10-04 */
+.dashboard-value-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 18px !important;
+}
+.dashboard-value-card {
+  min-height: 0 !important;
+  height: 88px !important;
+  padding: 10px 12px !important;
+  border-radius: 18px !important;
+  box-sizing: border-box;
+}
+.dashboard-value-card-payable {
+  grid-column: 1 / -1;
+}
+.dashboard-value-card strong {
+  margin-top: 4px !important;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1 !important;
+}
+.dashboard-value-card strong small,
+.job-card-value strong small,
+.dashboard-value-card > small {
+  display: inline !important;
+  margin: 0 !important;
+  color: #94a3b8 !important;
+  font-size: 9px !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dashboard-value-card > small {
+  display: none !important;
+}
+
+.job-card-metrics {
+  align-items: stretch !important;
+}
+.job-card-metrics > div {
+  min-height: 58px;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.job-card-metrics .job-card-value strong {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+.job-card-metrics .job-card-value small {
+  display: inline !important;
+  margin: 0 !important;
+  color: #94a3b8 !important;
+  font-size: 8px !important;
+  font-weight: 600;
+}
+
+.job-card-invoice-summary {
+  min-height: 0 !important;
+  padding: 12px !important;
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 5px !important;
+}
+.job-card-invoice-row {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.job-card-invoice-number,
+.job-card-invoice-gross {
+  min-width: 0;
+  color: #526174;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.job-card-invoice-gross {
+  color: #24345c;
+  text-align: right;
+  white-space: nowrap;
+}
+.job-card-invoice-gross small {
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 600;
+}
+.job-card-invoice-row .invoice-status-unpaid,
+.job-card-invoice-row .invoice-status-paid {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 700;
+}
+.job-card-invoice-row .invoice-remaining {
+  margin: 0;
+  font-size: 9px;
+  color: #718096 !important;
+  text-align: right;
+  white-space: nowrap;
+}
+.job-card-invoice-row .job-card-no-invoice {
+  font-size: 11px;
+}
+
+.general-reminder-add-button {
+  width: auto !important;
+  margin: 4px 0 10px !important;
+  min-height: 32px !important;
+  padding: 4px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #0787e8 !important;
+  font: inherit;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-align: left;
+  box-shadow: none !important;
+}
+
+.main-header::after {
+  right: 14px !important;
+  top: calc(env(safe-area-inset-top) + 14px) !important;
+  width: 36px !important;
+  height: 36px !important;
+  background: #0787e8 !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.job-deadline {
+  font-size: 9px !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .dashboard-value-card {
+    height: 88px !important;
+    min-height: 88px !important;
+  }
+  .dashboard-value-card strong {
+    font-size: 15px !important;
+  }
+  .dashboard-value-card span {
+    font-size: 11px !important;
+  }
+}

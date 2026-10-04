@@ -8459,17 +8459,22 @@ function FinancePage({
     .filter((invoice) => invoice.status !== 'Anulowana')
     .map((invoice) => {
       const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const vatSettled = Math.min(
-        Math.max(0, Number(invoice.vatSettledAmount || 0)),
-        Math.max(0, Number(invoice.vatAmount || 0))
-      )
+      const net = Math.max(0, Number(invoice.netAmount || 0))
+      const vat = Math.max(0, Number(invoice.vatAmount || (gross - net)))
       const paid = invoice.jobId
         ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
         : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
-      // Finanse używa tej samej logiki co moduł Faktury:
-      // wpłaty klienta zmniejszają należność brutto, a VAT rozliczony wcześniej
-      // jest od niej odejmowany osobno.
-      const remaining = Math.max(0, gross - paid - vatSettled)
+
+      // Należność pokazujemy w dwóch wartościach:
+      // BRUTTO = ile klient ma jeszcze faktycznie zapłacić,
+      // NETTO = kwota bez VAT,
+      // VAT = część pozostałej należności przypadająca na VAT.
+      // Dzięki temu użytkownik od razu widzi, ile pieniędzy jest jego,
+      // a ile stanowi VAT.
+      const remaining = Math.max(0, gross - paid)
+      const netRatio = gross > 0 ? Math.min(1, net / gross) : 1
+      const remainingNet = Math.min(remaining, remaining * netRatio)
+      const remainingVat = Math.max(0, remaining - remainingNet)
       const dueDate = invoice.dueDate || null
       const invoiceIssued = Boolean(invoice.issueDate) && invoice.status !== 'Do wystawienia'
       const isOverdue = invoiceIssued && remaining > 0.01 && dueDate && dueDate < getTodayString()
@@ -8489,6 +8494,8 @@ function FinancePage({
         invoiceValue: gross,
         paid,
         remaining,
+        remainingNet,
+        remainingVat,
         dueDate,
         invoiceIssued,
         isOverdue,
@@ -8506,6 +8513,8 @@ function FinancePage({
         .filter((payment) => payment.jobId === job.id)
         .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
       const remaining = Math.max(0, invoiceValue - paid)
+      const remainingNet = remaining
+      const remainingVat = 0
       const dueDate = job.paymentDueDate || null
       const invoiceIssued = Boolean(dueDate)
       const isOverdue = invoiceIssued && remaining > 0 && dueDate < getTodayString()
@@ -8518,6 +8527,8 @@ function FinancePage({
         invoiceValue,
         paid,
         remaining,
+        remainingNet,
+        remainingVat,
         dueDate,
         invoiceIssued,
         isOverdue,
@@ -8535,6 +8546,8 @@ function FinancePage({
     })
 
   const totalReceivables = receivables.reduce((sum, item) => sum + item.remaining, 0)
+  const totalReceivablesNet = receivables.reduce((sum, item) => sum + Number(item.remainingNet || 0), 0)
+  const totalReceivablesVat = receivables.reduce((sum, item) => sum + Number(item.remainingVat || 0), 0)
   const overdueReceivables = receivables.filter((item) => item.isOverdue).reduce((sum, item) => sum + item.remaining, 0)
 
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
@@ -8910,10 +8923,14 @@ function FinancePage({
             <div className="small-label">NALEŻNOŚCI</div>
             <h2>Do odzyskania</h2>
           </div>
-          <div className="receivables-total">{formatMoney(totalReceivables)}</div>
+          <div className="receivables-total" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+            <strong>{formatMoney(totalReceivablesNet)} netto</strong>
+            <span style={{ fontSize: '14px', opacity: 0.72 }}>{formatMoney(totalReceivablesVat)} VAT</span>
+            <span style={{ fontSize: '17px', fontWeight: 800 }}>{formatMoney(totalReceivables)} brutto</span>
+          </div>
         </div>
         <div className="receivables-summary">
-          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'} • kwoty netto</span>
+          <span>{receivables.length} {receivables.length === 1 ? 'nieopłacona należność' : 'nieopłacone należności'} • netto + VAT + brutto</span>
           {overdueReceivables > 0 && <strong>🔴 Zaległe: {formatMoney(overdueReceivables)}</strong>}
         </div>
         {receivables.length > 0 ? (
@@ -8929,7 +8946,8 @@ function FinancePage({
                     <span>{item.clientName}</span>
                   </div>
                   <div className="receivable-amount">
-                    <strong>{formatMoney(item.remaining)}</strong>
+                    <strong>{formatMoney(item.remainingNet)} netto</strong>
+                    <span style={{ display: 'block', fontSize: '12px', opacity: 0.72 }}>{formatMoney(item.remainingVat)} VAT • {formatMoney(item.remaining)} brutto</span>
                     <span className={item.isOverdue ? 'client-payment-overdue' : 'client-payment-due'}>
                       {item.isOverdue ? dueLabel + ' • ' + Math.max(1, Math.ceil((new Date(getTodayString()) - new Date(item.dueDate)) / 86400000)) + ' dni' : dueLabel}
                     </span>

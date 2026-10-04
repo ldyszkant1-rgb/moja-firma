@@ -755,6 +755,28 @@ function App() {
         setDeviceAuthError(null)
         setDeviceUser(assignedUser)
 
+        // Stare urządzenie korzysta z sesji anonimowej + device_users,
+        // więc applySession nie ustawia authOrganizationId. Terminarz
+        // potrzebuje jednak identyfikatora firmy do zapisu planów.
+        // Pobieramy go po udanym przypisaniu urządzenia, gdy RLS zna już
+        // właściwą organizację.
+        try {
+          const { data: deviceMembership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .limit(1)
+            .maybeSingle()
+
+          if (membershipError) {
+            console.error('Nie udało się pobrać firmy urządzenia:', membershipError)
+          } else if (deviceMembership?.organization_id) {
+            setAuthOrganizationId(deviceMembership.organization_id)
+            setAuthOrganizationChecked(true)
+          }
+        } catch (membershipError) {
+          console.error('Nie udało się ustawić firmy urządzenia:', membershipError)
+        }
+
         // Po udanym przypisaniu urządzenia wymuś pierwszy odczyt Realizacji
         // z aktywną sesją Supabase. Nie czekamy tutaj na kolejność renderów
         // ani na zmianę flagi dataAccessReady — to eliminuje sytuację,

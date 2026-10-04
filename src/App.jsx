@@ -12430,7 +12430,6 @@ function TeamsSettings({ organizationId, members, canManage }) {
   const [teamName, setTeamName] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [savingEdit, setSavingEdit] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
 
   const loadTeams = async () => {
@@ -12955,6 +12954,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [calendarExclusions, setCalendarExclusions] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [type, setType] = useState('job')
   const [jobId, setJobId] = useState('')

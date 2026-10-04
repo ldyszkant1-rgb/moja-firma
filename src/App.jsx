@@ -5307,6 +5307,29 @@ function JobDetails({
           ? 'Dobra marża'
           : 'Bardzo dobra marża'
 
+  const profitabilityAlerts = []
+  if (jobRevenue > 0 && jobProfit < 0) {
+    profitabilityAlerts.push({
+      level: 'danger',
+      title: 'Robota przynosi stratę',
+      message: 'Koszty realizacji są wyższe od przychodu. Warto sprawdzić materiały, robociznę i zakres prac.',
+    })
+  } else if (jobRevenue > 0 && jobMargin < 15) {
+    profitabilityAlerts.push({
+      level: 'warning',
+      title: 'Niska marża',
+      message: 'Marża tej realizacji spadła poniżej 15%. Sprawdź, czy kolejne koszty nie obniżą wyniku jeszcze bardziej.',
+    })
+  }
+
+  if (jobRevenue > 0 && laborShareOfRevenue > 50) {
+    profitabilityAlerts.push({
+      level: 'warning',
+      title: 'Wysoki koszt robocizny',
+      message: 'Robocizna przekracza 50% przychodu tej realizacji.',
+    })
+  }
+
   const activeTimerFor = (employeeId, timeType) =>
     jobTimeEntries.find(
       (entry) =>
@@ -8237,6 +8260,58 @@ function JobDetails({
           </div>
         </div>
       </div>
+
+      {profitabilityAlerts.length > 0 ? (
+        <div className="detail-card" style={{
+          border: '1px solid #f0caca',
+          background: '#fffafa',
+        }}>
+          <div className="small-label" style={{ color: '#b42318' }}>⚠️ ALERT RENTOWNOŚCI</div>
+          <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
+            {profitabilityAlerts.map((alert) => {
+              const isDanger = alert.level === 'danger'
+              return (
+                <div key={alert.title} style={{
+                  padding: '12px 13px',
+                  borderRadius: '12px',
+                  border: isDanger ? '1px solid #efb4b4' : '1px solid #f0d6a0',
+                  background: isDanger ? '#fff1f1' : '#fff8e8',
+                }}>
+                  <strong style={{
+                    display: 'block',
+                    color: isDanger ? '#b42318' : '#9a6700',
+                    fontSize: '14px',
+                  }}>
+                    {alert.title}
+                  </strong>
+                  <div style={{
+                    marginTop: '4px',
+                    color: '#64748b',
+                    fontSize: '12px',
+                    lineHeight: 1.5,
+                  }}>
+                    {alert.message}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="detail-card" style={{
+          border: '1px solid #cde8d8',
+          background: '#f7fcf9',
+        }}>
+          <div className="small-label" style={{ color: '#16834a' }}>✓ RENTOWNOŚĆ POD KONTROLĄ</div>
+          <div style={{
+            marginTop: '5px',
+            color: '#64748b',
+            fontSize: '12px',
+          }}>
+            Brak aktywnych alertów rentowności dla tej realizacji.
+          </div>
+        </div>
+      )}
 
       {/* KOSZTY REALIZACJI */}
       <div className="detail-card">

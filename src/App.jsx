@@ -12928,7 +12928,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const savePlan = async (event) => {
     event.preventDefault()
-    if (!organizationId || !startDate || !endDate) return
+    if (!organizationId) { await showCustomAlert('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.'); return }
+    if (!startDate || !endDate) { await showCustomAlert('Wybierz zakres dat.'); return }
     const start = makeDate(startDate)
     const end = makeDate(endDate)
     if (start > end) {

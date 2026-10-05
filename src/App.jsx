@@ -10866,115 +10866,109 @@ function FinancePage({
           </div>
         )}
 
-        {!showForm && !editingCostId && (
-          <button
-            type="button"
-            className="cost-add-button cost-add-button-modern"
-            onClick={() => setShowForm(true)}
-          >
-            <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
-            <span>Dodaj koszt</span>
-          </button>
-        )}
-
-        {showForm && (
-          <div className="cost-form cost-form-modern">
-            <div className="cost-form-header">
-              <span className="cost-form-header-icon cost-form-header-icon-add" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                </svg>
-              </span>
+      {showForm && (
+        <div className="finance-cost-sheet-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !costSaving) setShowForm(false)
+        }}>
+          <div className="finance-cost-sheet" role="dialog" aria-modal="true" aria-labelledby="finance-cost-sheet-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="finance-cost-sheet-handle" aria-hidden="true" />
+            <div className="finance-cost-sheet-header">
               <div>
-                <h3>Dodaj koszt</h3>
+                <h2 id="finance-cost-sheet-title">Dodaj koszt</h2>
                 <p>Wprowadź nowy wydatek w firmie</p>
               </div>
+              <button type="button" className="finance-cost-sheet-close" onClick={() => !costSaving && setShowForm(false)} aria-label="Zamknij" disabled={costSaving}>
+                <X size={20} strokeWidth={1.8} />
+              </button>
+            </div>
+            <div className="finance-cost-sheet-fields">
+              <div className={`finance-cost-sheet-field${costFieldErrors.category ? ' has-error' : ''}`}>
+                <label htmlFor="finance-cost-category">Kategoria</label>
+                <div className="finance-cost-select-wrap">
+                  <select id="finance-cost-category" value={newCost.category} onChange={(event) => {
+                    setNewCost({ ...newCost, category: event.target.value })
+                    setCostFieldErrors((current) => ({ ...current, category: undefined }))
+                  }}>
+                    <option value="">Wybierz kategorię</option>
+                    {safeCategoryOptions.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
+                  </select>
+                  <ChevronDown size={18} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+                {costFieldErrors.category && <small>{costFieldErrors.category}</small>}
+              </div>
+
+              <div className={`finance-cost-sheet-field${costFieldErrors.amount ? ' has-error' : ''}`}>
+                <label htmlFor="finance-cost-amount">Kwota</label>
+                <div className="finance-cost-amount-wrap">
+                  <input id="finance-cost-amount" type="text" inputMode="decimal" placeholder="0,00" value={newCost.amount} onChange={(event) => {
+                    setNewCost({ ...newCost, amount: event.target.value })
+                    setCostFieldErrors((current) => ({ ...current, amount: undefined }))
+                  }} />
+                  <span>zł</span>
+                </div>
+                {costFieldErrors.amount && <small>{costFieldErrors.amount}</small>}
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label>Kwota jest</label>
+                <div className="finance-cost-segmented">
+                  <button type="button" className={newCost.amountBasis === 'netto' ? 'is-active' : ''} onClick={() => setNewCost({ ...newCost, amountBasis: 'netto' })}>Netto</button>
+                  <button type="button" className={newCost.amountBasis === 'brutto' ? 'is-active' : ''} onClick={() => setNewCost({ ...newCost, amountBasis: 'brutto' })}>Brutto</button>
+                </div>
+              </div>
+
+              {newCost.amountBasis === 'brutto' && (
+                <div className="finance-cost-sheet-field">
+                  <label htmlFor="finance-cost-vat">Stawka VAT</label>
+                  <div className="finance-cost-select-wrap">
+                    <select id="finance-cost-vat" value={newCost.vatRate} onChange={(event) => setNewCost({ ...newCost, vatRate: event.target.value })}>
+                      <option value="23">23%</option>
+                      <option value="8">8%</option>
+                      <option value="5">5%</option>
+                      <option value="0">0%</option>
+                    </select>
+                    <ChevronDown size={18} strokeWidth={1.8} aria-hidden="true" />
+                  </div>
+                </div>
+              )}
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-cost-payer">Kto zapłacił</label>
+                <div className="finance-cost-select-wrap">
+                  <select id="finance-cost-payer" value={newCost.paidBy} onChange={(event) => setNewCost({ ...newCost, paidBy: event.target.value })}>
+                    <option value={partnerOne}>{partnerOne}</option>
+                    <option value={partnerTwo}>{partnerTwo}</option>
+                  </select>
+                  <ChevronDown size={18} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className={`finance-cost-sheet-field${costFieldErrors.date ? ' has-error' : ''}`}>
+                <label htmlFor="finance-cost-date">Data</label>
+                <input id="finance-cost-date" type="date" value={newCost.date} onChange={(event) => {
+                  setNewCost({ ...newCost, date: event.target.value })
+                  setCostFieldErrors((current) => ({ ...current, date: undefined }))
+                }} />
+                {costFieldErrors.date && <small>{costFieldErrors.date}</small>}
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-cost-description">Opis <span>opcjonalnie</span></label>
+                <textarea id="finance-cost-description" rows="2" value={newCost.description} onChange={(event) => setNewCost({ ...newCost, description: event.target.value })} placeholder="Opis kosztu" />
+              </div>
+
+              {costFormError && <div className="finance-cost-sheet-error">{costFormError}</div>}
             </div>
 
-            <div className="cost-form-grid">
-              <div className="cost-form-field">
-                <label>Kategoria</label>
-                <select
-                  value={newCost.category}
-                  onChange={(e) =>
-                    setNewCost({ ...newCost, category: e.target.value })
-                  }
-                >
-                  {safeCategoryOptions.map((category) => (
-                    <option key={category.name} value={category.name}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="cost-form-field">
-                <label>Kwota</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="np. 2800,00"
-                  value={newCost.amount}
-                  onChange={(e) =>
-                    setNewCost({ ...newCost, amount: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="cost-form-field">
-                <label>Kto zapłacił</label>
-                <select
-                  value={newCost.paidBy}
-                  onChange={(e) =>
-                    setNewCost({ ...newCost, paidBy: e.target.value })
-                  }
-                >
-                  <option value={partnerOne}>{partnerOne}</option>
-                  <option value={partnerTwo}>{partnerTwo}</option>
-                </select>
-              </div>
-
-              <div className="cost-form-field cost-form-field-wide">
-                <label>Opis</label>
-                <input
-                  type="text"
-                  placeholder="Opis kosztu (opcjonalnie)"
-                  value={newCost.description}
-                  onChange={(e) =>
-                    setNewCost({ ...newCost, description: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="cost-form-field">
-                <label>Data</label>
-                <input
-                  type="date"
-                  value={newCost.date}
-                  onChange={(e) =>
-                    setNewCost({ ...newCost, date: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="cost-form-actions cost-form-actions-modern">
-              <button className="cost-save-button" onClick={addCost}>
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                </svg>
-                <span>Dodaj koszt</span>
-              </button>
-              <button
-                className="cost-cancel-button"
-                onClick={() => setShowForm(false)}
-              >
-                Anuluj
-              </button>
+            <div className="finance-cost-sheet-actions">
+              <button type="button" className="finance-cost-sheet-cancel" onClick={() => !costSaving && setShowForm(false)} disabled={costSaving}>Anuluj</button>
+              <button type="button" className="finance-cost-sheet-save" onClick={addCost} disabled={costSaving}>{costSaving ? 'Zapisuję…' : 'Dodaj koszt'}</button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {costToast && <div className="finance-cost-toast" role="status">Dodano koszt</div>}
 
       <div className="detail-card finance-completed-card">
         <div className="finance-cost-header">

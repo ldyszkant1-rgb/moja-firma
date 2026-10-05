@@ -13302,6 +13302,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeJobDayFromCalendar = async (job, date) => {
     if (!job?.id || !date) return
 
+    const confirmed = await showCustomConfirm(
+      `Usunąć ten dzień realizacji „${job.name || 'bez nazwy'}” z kalendarza?\n\nRealizacja pozostanie zapisana, ale ten dzień przestanie być widoczny w terminarzu.`
+    )
+    if (!confirmed) return
+
     setMovingJobId(job.id + ':' + date)
     try {
       const { data: saved, error } = await supabase.rpc('add_calendar_job_exclusion', {
@@ -13544,7 +13549,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                         <HardHat size={18} strokeWidth={1.75} />
                         <strong>{job.name}</strong>
                       </div>
-                      <div className="calendar-plan-member">{job.location || 'Brak lokalizacji'}</div>
                       <div className="calendar-plan-member">Cała ekipa</div>
                     </button>
                   </div>

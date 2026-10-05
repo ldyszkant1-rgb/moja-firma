@@ -37,7 +37,7 @@ class RootErrorBoundary extends React.Component {
   }
 }
 
-const APP_VERSION = '2026.10.05-7ed88e3'
+const APP_VERSION = '2026.10.05-cost-sheet'
 
 function PwaUpdateBanner() {
   const [registration, setRegistration] = React.useState(null)

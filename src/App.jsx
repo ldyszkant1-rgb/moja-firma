@@ -12989,11 +12989,14 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [saving, setSaving] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [saveToast, setSaveToast] = useState(false)
+  const [formErrors, setFormErrors] = useState({})
   const [type, setType] = useState('job')
   const [jobId, setJobId] = useState('')
   const [userId, setUserId] = useState('')
   const [startDate, setStartDate] = useState(today)
   const [endDate, setEndDate] = useState(today)
+  const [multiDay, setMultiDay] = useState(false)
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [hoursWorked, setHoursWorked] = useState('')
@@ -13006,8 +13009,10 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [movingJobId, setMovingJobId] = useState(null)
 
   const gridStart = getMonday(getMonthStart(monthCursor))
-  const gridEnd = addDays(gridStart, 41)
-  const calendarDays = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
+  const fullCalendarDays = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
+  const showSixRows = fullCalendarDays.slice(35).some((day) => day.getMonth() === monthCursor.getMonth())
+  const calendarDays = fullCalendarDays.slice(0, showSixRows ? 42 : 35)
+  const gridEnd = addDays(gridStart, calendarDays.length - 1)
   const monthTitle = monthCursor.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })
   const selectedPlans = plans.filter((plan) => String(plan.plan_date) === String(selectedDate))
   const selectedDay = makeDate(selectedDate)
@@ -13097,46 +13102,86 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
   const openFormForDay = (date) => {
     setSaveMessage('')
+    setFormErrors({})
     setSaving(false)
     setSelectedDate(date)
     setStartDate(date)
     setEndDate(date)
+    setMultiDay(false)
+    setType('job')
+    setJobId('')
+    setUserId('')
+    setTitle('')
+    setNote('')
+    setHoursWorked('')
+    setMinutesWorked('')
     setShowForm(true)
+  }
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setShowForm(false)
+      closeEditPlan()
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const setQuickHours = (value) => {
+    setHoursWorked(String(value))
+    setMinutesWorked('0')
+    setFormErrors((current) => ({ ...current, time: '' }))
   }
 
   const savePlan = async (event) => {
     event.preventDefault()
     setSaveMessage('')
 
+    const errors = {}
+
     if (!organizationId) {
       setSaveMessage('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.')
       return
     }
-    if (!startDate || !endDate) {
-      setSaveMessage('Wybierz zakres dat.')
-      return
+    if (!startDate) {
+      errors.startDate = 'Wybierz datę rozpoczęcia.'
+    }
+    if (multiDay && !endDate) {
+      errors.endDate = 'Wybierz datę zakończenia.'
     }
 
-    const start = makeDate(startDate)
-    const end = makeDate(endDate)
-    if (start > end) {
-      setSaveMessage('Data końcowa nie może być wcześniejsza od początkowej.')
-      return
+    const effectiveEndDate = multiDay ? endDate : startDate
+    const start = startDate ? makeDate(startDate) : null
+    const end = effectiveEndDate ? makeDate(effectiveEndDate) : null
+
+    if (start && end && start > end) {
+      errors.endDate = 'Data końcowa nie może być wcześniejsza od początkowej.'
     }
     if (type === 'job' && !jobId) {
-      setSaveMessage('Wybierz robotę.')
-      return
+      errors.jobId = 'Wybierz robotę.'
     }
     if (type !== 'job' && !userId) {
-      setSaveMessage('Wybierz pracownika.')
+      errors.userId = 'Wybierz pracownika.'
+    }
+
+    const workedHoursValue = type === 'job'
+      ? workedHoursToDecimal(hoursWorked, minutesWorked)
+      : null
+
+    if (type === 'job') {
+      if ((hoursWorked !== '' || minutesWorked !== '') && workedHoursValue === null) {
+        errors.time = 'Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.'
+      } else if (workedHoursValue === null || workedHoursValue <= 0) {
+        errors.time = 'Czas pracy musi być większy od 0.'
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
       return
     }
 
-    const workedHoursValue = workedHoursToDecimal(hoursWorked, minutesWorked)
-    if ((hoursWorked !== '' || minutesWorked !== '') && workedHoursValue === null) {
-      setSaveMessage('Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.')
-      return
-    }
+    setFormErrors({})
 
     const selectedJob = jobs.find((job) => String(job.id) === String(jobId))
     const finalTitle = type === 'job'
@@ -13190,16 +13235,17 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       })
 
       await loadPlans()
-      setSaveMessage(rows.length > 1 ? 'Plan zapisany na cały wybrany okres.' : 'Plan zapisany.')
       setShowForm(false)
+      setSaveToast(true)
+      window.setTimeout(() => setSaveToast(false), 2000)
       setTitle('')
       setNote('')
       setHoursWorked('')
       setMinutesWorked('')
-      await showCustomAlert(rows.length > 1 ? 'Plan został wpisany na cały wybrany okres.' : 'Plan został zapisany.')
+      setFormErrors({})
     } catch (error) {
       console.error('Nie udało się zapisać planu:', error)
-      await showCustomAlert(error?.message || 'Nie udało się zapisać planu.')
+      setSaveMessage(error?.message || 'Nie udało się zapisać planu.')
     } finally {
       setSaving(false)
     }
@@ -13600,64 +13646,162 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                 <>
                   <div className="finance-cost-sheet-field">
                     <label>Rodzaj</label>
-                    <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }}>
-                      <option value="job">Robota</option>
-                      <option value="vacation">Urlop</option>
-                      <option value="sick">Chorobowe</option>
-                      <option value="day_off">Dzień wolny</option>
-                      <option value="delegation">Delegacja</option>
-                      <option value="other">Inne</option>
-                    </select>
+                    <div className="calendar-select-wrap">
+                      <select
+                        value={type}
+                        onChange={(e) => {
+                          const nextType = e.target.value
+                          setType(nextType)
+                          setJobId('')
+                          setFormErrors({})
+                          if (nextType !== 'job') {
+                            setHoursWorked('')
+                            setMinutesWorked('')
+                          }
+                        }}
+                      >
+                        <option value="job">Robota</option>
+                        <option value="vacation">Urlop</option>
+                        <option value="sick">Chorobowe</option>
+                        <option value="day_off">Dzień wolny</option>
+                        <option value="delegation">Delegacja</option>
+                        <option value="other">Inne</option>
+                      </select>
+                      <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+                    </div>
                   </div>
 
-                  <div className="finance-cost-sheet-field">
+                  <div className={'finance-cost-sheet-field' + (formErrors.userId ? ' has-error' : '')}>
                     <label>Kto</label>
-                    <select value={userId} onChange={(e) => setUserId(e.target.value)}>
-                      <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
-                      {organizationMembers.map((member) => (
-                        <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="finance-cost-sheet-field">
-                    <label>{type === 'job' ? 'Robota' : 'Nazwa'}</label>
-                    {type === 'job' ? (
-                      <select value={jobId} onChange={(e) => setJobId(e.target.value)}>
-                        <option value="">Wybierz robotę</option>
-                        {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => (
-                          <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+                    <div className="calendar-select-wrap">
+                      <select value={userId} onChange={(e) => { setUserId(e.target.value); setFormErrors((current) => ({ ...current, userId: '' })) }}>
+                        <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
+                        {organizationMembers.map((member) => (
+                          <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
                         ))}
                       </select>
-                    ) : (
+                      <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+                    </div>
+                    {formErrors.userId && <small>{formErrors.userId}</small>}
+                  </div>
+
+                  {type === 'job' && (
+                    <div className={'finance-cost-sheet-field' + (formErrors.jobId ? ' has-error' : '')}>
+                      <label>Robota</label>
+                      <div className="calendar-select-wrap">
+                        <select value={jobId} onChange={(e) => { setJobId(e.target.value); setFormErrors((current) => ({ ...current, jobId: '' })) }}>
+                          <option value="">Wybierz robotę</option>
+                          {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => (
+                            <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+                      </div>
+                      {formErrors.jobId && <small>{formErrors.jobId}</small>}
+                    </div>
+                  )}
+
+                  {type !== 'job' && (
+                    <div className="finance-cost-sheet-field">
+                      <label>Opis</label>
                       <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Np. Urlop wypoczynkowy" />
-                    )}
-                  </div>
-
-                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
-                    <div>
-                      <label>Od</label>
-                      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                     </div>
-                    <div>
-                      <label>Do</label>
-                      <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />
-                    </div>
-                  </div>
-
-                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
-                    <div>
-                      <label>Godziny</label>
-                      <input type="number" min="0" max="24" step="1" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} placeholder="np. 4" />
-                    </div>
-                    <div>
-                      <label>Minuty</label>
-                      <input type="number" min="0" max="59" step="1" value={minutesWorked} onChange={(e) => setMinutesWorked(e.target.value)} placeholder="np. 30" />
-                    </div>
-                  </div>
+                  )}
 
                   <div className="finance-cost-sheet-field">
-                    <label>Opis <span>opcjonalnie</span></label>
+                    <label>Od</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        const nextDate = e.target.value
+                        setStartDate(nextDate)
+                        if (!multiDay) setEndDate(nextDate)
+                        setFormErrors((current) => ({ ...current, startDate: '', endDate: '' }))
+                      }}
+                    />
+                    {formErrors.startDate && <small>{formErrors.startDate}</small>}
+                  </div>
+
+                  <div className="calendar-multi-day-row">
+                    <span>Kilka dni</span>
+                    <button
+                      type="button"
+                      className={'calendar-switch' + (multiDay ? ' is-on' : '')}
+                      onClick={() => {
+                        const next = !multiDay
+                        setMultiDay(next)
+                        if (!next) setEndDate(startDate)
+                        setFormErrors((current) => ({ ...current, endDate: '' }))
+                      }}
+                      aria-pressed={multiDay}
+                    >
+                      <span />
+                    </button>
+                  </div>
+
+                  {multiDay && (
+                    <div className={'finance-cost-sheet-field' + (formErrors.endDate ? ' has-error' : '')}>
+                      <label>Do</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        min={startDate}
+                        onChange={(e) => {
+                          setEndDate(e.target.value)
+                          setFormErrors((current) => ({ ...current, endDate: '' }))
+                        }}
+                      />
+                      {formErrors.endDate && <small>{formErrors.endDate}</small>}
+                    </div>
+                  )}
+
+                  {type === 'job' && (
+                    <div className={'finance-cost-sheet-field' + (formErrors.time ? ' has-error' : '')}>
+                      <label>Czas pracy</label>
+                      <div className="calendar-time-quick">
+                        {[4, 6, 8, 10].map((value) => {
+                          const active = Number(hoursWorked) === value && Number(minutesWorked || 0) === 0
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={active ? 'is-active' : ''}
+                              onClick={() => setQuickHours(value)}
+                            >
+                              {value} h
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <div className="calendar-time-custom">
+                        <input
+                          type="number"
+                          min="0"
+                          max="24"
+                          step="1"
+                          inputMode="numeric"
+                          value={hoursWorked}
+                          onChange={(e) => { setHoursWorked(e.target.value); setFormErrors((current) => ({ ...current, time: '' })) }}
+                          placeholder="Godziny"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          step="1"
+                          inputMode="numeric"
+                          value={minutesWorked}
+                          onChange={(e) => { setMinutesWorked(e.target.value); setFormErrors((current) => ({ ...current, time: '' })) }}
+                          placeholder="Minuty"
+                        />
+                      </div>
+                      {formErrors.time && <small>{formErrors.time}</small>}
+                    </div>
+                  )}
+
+                  <div className="finance-cost-sheet-field">
+                    <label>Opis</label>
                     <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka" />
                   </div>
                 </>
@@ -13671,22 +13815,36 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     <label>Data</label>
                     <input type="date" value={String(editingPlan.plan_date || '')} readOnly />
                   </div>
-                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
-                    <div>
-                      <label>Godziny</label>
-                      <input type="number" min="0" max="24" step="1" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="np. 4" />
+                  <div className="finance-cost-sheet-field">
+                    <label>Czas pracy</label>
+                    <div className="calendar-time-quick">
+                      {[4, 6, 8, 10].map((value) => {
+                        const active = Number(editHours) === value && Number(editMinutes || 0) === 0
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            className={active ? 'is-active' : ''}
+                            onClick={() => { setEditHours(String(value)); setEditMinutes('0') }}
+                          >
+                            {value} h
+                          </button>
+                        )
+                      })}
                     </div>
-                    <div>
-                      <label>Minuty</label>
-                      <input type="number" min="0" max="59" step="1" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="np. 30" />
+                    <div className="calendar-time-custom">
+                      <input type="number" min="0" max="24" step="1" inputMode="numeric" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="Godziny" />
+                      <input type="number" min="0" max="59" step="1" inputMode="numeric" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="Minuty" />
                     </div>
                   </div>
                   <div className="finance-cost-sheet-field">
-                    <label>Opis <span>opcjonalnie</span></label>
+                    <label>Opis</label>
                     <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka" />
                   </div>
                 </>
               )}
+            </div>
+
             </div>
 
             {(saveMessage && !editingPlan) && (
@@ -13707,6 +13865,9 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
       {saveMessage && !showForm && !editingPlan && (
         <div className="calendar-save-message">{saveMessage}</div>
+      )}
+      {saveToast && (
+        <div className="calendar-save-toast" role="status">Zapisano</div>
       )}
     </div>
   )

@@ -10865,6 +10865,7 @@ function FinancePage({
             </div>
           </div>
         )}
+      </div>
 
       {showForm && (
         <div className="finance-cost-sheet-backdrop" role="presentation" onMouseDown={(event) => {

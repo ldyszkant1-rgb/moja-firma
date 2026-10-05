@@ -10283,6 +10283,16 @@ function FinancePage({
     }
   }
 
+  const costPreviewAmount = parseDecimal(newCost.amount)
+  const costPreviewRate = Number(newCost.vatRate || 0)
+  const costPreviewGross = newCost.amountBasis === 'brutto'
+    ? costPreviewAmount
+    : costPreviewAmount * (1 + costPreviewRate / 100)
+  const costPreviewNet = newCost.amountBasis === 'brutto'
+    ? costPreviewAmount / (1 + costPreviewRate / 100)
+    : costPreviewAmount
+  const costPreviewVat = costPreviewGross - costPreviewNet
+
   return (
     <div className="sub-page finance-page">
 
@@ -10982,6 +10992,13 @@ function FinancePage({
                   <span>zł</span>
                 </div>
                 {costFieldErrors.amount && <small>{costFieldErrors.amount}</small>}
+                {costPreviewAmount > 0 && (
+                  <div className="finance-cost-amount-preview">
+                    {newCost.amountBasis === 'brutto'
+                      ? 'Netto ' + formatMoney(costPreviewNet) + ' zł · VAT ' + formatMoney(costPreviewVat) + ' zł'
+                      : 'Brutto ' + formatMoney(costPreviewGross) + ' zł · VAT ' + formatMoney(costPreviewVat) + ' zł'}
+                  </div>
+                )}
               </div>
 
               <div className="finance-cost-sheet-field">

@@ -5314,6 +5314,12 @@ body {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 18px;
+  text-align: left;
+}
+
+.finance-page .finance-cost-sheet-header > div {
+  min-width: 0;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-header h2 {
@@ -5322,6 +5328,7 @@ body {
   font-size: 18px;
   font-weight: 800;
   line-height: 1.25;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-header p {
@@ -5330,6 +5337,7 @@ body {
   font-size: 13px;
   line-height: 1.25;
   white-space: nowrap;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-close {
@@ -5354,12 +5362,15 @@ body {
 .finance-page .finance-cost-sheet-fields {
   display: grid;
   gap: 14px;
+  padding-bottom: 20px;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-field {
   min-width: 0;
   display: grid;
   gap: 6px;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-field > label {
@@ -5367,6 +5378,7 @@ body {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
+  text-align: left;
 }
 
 .finance-page .finance-cost-sheet-field > label span {
@@ -5379,6 +5391,8 @@ body {
 .finance-page .finance-cost-sheet-field textarea {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid #dce7f1;
   border-radius: 14px;
   background: #f8fafc;
@@ -5400,6 +5414,22 @@ body {
   padding: 12px 14px;
   resize: vertical;
 }
+.finance-page .finance-cost-sheet-field input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+
+.finance-page .finance-cost-sheet-field input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
 
 .finance-page .finance-cost-sheet-field input:focus,
 .finance-page .finance-cost-sheet-field select:focus,
@@ -5460,6 +5490,14 @@ body {
   transform: translateY(-50%);
 }
 
+.finance-page .finance-cost-amount-preview {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+
 .finance-page .finance-cost-segmented {
   min-height: 48px;
   padding: 3px;
@@ -5507,9 +5545,11 @@ body {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 10px;
-  padding-top: 12px;
-  margin-top: 14px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  margin: 14px -16px 0;
+  border-top: 1px solid #edf1f5;
   background: #fff;
+  z-index: 2;
 }
 
 .finance-page .finance-cost-sheet-actions button {

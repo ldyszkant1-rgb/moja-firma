@@ -11151,7 +11151,38 @@ function FinancePage({
                         : '—'}
                     </span>
 
-                    <div style={      {showForm && (
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: 'block' }}>
+                        {cost.category || 'Inne'}
+                      </strong>
+                      <span
+                        style={{
+                          color: '#68758a',
+                          fontSize: '13px',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {cost.description || `Zapłacił: ${cost.paidBy || '—'}`}
+                      </span>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <strong style={{ display: 'block', whiteSpace: 'nowrap' }}>
+                        {formatMoney(Number(cost.netAmount ?? cost.amount ?? 0))}
+                      </strong>
+                      <span style={{ color: '#68758a', fontSize: '12px' }}>
+                        {cost.paidBy || '—'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+        )}
+      </div>
+
+
+{showForm && (
         <div
           className="finance-cost-sheet-backdrop"
           role="presentation"
@@ -11425,37 +11456,6 @@ function FinancePage({
           </div>
           </div>
         )}
-
-{ minWidth: 0 }}>
-                      <strong style={{ display: 'block' }}>
-                        {cost.category || 'Inne'}
-                      </strong>
-                      <span
-                        style={{
-                          color: '#68758a',
-                          fontSize: '13px',
-                          overflowWrap: 'anywhere',
-                        }}
-                      >
-                        {cost.description || `Zapłacił: ${cost.paidBy || '—'}`}
-                      </span>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ display: 'block', whiteSpace: 'nowrap' }}>
-                        {formatMoney(Number(cost.netAmount ?? cost.amount ?? 0))}
-                      </strong>
-                      <span style={{ color: '#68758a', fontSize: '12px' }}>
-                        {cost.paidBy || '—'}
-                      </span>
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
-        )}
-      </div>
-
       <div className="detail-card finance-year-summary">
         <div className="finance-cost-header">
           <div>

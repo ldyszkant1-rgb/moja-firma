@@ -79,6 +79,25 @@ function mapSupabaseFinanceToApp(
         item.amount
       ),
 
+    amountBasis:
+      item.amount_basis || null,
+
+    vatRate:
+      item.vat_rate == null ? null : parseDecimal(item.vat_rate),
+
+    netAmount:
+      item.net_amount == null
+        ? parseDecimal(item.amount)
+        : parseDecimal(item.net_amount),
+
+    vatAmount:
+      item.vat_amount == null ? 0 : parseDecimal(item.vat_amount),
+
+    grossAmount:
+      item.gross_amount == null
+        ? parseDecimal(item.amount)
+        : parseDecimal(item.gross_amount),
+
     paidBy:
       item.paid_by || null,
 
@@ -147,8 +166,27 @@ function mapAppFinanceToSupabase(
 
     amount:
       parseDecimal(
-        item.amount
+        item.netAmount ?? item.amount
       ),
+
+    amount_basis:
+      item.amountBasis || null,
+
+    vat_rate:
+      item.vatRate == null ? null : parseDecimal(item.vatRate),
+
+    net_amount:
+      item.netAmount == null
+        ? parseDecimal(item.amount)
+        : parseDecimal(item.netAmount),
+
+    vat_amount:
+      item.vatAmount == null ? 0 : parseDecimal(item.vatAmount),
+
+    gross_amount:
+      item.grossAmount == null
+        ? parseDecimal(item.amount)
+        : parseDecimal(item.grossAmount),
 
     category:
       item.category || null,

@@ -13711,62 +13711,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     </div>
   )
 }
-const calendarMonthNavButtonStyle = {
-  width: '40px',
-  height: '40px',
-  border: '1px solid #d7e1eb',
-  background: '#ffffff',
-  color: '#12234f',
-  borderRadius: '12px',
-  fontSize: '26px',
-  lineHeight: 1,
-  fontWeight: 800,
-  cursor: 'pointer',
-}
-
-const calendarTextButtonStyle = {
-  border: 'none',
-  background: 'transparent',
-  color: '#1670c5',
-  fontSize: '10px',
-  fontWeight: 800,
-  padding: 0,
-  cursor: 'pointer',
-}
-
-const calendarDotStyle = (color) => ({
-  display: 'inline-block',
-  width: '6px',
-  height: '6px',
-  borderRadius: '50%',
-  background: color,
-  flexShrink: 0,
-})
-
-
-const calendarSmallButtonStyle = {
-  border: '1px solid #d7e1eb',
-  background: '#fff',
-  color: '#334e68',
-  borderRadius: '10px',
-  padding: '8px 10px',
-  fontSize: '12px',
-  fontWeight: 800,
-  cursor: 'pointer',
-}
-
-const calendarMoveButtonStyle = {
-  flex: 1,
-  minHeight: '30px',
-  border: '1px solid #d7e1eb',
-  background: '#f5f8fb',
-  color: '#526174',
-  borderRadius: '8px',
-  fontSize: '14px',
-  fontWeight: 900,
-  cursor: 'pointer',
-}
-
 /* =====================================================
    DOLNE MENU
    ===================================================== */

@@ -13276,6 +13276,10 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       await showCustomAlert('Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.')
       return
     }
+    if (editingPlan.plan_type === 'job' && (workedHoursValue === null || workedHoursValue <= 0)) {
+      await showCustomAlert('Czas pracy musi być większy od 0.')
+      return
+    }
 
     setSavingEdit(true)
     try {
@@ -13815,28 +13819,30 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     <label>Data</label>
                     <input type="date" value={String(editingPlan.plan_date || '')} readOnly />
                   </div>
-                  <div className="finance-cost-sheet-field">
-                    <label>Czas pracy</label>
-                    <div className="calendar-time-quick">
-                      {[4, 6, 8, 10].map((value) => {
-                        const active = Number(editHours) === value && Number(editMinutes || 0) === 0
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            className={active ? 'is-active' : ''}
-                            onClick={() => { setEditHours(String(value)); setEditMinutes('0') }}
-                          >
-                            {value} h
-                          </button>
-                        )
-                      })}
+                  {editingPlan.plan_type === 'job' && (
+                    <div className="finance-cost-sheet-field">
+                      <label>Czas pracy</label>
+                      <div className="calendar-time-quick">
+                        {[4, 6, 8, 10].map((value) => {
+                          const active = Number(editHours) === value && Number(editMinutes || 0) === 0
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              className={active ? 'is-active' : ''}
+                              onClick={() => { setEditHours(String(value)); setEditMinutes('0') }}
+                            >
+                              {value} h
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <div className="calendar-time-custom">
+                        <input type="number" min="0" max="24" step="1" inputMode="numeric" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="Godziny" />
+                        <input type="number" min="0" max="59" step="1" inputMode="numeric" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="Minuty" />
+                      </div>
                     </div>
-                    <div className="calendar-time-custom">
-                      <input type="number" min="0" max="24" step="1" inputMode="numeric" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="Godziny" />
-                      <input type="number" min="0" max="59" step="1" inputMode="numeric" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="Minuty" />
-                    </div>
-                  </div>
+                  )}
                   <div className="finance-cost-sheet-field">
                     <label>Opis</label>
                     <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka" />

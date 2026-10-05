@@ -10787,7 +10787,7 @@ function FinancePage({
         {monthCosts.length === 0 ? (
           <div className="cost-empty-state">
             <div className="cost-empty-icon" aria-hidden="true">
-              <FileText size={40} strokeWidth={1.75} />
+              <FileText size={18} strokeWidth={1.75} aria-hidden="true" />
             </div>
             <div className="cost-empty-copy">
               <strong>Brak kosztów</strong>

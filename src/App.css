@@ -4566,6 +4566,10 @@ body {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.finance-page .finance-command-grid-bottom + .finance-cost-card {
+  margin-top: 12px;
+}
+
 .finance-page .finance-command-card {
   margin: 0;
 }
@@ -4937,14 +4941,21 @@ body {
 
 .finance-page .receivable-main {
   min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
 .finance-page .receivable-main strong {
+  min-width: 0;
+  flex-shrink: 0;
+  max-width: 100%;
   font-size: 13px;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .finance-page .receivable-main span,
@@ -4954,9 +4965,27 @@ body {
   line-height: 1.25;
 }
 
+.finance-page .receivable-amount {
+  flex: 0 0 auto;
+  min-width: max-content;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
 .finance-page .receivable-amount strong {
   color: #0f172a;
   font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.finance-page .receivable-amount small {
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 

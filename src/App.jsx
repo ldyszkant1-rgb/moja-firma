@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2 } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -13354,357 +13354,213 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     setSelectedDate(date)
   }
 
+  const isCurrentMonth = monthCursor.getFullYear() === new Date().getFullYear() && monthCursor.getMonth() === new Date().getMonth()
+  const monthPlans = plans.filter((plan) => String(plan.plan_date || '').startsWith(toDateString(monthCursor).slice(0, 7)))
+  const monthJobDates = calendarDays
+    .filter((day) => day.getMonth() === monthCursor.getMonth())
+    .map((day) => toDateString(day))
+    .filter((date) => getDayJobs(date).length > 0)
+  const monthWorkDates = new Set([
+    ...monthPlans.filter((plan) => plan.plan_type === 'job').map((plan) => String(plan.plan_date)),
+    ...monthJobDates,
+  ])
+  const monthHours = monthPlans.reduce((sum, plan) => sum + (Number(plan.hours_worked) || 0), 0)
+  const monthVacationDates = new Set(
+    monthPlans.filter((plan) => plan.plan_type === 'vacation').map((plan) => String(plan.plan_date))
+  )
+  const selectedDateLabel = selectedDay.toLocaleDateString('pl-PL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+  const selectedDateTitle = selectedDateLabel.charAt(0).toUpperCase() + selectedDateLabel.slice(1)
+
+  const getPlanIcon = (planType) => {
+    if (planType === 'job') return HardHat
+    if (planType === 'vacation') return Briefcase
+    return Pencil
+  }
+
   return (
-    <div>
-      <div className="small-label">TERMINARZ 4.0</div>
-      <h1 style={{ marginBottom: '6px' }}>Kalendarz pracy</h1>
-      <div style={{ color: '#718096', fontSize: '13px', marginBottom: '14px' }}>
-        Normalny kalendarz miesięczny. Kliknij dzień, aby zobaczyć lub wpisać pracę i godziny.
+    <div className="calendar-page">
+      <div className="calendar-page-header">
+        <div className="small-label">AEROINSTAL</div>
+        <h1>Terminarz</h1>
+        <p>Dni pracy i godziny ekipy</p>
       </div>
 
-      <div style={{
-        background: '#f8fbfe',
-        border: '1px solid #dce7f1',
-        borderRadius: '18px',
-        padding: '12px',
-        marginBottom: '14px',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
-          marginBottom: '12px',
-        }}>
-          <button type="button" onClick={() => changeMonth(-1)} style={calendarMonthNavButtonStyle}>‹</button>
+      <div className="calendar-card">
+        <div className="calendar-month-nav">
+          <button type="button" onClick={() => changeMonth(-1)} className="calendar-month-nav-button" aria-label="Poprzedni miesiąc">
+            <ChevronLeft size={20} strokeWidth={1.75} />
+          </button>
 
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{
-              color: '#12234f',
-              fontSize: '22px',
-              fontWeight: 900,
-              textTransform: 'capitalize',
-              lineHeight: 1.15,
-            }}>
-              {monthTitle}
-            </div>
-            <button type="button" onClick={goToday} style={{
-              border: 'none',
-              background: 'transparent',
-              color: '#1670c5',
-              fontSize: '11px',
-              fontWeight: 800,
-              padding: '4px 8px',
-              cursor: 'pointer',
-            }}>
-              Dzisiaj
-            </button>
+          <div className="calendar-month-heading">
+            <strong>{monthTitle}</strong>
+            {!isCurrentMonth && (
+              <button type="button" onClick={goToday} className="calendar-today-button">
+                Dzisiaj
+              </button>
+            )}
           </div>
 
-          <button type="button" onClick={() => changeMonth(1)} style={calendarMonthNavButtonStyle}>›</button>
+          <button type="button" onClick={() => changeMonth(1)} className="calendar-month-nav-button" aria-label="Następny miesiąc">
+            <ChevronRight size={20} strokeWidth={1.75} />
+          </button>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-          gap: '4px',
-          marginBottom: '4px',
-        }}>
-          {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((dayName, index) => (
-            <div key={dayName} style={{
-              textAlign: 'center',
-              color: index >= 5 ? '#8b96a8' : '#66758a',
-              fontSize: '10px',
-              fontWeight: 900,
-              padding: '4px 0',
-            }}>
-              {dayName}
-            </div>
+        <div className="calendar-month-summary">
+          <div><span>Dni pracy</span><strong>{formatDisplayNumber(monthWorkDates.size)}</strong></div>
+          <div><span>Godziny</span><strong>{formatWorkedHours(monthHours) || '0 h'}</strong></div>
+          <div><span>Urlop</span><strong>{formatDisplayNumber(monthVacationDates.size)}</strong></div>
+        </div>
+
+        <div className="calendar-weekdays">
+          {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((dayName) => (
+            <div key={dayName}>{dayName}</div>
           ))}
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-          gap: '4px',
-        }}>
+        <div className="calendar-grid">
           {calendarDays.map((day) => {
             const date = toDateString(day)
             const dayPlans = getDayPlans(date)
             const dayJobs = getDayJobs(date)
-            const isCurrentMonth = day.getMonth() === monthCursor.getMonth()
-            const isToday = date === today
-            const isSelected = date === selectedDate
-            const hasHours = dayPlans.some((plan) => plan.hours_worked != null && Number(plan.hours_worked) > 0)
-            const hasPlans = dayPlans.length > 0 || dayJobs.length > 0
+            const current = day.getMonth() === monthCursor.getMonth()
+            const todayCell = date === today
+            const selected = date === selectedDate
+            const markers = current ? [
+              dayJobs.length > 0 ? 'job' : null,
+              dayPlans.some((plan) => plan.plan_type === 'vacation') ? 'vacation' : null,
+              dayPlans.some((plan) => !['vacation', 'job'].includes(plan.plan_type)) ? 'other' : null,
+              dayPlans.some((plan) => plan.hours_worked != null && Number(plan.hours_worked) > 0) ? 'hours' : null,
+            ].filter(Boolean) : []
+            const visibleMarkers = markers.slice(0, 3)
+            const extraMarkers = Math.max(0, markers.length - 3)
 
             return (
               <button
                 key={date}
                 type="button"
                 onClick={() => setSelectedDate(date)}
-                style={{
-                  minWidth: 0,
-                  minHeight: '74px',
-                  padding: '6px 4px',
-                  borderRadius: '11px',
-                  border: isSelected
-                    ? '2px solid #168fe5'
-                    : isToday
-                      ? '2px solid #8fc7ef'
-                      : '1px solid #e2e8f0',
-                  background: isSelected
-                    ? '#eef8ff'
-                    : isToday
-                      ? '#f6fbff'
-                      : '#ffffff',
-                  color: isCurrentMonth ? '#12234f' : '#a6afbc',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  boxSizing: 'border-box',
-                  overflow: 'hidden',
-                }}
+                className={[
+                  'calendar-day-cell',
+                  !current ? 'is-other-month' : '',
+                  todayCell ? 'is-today' : '',
+                  selected ? 'is-selected' : '',
+                ].filter(Boolean).join(' ')}
+                aria-label={date}
               >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '25px',
-                  height: '25px',
-                  margin: '0 auto 3px',
-                  borderRadius: '50%',
-                  background: isToday ? '#168fe5' : 'transparent',
-                  color: isToday ? '#fff' : 'inherit',
-                  fontSize: '12px',
-                  fontWeight: 900,
-                }}>
-                  {day.getDate()}
-                </div>
-
-                <div style={{
-                  minHeight: '22px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '3px',
-                  flexWrap: 'wrap',
-                }}>
-                  {dayJobs.length > 0 && <span style={calendarDotStyle('#168fe5')} title="Zaplanowana robota" />}
-                  {dayPlans.some((plan) => plan.plan_type === 'vacation') && <span style={calendarDotStyle('#35a85a')} title="Urlop" />}
-                  {dayPlans.some((plan) => plan.plan_type !== 'vacation' && plan.plan_type !== 'job') && <span style={calendarDotStyle('#8b96a8')} title="Nieobecność / inne" />}
-                  {hasHours && <span style={calendarDotStyle('#f59e0b')} title="Wpisane godziny" />}
-                </div>
-
-                {hasPlans && (
-                  <div style={{
-                    marginTop: '2px',
-                    textAlign: 'center',
-                    color: isSelected ? '#1670c5' : '#718096',
-                    fontSize: '8px',
-                    fontWeight: 800,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                    {dayPlans.length + dayJobs.length} wpis.
-                  </div>
+                <span className="calendar-day-number">{day.getDate()}</span>
+                {current && (
+                  <span className="calendar-day-markers">
+                    {visibleMarkers.map((marker) => (
+                      <i key={marker} className={'calendar-dot calendar-dot-' + marker} />
+                    ))}
+                    {extraMarkers > 0 && <span className="calendar-extra-markers">+{extraMarkers}</span>}
+                  </span>
                 )}
               </button>
             )
           })}
         </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-          gap: '10px',
-          marginTop: '11px',
-          paddingTop: '9px',
-          borderTop: '1px solid #e4ebf2',
-          color: '#66758a',
-          fontSize: '9px',
-          fontWeight: 700,
-        }}>
-          <span><i style={calendarDotStyle('#168fe5')} /> robota</span>
-          <span><i style={calendarDotStyle('#35a85a')} /> urlop</span>
-          <span><i style={calendarDotStyle('#8b96a8')} /> inne</span>
-          <span><i style={calendarDotStyle('#f59e0b')} /> godziny</span>
+        <div className="calendar-legend">
+          <span><i className="calendar-dot calendar-dot-job" /> robota</span>
+          <span><i className="calendar-dot calendar-dot-vacation" /> urlop</span>
+          <span><i className="calendar-dot calendar-dot-other" /> inne</span>
+          <span><i className="calendar-dot calendar-dot-hours" /> godziny</span>
         </div>
       </div>
 
-      <div className="detail-card" style={{
-        marginBottom: '14px',
-        border: '1px solid #dce7f1',
-        background: '#ffffff',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '10px',
-          marginBottom: '10px',
-        }}>
+      <div className="calendar-selected-card">
+        <div className="calendar-selected-header">
           <div>
-            <div style={{ color: '#718096', fontSize: '11px', fontWeight: 800 }}>WYBRANY DZIEŃ</div>
-            <strong style={{ color: '#12234f', fontSize: '18px' }}>{formatDate(selectedDate)}</strong>
+            <div className="small-label">WYBRANY DZIEŃ</div>
+            <strong>{selectedDateTitle}</strong>
           </div>
-          <button
-            type="button"
-            onClick={() => openFormForDay(selectedDate)}
-            style={{
-              border: 'none',
-              background: '#168fe5',
-              color: '#fff',
-              borderRadius: '11px',
-              padding: '10px 12px',
-              fontSize: '12px',
-              fontWeight: 900,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            ＋ Dodaj dzień
+          <button type="button" onClick={() => openFormForDay(selectedDate)} className="calendar-add-button" aria-label="Dodaj dzień">
+            <Plus size={20} strokeWidth={1.75} />
           </button>
         </div>
 
         {selectedPlans.length === 0 && selectedJobs.length === 0 && (
-          <div style={{
-            padding: '18px 10px',
-            textAlign: 'center',
-            color: '#9aa6b5',
-            background: '#f8fbfe',
-            borderRadius: '12px',
-            fontSize: '12px',
-          }}>
-            Brak wpisów na ten dzień
+          <div className="calendar-empty-day">
+            <span>Brak wpisów tego dnia</span>
+            <button type="button" onClick={() => openFormForDay(selectedDate)}>+ Dodaj dzień</button>
           </div>
         )}
 
         {selectedPlans.length > 0 && (
-          <div style={{ display: 'grid', gap: '7px', marginBottom: selectedJobs.length ? '9px' : 0 }}>
-            {selectedPlans.map((plan) => (
-              <div key={plan.id} style={{
-                border: plan.plan_type === 'vacation' ? '1px solid #9ed5b1' : '1px solid #d7e1eb',
-                background: plan.plan_type === 'vacation' ? '#effaf4' : '#f8fbfe',
-                borderRadius: '11px',
-                padding: '9px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: '#12234f', fontSize: '13px', fontWeight: 900 }}>
-                      {planIcon[plan.plan_type] || '📌'} {plan.title}
+          <div className="calendar-plan-list">
+            {selectedPlans.map((plan) => {
+              const PlanIcon = getPlanIcon(plan.plan_type)
+              return (
+                <div key={plan.id} className="calendar-plan-card">
+                  <div className="calendar-plan-main">
+                    <div className="calendar-plan-title">
+                      <PlanIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+                      <strong>{plan.title}</strong>
                     </div>
-                    <div style={{ color: '#718096', fontSize: '10px', marginTop: '3px' }}>
-                      {getMemberName(plan.user_id)}
-                    </div>
+                    <div className="calendar-plan-member">{getMemberName(plan.user_id)}</div>
                     {plan.hours_worked != null && (
-                      <div style={{ color: '#1670c5', fontSize: '12px', fontWeight: 900, marginTop: '4px' }}>
-                        ⏱️ {formatWorkedHours(plan.hours_worked)}
-                      </div>
+                      <span className="calendar-hours-pill">
+                        <Clock size={14} strokeWidth={1.75} />
+                        {formatWorkedHours(plan.hours_worked)}
+                      </span>
                     )}
-                    {plan.note && (
-                      <div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>{plan.note}</div>
-                    )}
+                    {plan.note && <div className="calendar-plan-note">{plan.note}</div>}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                    <button type="button" onClick={() => openEditPlan(plan)} style={calendarTextButtonStyle}>✏️ Edytuj</button>
-                    <button type="button" onClick={() => removePlan(plan)} style={{ ...calendarTextButtonStyle, color: '#c53030' }}>Usuń</button>
+                  <div className="calendar-plan-actions">
+                    <button type="button" onClick={() => openEditPlan(plan)} className="calendar-icon-button calendar-icon-button-edit" aria-label="Edytuj wpis">
+                      <Pencil size={18} strokeWidth={1.75} />
+                    </button>
+                    <button type="button" onClick={() => removePlan(plan)} className="calendar-icon-button calendar-icon-button-delete" aria-label="Usuń wpis">
+                      <Trash2 size={18} strokeWidth={1.75} />
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => void removeDayPlans(selectedDate, selectedPlans)}
-              style={{
-                justifySelf: 'start',
-                border: '1px solid #f0b5b5',
-                background: '#fff7f7',
-                color: '#c53030',
-                borderRadius: '9px',
-                padding: '7px 9px',
-                fontSize: '10px',
-                fontWeight: 800,
-                cursor: 'pointer',
-              }}
-            >
-              Usuń wszystkie wpisy tego dnia
-            </button>
+              )
+            })}
+            {selectedPlans.length >= 2 && (
+              <button type="button" onClick={() => void removeDayPlans(selectedDate, selectedPlans)} className="calendar-delete-day-link">
+                Usuń wszystkie wpisy tego dnia
+              </button>
+            )}
           </div>
         )}
 
         {selectedJobs.length > 0 && (
-          <div style={{ display: 'grid', gap: '7px' }}>
+          <div className="calendar-plan-list">
             {selectedJobs.map((job) => {
               const range = getRange(job)
               const starts = range && toDateString(range.start) === selectedDate
               const moving = String(movingJobId) === String(job.id + ':' + selectedDate)
-
               return (
-                <div key={'job-' + job.id} style={{
-                  border: '1px solid #d6e3ef',
-                  background: '#fff',
-                  borderRadius: '11px',
-                  padding: '9px',
-                  opacity: moving ? 0.55 : 1,
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => onOpenJob(job)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      padding: 0,
-                      width: '100%',
-                      textAlign: 'left',
-                      color: '#12234f',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <strong style={{ fontSize: '13px' }}>🏗️ {job.name}</strong>
-                    <div style={{ marginTop: '3px', fontSize: '10px', color: '#718096' }}>
-                      📍 {job.location || 'Brak lokalizacji'}
-                    </div>
-                  </button>
-
+                <div key={'job-' + job.id} className="calendar-plan-card">
+                  <div className="calendar-plan-main">
+                    <button type="button" onClick={() => onOpenJob(job)} className="calendar-job-button">
+                      <div className="calendar-plan-title">
+                        <HardHat size={18} strokeWidth={1.75} />
+                        <strong>{job.name}</strong>
+                      </div>
+                      <div className="calendar-plan-member">{job.location || 'Brak lokalizacji'}</div>
+                      <div className="calendar-plan-member">Cała ekipa</div>
+                    </button>
+                  </div>
                   {starts && (
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '7px' }}>
-                      <button
-                        type="button"
-                        onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }}
-                        style={calendarMoveButtonStyle}
-                      >
-                        ← Przesuń
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }}
-                        style={calendarMoveButtonStyle}
-                      >
-                        Przesuń →
-                      </button>
+                    <div className="calendar-job-move-actions">
+                      <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }} disabled={moving} aria-label="Przesuń dzień wstecz">←</button>
+                      <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, 1))) }} disabled={moving} aria-label="Przesuń dzień do przodu">→</button>
                     </div>
                   )}
-
                   <button
                     type="button"
                     disabled={moving}
                     onClick={() => void removeJobDayFromCalendar(job, selectedDate)}
-                    style={{
-                      width: '100%',
-                      minHeight: '30px',
-                      marginTop: '7px',
-                      border: '1px solid #f0b5b5',
-                      background: '#fff7f7',
-                      color: '#c53030',
-                      borderRadius: '8px',
-                      fontSize: '10px',
-                      fontWeight: 800,
-                      cursor: moving ? 'default' : 'pointer',
-                    }}
+                    className="calendar-delete-job-link"
                   >
-                    🗑 Usuń ten dzień z kalendarza
+                    Usuń ten dzień z kalendarza
                   </button>
                 </div>
               )
@@ -13713,130 +13569,140 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         )}
       </div>
 
-      {editingPlan && (
-        <form onSubmit={saveEditedPlan} className="detail-card" style={{
-          marginBottom: '14px',
-          display: 'grid',
-          gap: '10px',
-          border: '1px solid #b9d8ee',
-          background: '#f7fbff',
+      {(showForm || editingPlan) && (
+        <div className="calendar-sheet-backdrop" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !saving && !savingEdit) {
+            setShowForm(false)
+            closeEditPlan()
+          }
         }}>
-          <strong style={{ color: '#12234f' }}>✏️ Edytuj wpis — {editingPlan.title}</strong>
-          <div style={{ color: '#718096', fontSize: '12px' }}>
-            {formatDate(String(editingPlan.plan_date))} · zmień czas pracy lub notatkę.
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Godziny
-              <input type="number" min="0" max="24" step="1" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="np. 4" style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Minuty
-              <input type="number" min="0" max="59" step="1" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="np. 30" style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-          </div>
-          <input value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button type="button" onClick={closeEditPlan} className="back-button">Anuluj</button>
-            <button type="submit" disabled={savingEdit} className="save-button">{savingEdit ? 'Zapisywanie…' : 'Zapisz zmiany'}</button>
-          </div>
-        </form>
-      )}
-
-      {showForm && (
-        <form onSubmit={savePlan} className="detail-card" style={{ marginBottom: '14px', display: 'grid', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-            <strong style={{ color: '#12234f' }}>＋ Nowy dzień</strong>
-            <button type="button" onClick={() => setShowForm(false)} className="back-button">Zamknij</button>
-          </div>
-
-          {saveMessage && (
-            <div style={{
-              padding: '10px',
-              borderRadius: '10px',
-              background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5',
-              color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534',
-              fontWeight: 800,
-              fontSize: '13px',
-            }}>
-              {saveMessage}
+          <form
+            onSubmit={editingPlan ? saveEditedPlan : savePlan}
+            className="calendar-sheet"
+          >
+            <div className="calendar-sheet-handle" />
+            <div className="calendar-sheet-header">
+              <div>
+                <h2>{editingPlan ? 'Edytuj dzień' : 'Dodaj dzień'}</h2>
+                <p>{editingPlan ? 'Zmień godziny pracy lub notatkę' : 'Wprowadź dzień pracy lub nieobecność'}</p>
+              </div>
+              <button type="button" className="calendar-sheet-close" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit} aria-label="Zamknij">
+                <X size={20} strokeWidth={1.75} />
+              </button>
             </div>
-          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }} style={settingsInputStyle}>
-              <option value="job">🏗️ Robota</option>
-              <option value="vacation">🏖️ Urlop</option>
-              <option value="sick">🤒 Chorobowe</option>
-              <option value="day_off">🛌 Dzień wolny</option>
-              <option value="delegation">🚗 Delegacja</option>
-              <option value="other">📌 Inne</option>
-            </select>
-            <select value={userId} onChange={(e) => setUserId(e.target.value)} style={settingsInputStyle}>
-              <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
-              {organizationMembers.map((member) => (
-                <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
-              ))}
-            </select>
-          </div>
+            <div className="calendar-sheet-fields">
+              {!editingPlan ? (
+                <>
+                  <div className="calendar-sheet-field">
+                    <label>Rodzaj</label>
+                    <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }}>
+                      <option value="job">Robota</option>
+                      <option value="vacation">Urlop</option>
+                      <option value="sick">Chorobowe</option>
+                      <option value="day_off">Dzień wolny</option>
+                      <option value="delegation">Delegacja</option>
+                      <option value="other">Inne</option>
+                    </select>
+                  </div>
 
-          {type === 'job' ? (
-            <select value={jobId} onChange={(e) => setJobId(e.target.value)} style={settingsInputStyle}>
-              <option value="">Wybierz robotę</option>
-              {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => (
-                <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
-              ))}
-            </select>
-          ) : (
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nazwa, np. Urlop wypoczynkowy" style={settingsInputStyle} />
-          )}
+                  <div className="calendar-sheet-field">
+                    <label>Kto</label>
+                    <select value={userId} onChange={(e) => setUserId(e.target.value)}>
+                      <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
+                      {organizationMembers.map((member) => (
+                        <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
+                      ))}
+                    </select>
+                  </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Od
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Do
-              <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-          </div>
+                  <div className="calendar-sheet-field">
+                    <label>{type === 'job' ? 'Robota' : 'Nazwa'}</label>
+                    {type === 'job' ? (
+                      <select value={jobId} onChange={(e) => setJobId(e.target.value)}>
+                        <option value="">Wybierz robotę</option>
+                        {jobs.filter((job) => Number(job.progress ?? 0) < 100).map((job) => (
+                          <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Np. Urlop wypoczynkowy" />
+                    )}
+                  </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Godziny
-              <input type="number" min="0" max="24" step="1" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} placeholder="np. 4" style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-            <label style={{ fontSize: '12px', color: '#64748b' }}>
-              Minuty
-              <input type="number" min="0" max="59" step="1" value={minutesWorked} onChange={(e) => setMinutesWorked(e.target.value)} placeholder="np. 30" style={{ ...settingsInputStyle, marginTop: '4px' }} />
-            </label>
-          </div>
+                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                    <div>
+                      <label>Od</label>
+                      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <label>Do</label>
+                      <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />
+                    </div>
+                  </div>
 
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka (opcjonalnie)" style={settingsInputStyle} />
+                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                    <div>
+                      <label>Godziny</label>
+                      <input type="number" min="0" max="24" step="1" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} placeholder="np. 4" />
+                    </div>
+                    <div>
+                      <label>Minuty</label>
+                      <input type="number" min="0" max="59" step="1" value={minutesWorked} onChange={(e) => setMinutesWorked(e.target.value)} placeholder="np. 30" />
+                    </div>
+                  </div>
 
-          <div style={{ color: '#718096', fontSize: '11px' }}>
-            Możesz wpisać samo <strong>4</strong> (czyli 4 godziny) albo <strong>4 h 30 min</strong>.
-          </div>
+                  <div className="calendar-sheet-field">
+                    <label>Opis <span>opcjonalnie</span></label>
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="calendar-sheet-field">
+                    <label>Wpis</label>
+                    <input value={editingPlan.title || ''} readOnly />
+                  </div>
+                  <div className="calendar-sheet-field">
+                    <label>Data</label>
+                    <input type="date" value={String(editingPlan.plan_date || '')} readOnly />
+                  </div>
+                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                    <div>
+                      <label>Godziny</label>
+                      <input type="number" min="0" max="24" step="1" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="np. 4" />
+                    </div>
+                    <div>
+                      <label>Minuty</label>
+                      <input type="number" min="0" max="59" step="1" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="np. 30" />
+                    </div>
+                  </div>
+                  <div className="calendar-sheet-field">
+                    <label>Opis <span>opcjonalnie</span></label>
+                    <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka" />
+                  </div>
+                </>
+              )}
+            </div>
 
-          <button type="submit" disabled={saving} className="save-button">
-            {saving ? 'Zapisywanie…' : 'Zapisz dzień'}
-          </button>
-        </form>
+            {(saveMessage && !editingPlan) && (
+              <div className="calendar-sheet-error">{saveMessage}</div>
+            )}
+
+            <div className="calendar-sheet-actions">
+              <button type="button" className="calendar-sheet-cancel" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit}>
+                Anuluj
+              </button>
+              <button type="submit" className="calendar-sheet-save" disabled={saving || savingEdit}>
+                {saving || savingEdit ? 'Zapisuję…' : editingPlan ? 'Zapisz zmiany' : 'Zapisz dzień'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
-      {saveMessage && !showForm && (
-        <div style={{
-          marginBottom: '12px',
-          padding: '10px',
-          borderRadius: '10px',
-          background: saveMessage.startsWith('BŁĄD') ? '#fff1f2' : '#ecfdf5',
-          color: saveMessage.startsWith('BŁĄD') ? '#b42318' : '#166534',
-          fontWeight: 800,
-          fontSize: '13px',
-        }}>
-          {saveMessage}
-        </div>
+      {saveMessage && !showForm && !editingPlan && (
+        <div className="calendar-save-message">{saveMessage}</div>
       )}
     </div>
   )

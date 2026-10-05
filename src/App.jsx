@@ -13570,7 +13570,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       </div>
 
       {(showForm || editingPlan) && (
-        <div className="calendar-sheet-backdrop" onMouseDown={(event) => {
+        <div className="finance-cost-sheet-backdrop" onMouseDown={(event) => {
           if (event.target === event.currentTarget && !saving && !savingEdit) {
             setShowForm(false)
             closeEditPlan()
@@ -13578,23 +13578,23 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         }}>
           <form
             onSubmit={editingPlan ? saveEditedPlan : savePlan}
-            className="calendar-sheet"
+            className="finance-cost-sheet"
           >
-            <div className="calendar-sheet-handle" />
-            <div className="calendar-sheet-header">
+            <div className="finance-cost-sheet-handle" />
+            <div className="finance-cost-sheet-header">
               <div>
                 <h2>{editingPlan ? 'Edytuj dzień' : 'Dodaj dzień'}</h2>
                 <p>{editingPlan ? 'Zmień godziny pracy lub notatkę' : 'Wprowadź dzień pracy lub nieobecność'}</p>
               </div>
-              <button type="button" className="calendar-sheet-close" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit} aria-label="Zamknij">
+              <button type="button" className="finance-cost-sheet-close" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit} aria-label="Zamknij">
                 <X size={20} strokeWidth={1.75} />
               </button>
             </div>
 
-            <div className="calendar-sheet-fields">
+            <div className="finance-cost-sheet-fields">
               {!editingPlan ? (
                 <>
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Rodzaj</label>
                     <select value={type} onChange={(e) => { setType(e.target.value); setTitle('') }}>
                       <option value="job">Robota</option>
@@ -13606,7 +13606,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     </select>
                   </div>
 
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Kto</label>
                     <select value={userId} onChange={(e) => setUserId(e.target.value)}>
                       <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
@@ -13616,7 +13616,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     </select>
                   </div>
 
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>{type === 'job' ? 'Robota' : 'Nazwa'}</label>
                     {type === 'job' ? (
                       <select value={jobId} onChange={(e) => setJobId(e.target.value)}>
@@ -13630,7 +13630,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     )}
                   </div>
 
-                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
                     <div>
                       <label>Od</label>
                       <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -13641,7 +13641,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     </div>
                   </div>
 
-                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
                     <div>
                       <label>Godziny</label>
                       <input type="number" min="0" max="24" step="1" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} placeholder="np. 4" />
@@ -13652,22 +13652,22 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     </div>
                   </div>
 
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Opis <span>opcjonalnie</span></label>
                     <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notatka" />
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Wpis</label>
                     <input value={editingPlan.title || ''} readOnly />
                   </div>
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Data</label>
                     <input type="date" value={String(editingPlan.plan_date || '')} readOnly />
                   </div>
-                  <div className="calendar-sheet-field calendar-sheet-date-grid">
+                  <div className="finance-cost-sheet-field finance-cost-sheet-date-grid">
                     <div>
                       <label>Godziny</label>
                       <input type="number" min="0" max="24" step="1" value={editHours} onChange={(e) => setEditHours(e.target.value)} placeholder="np. 4" />
@@ -13677,7 +13677,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <input type="number" min="0" max="59" step="1" value={editMinutes} onChange={(e) => setEditMinutes(e.target.value)} placeholder="np. 30" />
                     </div>
                   </div>
-                  <div className="calendar-sheet-field">
+                  <div className="finance-cost-sheet-field">
                     <label>Opis <span>opcjonalnie</span></label>
                     <textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Notatka" />
                   </div>
@@ -13686,14 +13686,14 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
             </div>
 
             {(saveMessage && !editingPlan) && (
-              <div className="calendar-sheet-error">{saveMessage}</div>
+              <div className="finance-cost-sheet-error">{saveMessage}</div>
             )}
 
-            <div className="calendar-sheet-actions">
-              <button type="button" className="calendar-sheet-cancel" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit}>
+            <div className="finance-cost-sheet-actions">
+              <button type="button" className="finance-cost-sheet-cancel" onClick={() => { setShowForm(false); closeEditPlan() }} disabled={saving || savingEdit}>
                 Anuluj
               </button>
-              <button type="submit" className="calendar-sheet-save" disabled={saving || savingEdit}>
+              <button type="submit" className="finance-cost-sheet-save" disabled={saving || savingEdit}>
                 {saving || savingEdit ? 'Zapisuję…' : editingPlan ? 'Zapisz zmiany' : 'Zapisz dzień'}
               </button>
             </div>

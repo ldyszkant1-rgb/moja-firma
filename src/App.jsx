@@ -10125,6 +10125,12 @@ function FinancePage({
     await recordPartnerTransfer(amount)
   }
 
+  const openCostSheet = () => {
+    setCostFormError('')
+    setCostFieldErrors({})
+    setShowForm(true)
+  }
+
   const addCost = async () => {
     const amount = parseDecimal(newCost.amount)
     const errors = {}
@@ -10291,7 +10297,7 @@ function FinancePage({
           <button
             type="button"
             className="finance-header-add-button"
-            onClick={() => setShowForm(true)}
+            onClick={openCostSheet}
           >
             <Plus size={16} strokeWidth={1.75} aria-hidden="true" />
             Dodaj koszt

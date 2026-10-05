@@ -9455,7 +9455,10 @@ function FinancePage({
   }
 
   useEffect(() => {
-    const handlePopState = () => setShowForm(false)
+    const handlePopState = () => {
+      setShowForm(false)
+      setEditingCostId(null)
+    }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
@@ -10866,6 +10869,71 @@ function FinancePage({
           </div>
         )}
       </div>
+
+      {editingCostId && (
+        <div className="finance-cost-sheet-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) cancelEditCost()
+        }}>
+          <div className="finance-cost-sheet" role="dialog" aria-modal="true" aria-labelledby="finance-edit-cost-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="finance-cost-sheet-handle" aria-hidden="true" />
+            <div className="finance-cost-sheet-header">
+              <div>
+                <h2 id="finance-edit-cost-title">Zmień koszt</h2>
+                <p>Edytuj wybrany wydatek</p>
+              </div>
+              <button type="button" className="finance-cost-sheet-close" onClick={cancelEditCost} aria-label="Zamknij">
+                <X size={20} strokeWidth={1.8} />
+              </button>
+            </div>
+
+            <div className="finance-cost-sheet-fields">
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-edit-category">Kategoria</label>
+                <div className="finance-cost-select-wrap">
+                  <select id="finance-edit-category" value={editCost.category} onChange={(event) => setEditCost({ ...editCost, category: event.target.value })}>
+                    {safeCategoryOptions.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}
+                  </select>
+                  <ChevronDown size={18} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-edit-amount">Kwota netto</label>
+                <div className="finance-cost-amount-wrap">
+                  <input id="finance-edit-amount" type="text" inputMode="decimal" value={editCost.amount} onChange={(event) => setEditCost({ ...editCost, amount: event.target.value })} />
+                  <span>zł</span>
+                </div>
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-edit-payer">Kto zapłacił</label>
+                <div className="finance-cost-select-wrap">
+                  <select id="finance-edit-payer" value={editCost.paidBy} onChange={(event) => setEditCost({ ...editCost, paidBy: event.target.value })}>
+                    <option value={partnerOne}>{partnerOne}</option>
+                    <option value={partnerTwo}>{partnerTwo}</option>
+                  </select>
+                  <ChevronDown size={18} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-edit-date">Data</label>
+                <input id="finance-edit-date" type="date" value={editCost.date} onChange={(event) => setEditCost({ ...editCost, date: event.target.value })} />
+              </div>
+
+              <div className="finance-cost-sheet-field">
+                <label htmlFor="finance-edit-description">Opis <span>opcjonalnie</span></label>
+                <textarea id="finance-edit-description" rows="2" value={editCost.description} onChange={(event) => setEditCost({ ...editCost, description: event.target.value })} />
+              </div>
+            </div>
+
+            <div className="finance-cost-sheet-actions">
+              <button type="button" className="finance-cost-sheet-cancel" onClick={cancelEditCost}>Anuluj</button>
+              <button type="button" className="finance-cost-sheet-save" onClick={saveEditCost}>Zapisz zmiany</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="finance-cost-sheet-backdrop" role="presentation" onMouseDown={(event) => {

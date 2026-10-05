@@ -13610,6 +13610,9 @@ function BottomNavigation({ activePage, onChange }) {
     <>
       {moreOpen && (
         <div className="bottom-more-menu" role="menu">
+          <div style={{ padding: '8px 14px 4px', color: '#94a3b8', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em' }}>
+            WERSJA 2026.10.05-7ed88e3
+          </div>
           {secondary.map(([page, label]) => (
             <button
               key={page}

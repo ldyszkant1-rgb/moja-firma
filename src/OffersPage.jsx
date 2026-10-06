@@ -218,7 +218,7 @@ export default function OffersPage({
     const total = calculateOfferTotal(editing)
 
     return (
-      <div className="sub-page" style={{ paddingBottom: '130px' }}>
+      <div className="sub-page offers-page offers-editor-page" style={{ paddingBottom: '130px' }}>
         <div className="details-top">
           <button className="back-button" type="button" onClick={() => setEditing(null)}>← Wróć</button>
         </div>
@@ -295,7 +295,7 @@ export default function OffersPage({
   }
 
   return (
-    <div className="sub-page" style={{ paddingBottom: '130px' }}>
+    <div className="sub-page offers-page" style={{ paddingBottom: '130px' }}>
       <div className="page-heading">
         <div>
           <div className="small-label">MOJA FIRMA</div>

@@ -11319,17 +11319,32 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const loadPlans = async () => {
     if (!organizationId) return
 
-    const { data, error } = await supabase.rpc('list_calendar_plans', {
+    // RPC jest głównym źródłem terminarza. Dodatkowo odczytujemy tabelę
+    // bezpośrednio i łączymy wyniki po ID, żeby godziny nie znikały przy
+    // chwilowym problemie z odświeżeniem RPC/RLS.
+    const { data: rpcPlans, error: rpcError } = await supabase.rpc('list_calendar_plans', {
       p_start_date: toDateString(gridStart),
       p_end_date: toDateString(gridEnd),
     })
 
-    if (error) {
-      console.error('Nie udało się wczytać terminarza:', error)
+    const { data: directPlans, error: directError } = await supabase
+      .from('calendar_plans')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .gte('plan_date', toDateString(gridStart))
+      .lte('plan_date', toDateString(gridEnd))
+      .order('plan_date', { ascending: true })
+
+    if (rpcError && directError) {
+      console.error('Nie udało się wczytać terminarza:', rpcError, directError)
       return
     }
 
-    setPlans(data || [])
+    const mergedPlans = new Map()
+    ;[...(rpcPlans || []), ...(directPlans || [])].forEach((plan) => {
+      if (plan?.id) mergedPlans.set(String(plan.id), plan)
+    })
+    setPlans(Array.from(mergedPlans.values()))
 
     const { data: exclusions, error: exclusionsError } = await supabase.rpc('list_calendar_job_exclusions', {
       p_organization_id: organizationId,

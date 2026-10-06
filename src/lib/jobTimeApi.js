@@ -115,3 +115,17 @@ export async function deleteJobTimeEntry(id) {
 
   return true
 }
+
+export async function getJobCalendarPlans(jobId) {
+  if (!jobId) return []
+
+  const { data, error } = await supabase
+    .from('calendar_plans')
+    .select('id, job_id, user_id, plan_date, hours_worked, title, note')
+    .eq('job_id', jobId)
+    .eq('plan_type', 'job')
+    .order('plan_date', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}

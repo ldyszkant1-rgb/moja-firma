@@ -11376,6 +11376,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const getDayPlans = (date) =>
     plans.filter((plan) => String(plan.plan_date) === String(date))
 
+  const getJobDayHours = (jobId, date) =>
+    getDayPlans(date)
+      .filter((plan) => plan.plan_type === 'job' && String(plan.job_id) === String(jobId))
+      .reduce((sum, plan) => sum + Math.max(0, Number(plan.hours_worked || 0)), 0)
+
   const getDayJobs = (date) => {
     const day = makeDate(date)
     return jobs.filter((job) => {
@@ -11891,6 +11896,12 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <div className="calendar-plan-member">Cała ekipa</div>
                     </button>
                   </div>
+                  {getJobDayHours(job.id, selectedDate) > 0 && (
+                    <span className="calendar-hours-pill">
+                      <Clock size={14} strokeWidth={1.75} />
+                      {formatWorkedHours(getJobDayHours(job.id, selectedDate))}
+                    </span>
+                  )}
                   {starts && (
                     <div className="calendar-job-move-actions">
                       <button type="button" onClick={() => { const r = getRange(job); if (r) void moveJob(job, toDateString(addDays(r.start, -1))) }} disabled={moving} aria-label="Przesuń dzień wstecz">←</button>

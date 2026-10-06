@@ -2995,6 +2995,9 @@ section {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   padding-bottom: calc(92px + env(safe-area-inset-bottom) + 16px);
 }
 

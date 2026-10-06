@@ -6748,6 +6748,17 @@ function JobDetails({
           <strong className="job-detail-time-total">{formatDuration(totalTrackedMinutes)}</strong>
         </div>
 
+        <div className="job-detail-calendar-time-summary">
+          <div>
+            <span>Z terminarza</span>
+            <strong>{formatDuration(calendarLaborMinutes)} roboczogodz.</strong>
+          </div>
+          <div>
+            <span>Pomiar na robocie</span>
+            <strong>{formatDuration(teamLaborMinutes)}</strong>
+          </div>
+        </div>
+
         <div className="job-detail-time-summary">
           {[
             ['transport', 'Transport', Truck],
@@ -6957,6 +6968,8 @@ function JobDetails({
           <div><span>Marża</span><strong>{formatDisplayNumber(jobMargin, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong></div>
           <div><span>Materiały/inne</span><strong>{formatDisplayMoney(materialOtherCost)}</strong></div>
           <div><span>Robocizna / przychód</span><strong>{formatDisplayNumber(laborShareOfRevenue, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong></div>
+          <div><span>Roboczogodziny</span><strong>{formatDisplayNumber(effectiveLaborMinutes / 60, { maximumFractionDigits: 2 })} h</strong></div>
+          <div><span>Zysk / roboczogodz.</span><strong>{formatDisplayMoney(profitPerLaborHour)}</strong></div>
         </div>
       </section>
 

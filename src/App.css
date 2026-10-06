@@ -5896,6 +5896,57 @@ body {
   padding-right: 36px;
 }
 
+.jobs-page-form-sheet .jobs-page-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.jobs-page-form-sheet .jobs-page-select-wrap select {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.jobs-page-form-sheet .jobs-page-select-wrap > svg {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: #64748b;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.jobs-page-form-sheet .job-new-input:focus,
+.jobs-page-form-sheet .rate-input:focus,
+.jobs-page-form-sheet .quantity-box input:focus {
+  border-color: #0787e8;
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, .10);
+}
+
+.jobs-page .job-card-with-tasks {
+  padding: 12px;
+  gap: 8px;
+}
+
+.jobs-page .job-card-tasks:empty {
+  display: none;
+}
+
+.jobs-page .job-card-with-tasks:has(.job-card-progress-completed) .job-card-tasks {
+  padding-top: 2px;
+}
+
+.jobs-page .job-card-with-tasks:has(.job-card-progress-completed) .job-card-open-link {
+  min-height: 36px;
+}
+
+.jobs-page .job-card-with-tasks:has(.job-card-progress-completed) .job-card-metrics {
+  gap: 4px;
+}
+
+.jobs-page-form-sheet .jobs-page-form-close {
+  margin-bottom: 0;
+}
+
 .jobs-page-form-sheet .detail-quantities {
   gap: 8px;
 }

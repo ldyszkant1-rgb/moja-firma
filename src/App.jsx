@@ -4250,6 +4250,8 @@ function NewJobPage({
     }))
   }, [])
 
+  const [valueBasis, setValueBasis] = useState('netto')
+
   const total =
 
     (Number(
@@ -4346,7 +4348,10 @@ function NewJobPage({
 
   return (
 
-    <div className="sub-page">
+    <div className="jobs-page-form-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onBack()
+    }}>
+      <div className="jobs-page-form-sheet" onMouseDown={(event) => event.stopPropagation()}>
 
       <div className="details-top">
 
@@ -4369,13 +4374,9 @@ function NewJobPage({
 
         <div>
 
-          <div className="small-label">
-            NOWA REALIZACJA
-          </div>
-
-          <h1>
-            Dodaj realizację
-          </h1>
+          <div className="small-label">AEROINSTAL</div>
+          <h1>Nowa realizacja</h1>
+          <p className="jobs-page-form-subtitle">Podstawowe dane realizacji</p>
 
         </div>
 
@@ -4391,11 +4392,13 @@ function NewJobPage({
 
         <div className="note-form new-job-basic-form">
 
+          <label>Nazwa realizacji</label>
+
           <input
 
             className="job-new-input"
 
-            placeholder="Nazwa realizacje"
+            placeholder="Nazwa realizacji"
 
             value={
               newJob.name
@@ -4410,6 +4413,8 @@ function NewJobPage({
 
           />
 
+
+          <label>Lokalizacja / statek</label>
 
           <input
 
@@ -4430,6 +4435,7 @@ function NewJobPage({
 
           />
 
+          <label>Klient</label>
           <select
             className="job-new-input"
             value={newJob.clientId || ''}
@@ -4441,6 +4447,7 @@ function NewJobPage({
             ))}
           </select>
 
+          <label>Priorytet</label>
           <select
             className="job-new-input"
             value={newJob.priority || 'normal'}
@@ -4451,6 +4458,13 @@ function NewJobPage({
             <option value="urgent">🔴 Pilny priorytet</option>
           </select>
 
+          <label>Termin zakończenia</label>
+          <input
+            className="job-new-input"
+            type="date"
+            value={newJob.plannedEndDate || ''}
+            onChange={(e) => change('plannedEndDate', e.target.value || null)}
+          />
         </div>
 
       </div>
@@ -4553,11 +4567,34 @@ function NewJobPage({
       </div>
 
 
-      <div className="detail-card">
+      <div className="detail-card jobs-page-value-card">
 
-        <h2>
-          Stawki
-        </h2>
+        <h2>Wartość</h2>
+
+        <div className="jobs-page-value-toggle">
+          <button
+            type="button"
+            className={valueBasis === 'netto' ? 'is-active' : ''}
+            onClick={() => setValueBasis('netto')}
+          >
+            Netto
+          </button>
+          <button
+            type="button"
+            className={valueBasis === 'brutto' ? 'is-active' : ''}
+            onClick={() => setValueBasis('brutto')}
+          >
+            Brutto
+          </button>
+        </div>
+
+        <div className="jobs-page-total-preview">
+          <span>Łączna wartość</span>
+          <strong>{formatMoney(valueBasis === 'brutto' ? total * 1.23 : total)} <small>{valueBasis}</small></strong>
+        </div>
+      </div>
+
+      <div className="detail-card">
 
 
         <div className="finance-row new-job-rate-row">
@@ -4727,19 +4764,24 @@ function NewJobPage({
       </div>
 
 
-      <button
-
-        className="save-button"
-
-        onClick={
-          onCreate
-        }
-
-      >
-        Utwórz realizację
-      </button>
-
+      <div className="jobs-page-form-actions">
+        <button
+          type="button"
+          className="jobs-page-form-cancel"
+          onClick={onBack}
+        >
+          Anuluj
+        </button>
+        <button
+          type="button"
+          className="jobs-page-form-save"
+          onClick={onCreate}
+        >
+          Zapisz
+        </button>
+      </div>
     </div>
+  </div>
 
   )
 

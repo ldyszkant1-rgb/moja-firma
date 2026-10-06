@@ -11294,6 +11294,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [editHours, setEditHours] = useState('')
   const [editMinutes, setEditMinutes] = useState('')
   const [editNote, setEditNote] = useState('')
+  const [editJobId, setEditJobId] = useState('')
+  const [editUserId, setEditUserId] = useState('')
   const [draggedJobId, setDraggedJobId] = useState(null)
   const [movingJobId, setMovingJobId] = useState(null)
 
@@ -11567,6 +11569,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     setEditHours(time.hours)
     setEditMinutes(time.minutes)
     setEditNote(plan.note || '')
+    setEditJobId(plan.plan_type === 'job' ? String(plan.job_id || '') : '')
+    setEditUserId(String(plan.user_id || ''))
   }
 
   const closeEditPlan = () => {
@@ -11574,6 +11578,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     setEditHours('')
     setEditMinutes('')
     setEditNote('')
+    setEditJobId('')
+    setEditUserId('')
   }
 
   const saveEditedPlan = async (event) => {
@@ -11594,6 +11600,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     try {
       const { data, error } = await supabase.rpc('update_calendar_plan', {
         p_plan_id: editingPlan.id,
+        p_job_id: editingPlan.plan_type === 'job' ? (editJobId || null) : null,
+        p_user_id: editUserId || null,
         p_hours_worked: workedHoursValue,
         p_note: editNote.trim() || null,
       })
@@ -12126,10 +12134,39 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                 </>
               ) : (
                 <>
-                  <div className="finance-cost-sheet-field">
-                    <label>Wpis</label>
-                    <input value={editingPlan.title || ''} readOnly />
-                  </div>
+                  {editingPlan.plan_type === 'job' ? (
+                    <>
+                      <div className="finance-cost-sheet-field">
+                        <label>Robota</label>
+                        <div className="calendar-select-wrap">
+                          <select value={editJobId} onChange={(e) => setEditJobId(e.target.value)}>
+                            <option value="">Wybierz robotę</option>
+                            {jobs.filter((job) => Number(job.progress ?? 0) < 100 || String(job.id) === String(editJobId)).map((job) => (
+                              <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+                        </div>
+                      </div>
+                      <div className="finance-cost-sheet-field">
+                        <label>Kto</label>
+                        <div className="calendar-select-wrap">
+                          <select value={editUserId} onChange={(e) => setEditUserId(e.target.value)}>
+                            <option value="">Cała ekipa</option>
+                            {organizationMembers.map((member) => (
+                              <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="finance-cost-sheet-field">
+                      <label>Wpis</label>
+                      <input value={editingPlan.title || ''} readOnly />
+                    </div>
+                  )
                   <div className="finance-cost-sheet-field">
                     <label>Data</label>
                     <input type="date" value={String(editingPlan.plan_date || '')} readOnly />

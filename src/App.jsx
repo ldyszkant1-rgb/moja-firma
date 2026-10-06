@@ -11596,6 +11596,13 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         await showCustomAlert('Wybierz robotę.')
         return
       }
+
+      const selectedEditJob = jobs.find((job) => String(job.id) === String(editJobId))
+      if (!selectedEditJob || normalizeJobStage(selectedEditJob) !== 'W toku') {
+        await showCustomAlert('Możesz przypisać godziny tylko do roboty, która jest aktualnie w realizacji.')
+        return
+      }
+
       if (workedHoursValue === null || workedHoursValue <= 0) {
         await showCustomAlert('Czas pracy musi być większy od 0.')
         return
@@ -12165,9 +12172,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                         <div className="calendar-select-wrap">
                           <select autoComplete="off" value={editJobId} onChange={(e) => setEditJobId(e.target.value)}>
                             <option value="">Wybierz robotę</option>
-                            {jobs.map((job) => (
-                              <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
-                            ))}
+                            {jobs
+                              .filter((job) => normalizeJobStage(job) === 'W toku')
+                              .map((job) => (
+                                <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
+                              ))}
                           </select>
                           <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
                         </div>

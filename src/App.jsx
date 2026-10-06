@@ -3995,7 +3995,7 @@ function JobCard({
             </button>
           )}
         </section>
-      )}
+      ) : null}
 
       <button
         type="button"
@@ -13699,8 +13699,6 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
               )}
             </div>
 
-            </div>
-
             {(saveMessage && !editingPlan) && (
               <div className="finance-cost-sheet-error">{saveMessage}</div>
             )}
@@ -13998,3 +13996,5 @@ function formatDate(
 
 
 export default App
+
+

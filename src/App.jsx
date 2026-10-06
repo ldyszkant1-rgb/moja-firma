@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2 } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2 } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -4025,409 +4025,201 @@ function JobsPage({
   onRestoreJob,
   onPermanentDeleteJob,
 }) {
-
-  const [filter, setFilter] =
-    useState('all')
-
-  const [showTrash, setShowTrash] =
-    useState(false)
+  const [filter, setFilter] = useState('all')
+  const [showTrash, setShowTrash] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortMode, setSortMode] = useState('newest')
 
   useEffect(() => {
     const handleDashboardTab = (event) => {
       const requestedTab = event.detail
-
-      if (
-        requestedTab === 'all' ||
-        requestedTab === 'planned' ||
-        requestedTab === 'active' ||
-        requestedTab === 'receipt' ||
-        requestedTab === 'completed'
-      ) {
+      if (['all', 'planned', 'active', 'receipt', 'completed'].includes(requestedTab)) {
         setFilter(requestedTab)
       }
     }
 
-    window.addEventListener(
-      'aeroinstal-open-jobs-tab',
-      handleDashboardTab
-    )
-
-    return () => {
-      window.removeEventListener(
-        'aeroinstal-open-jobs-tab',
-        handleDashboardTab
-      )
-    }
+    window.addEventListener('aeroinstal-open-jobs-tab', handleDashboardTab)
+    return () => window.removeEventListener('aeroinstal-open-jobs-tab', handleDashboardTab)
   }, [])
 
+  const clientForJob = (job) =>
+    (clients || []).find((client) => String(client.id) === String(job.clientId || ''))
 
-  const filteredJobs =
-    jobs.filter(
-      (job) => {
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase('pl-PL')
 
-        const stage = normalizeJobStage(job)
+  const filteredJobs = jobs
+    .filter((job) => {
+      const stage = normalizeJobStage(job)
+      if (filter === 'active' && stage !== 'W toku') return false
+      if (filter === 'receipt' && stage !== 'Odbiór') return false
+      if (filter === 'completed' && stage !== 'Zakończone') return false
 
-        if (filter === 'active') return stage === 'W toku'
-        if (filter === 'receipt') return stage === 'Odbiór'
-        if (filter === 'completed') return stage === 'Zakończone'
+      if (!normalizedQuery) return true
 
-        return true
+      const client = clientForJob(job)
+      const haystack = [
+        job.name,
+        job.location,
+        client?.shortName,
+        client?.name,
+      ].filter(Boolean).join(' ').toLocaleLowerCase('pl-PL')
 
+      return haystack.includes(normalizedQuery)
+    })
+    .sort((a, b) => {
+      if (sortMode === 'deadline') {
+        const dateA = a.plannedEndDate || '9999-12-31'
+        const dateB = b.plannedEndDate || '9999-12-31'
+        return dateA.localeCompare(dateB)
       }
-    )
+
+      const dateA = String(a.createdAt || '')
+      const dateB = String(b.createdAt || '')
+      return dateB.localeCompare(dateA)
+    })
 
   const activeCount = jobs.filter((job) => normalizeJobStage(job) === 'W toku').length
   const receiptCount = jobs.filter((job) => normalizeJobStage(job) === 'Odbiór').length
   const completedCount = jobs.filter((job) => normalizeJobStage(job) === 'Zakończone').length
 
-
-  const filterButtonStyle = (active) => ({
-    flex: 1,
-    minWidth: 0,
-    padding: '11px 10px',
-    borderRadius: '999px',
-    border: active
-      ? '1px solid #0786e6'
-      : '1px solid #dce5ec',
-    background: active
-      ? '#0786e6'
-      : '#ffffff',
-    color: active
-      ? '#ffffff'
-      : '#24345c',
-    fontSize: '15px',
-    fontWeight: 700,
-    boxShadow: active
-      ? '0 5px 12px rgba(7,134,230,0.18)'
-      : 'none',
-  })
-
+  const filterItems = [
+    ['all', 'Wszystkie', jobs.length],
+    ['active', 'W toku', activeCount],
+    ['receipt', 'Odbiór', receiptCount],
+    ['completed', 'Zakończone', completedCount],
+  ]
 
   return (
-
-    <div
-      className="sub-page"
-      style={{
-        paddingBottom: '130px',
-      }}
-    >
-
-      <div className="page-heading">
-
+    <div className="sub-page jobs-page">
+      <div className="jobs-page-header">
         <div>
-
-          <div className="small-label">
-            MOJA FIRMA
-          </div>
-
-          <h1>
-            Realizacje
-          </h1>
-
+          <div className="small-label">AEROINSTAL</div>
+          <h1>Realizacje</h1>
         </div>
 
+        <div className="jobs-page-header-actions">
+          <button
+            type="button"
+            className="jobs-page-new-button"
+            onClick={onAddJob}
+          >
+            <Plus size={16} strokeWidth={2} />
+            Nowa realizacja
+          </button>
 
-        <button
-          type="button"
-          className="edit-button"
-          onClick={onAddJob}
-          style={{
-            padding: '11px 17px',
-            borderRadius: '999px',
-            fontSize: '15px',
-            fontWeight: 700,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          + Nowa realizacja
-        </button>
-
+          <button
+            type="button"
+            className="jobs-page-trash-button"
+            onClick={() => setShowTrash((value) => !value)}
+            aria-label={showTrash ? 'Ukryj kosz' : 'Otwórz kosz'}
+            title={showTrash ? 'Ukryj kosz' : 'Kosz'}
+          >
+            <Trash2 size={18} strokeWidth={1.75} />
+            {deletedJobs?.length > 0 && <span>{deletedJobs.length}</span>}
+          </button>
+        </div>
       </div>
 
+      <div className="jobs-page-search-row">
+        <div className="jobs-page-search">
+          <Search size={18} strokeWidth={1.75} aria-hidden="true" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Szukaj realizacji lub klienta"
+            aria-label="Szukaj realizacji lub klienta"
+          />
+        </div>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: '12px',
-        }}
-      >
         <button
           type="button"
-          onClick={() => setShowTrash((value) => !value)}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#168fe5',
-            fontSize: '14px',
-            fontWeight: 700,
-            padding: '6px 2px',
-            cursor: 'pointer',
-          }}
+          className="jobs-page-sort-button"
+          onClick={() => setSortMode((value) => value === 'newest' ? 'deadline' : 'newest')}
+          title={sortMode === 'newest' ? 'Sortuj po terminie' : 'Sortuj po najnowszych'}
+          aria-label={sortMode === 'newest' ? 'Sortuj po terminie' : 'Sortuj po najnowszych'}
         >
-          🗑️ {showTrash ? 'Ukryj kosz' : `Kosz${deletedJobs?.length ? ` (${deletedJobs.length})` : ''}`}
+          <ArrowUpDown size={18} strokeWidth={1.75} />
         </button>
       </div>
 
       {showTrash && (
-        <div
-          style={{
-            marginBottom: '18px',
-            padding: '16px',
-            borderRadius: '20px',
-            background: '#ffffff',
-            border: '1px solid #dce5ec',
-            boxShadow: '0 6px 18px rgba(18,35,79,0.06)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px',
-            }}
-          >
+        <div className="jobs-page-trash-panel">
+          <div className="jobs-page-trash-header">
             <div>
-              <div
-                style={{
-                  color: '#12234f',
-                  fontSize: '18px',
-                  fontWeight: 800,
-                }}
-              >
-                🗑️ Kosz
-              </div>
-              <div
-                style={{
-                  color: '#657491',
-                  fontSize: '13px',
-                  marginTop: '3px',
-                }}
-              >
-                Realizacje są przechowywane przez 30 dni.
-              </div>
+              <strong>Kosz</strong>
+              <span>Realizacje są przechowywane przez 30 dni.</span>
             </div>
+            <Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />
           </div>
 
           {(!deletedJobs || deletedJobs.length === 0) && (
-            <div
-              style={{
-                padding: '14px',
-                borderRadius: '14px',
-                background: '#f7f9fb',
-                color: '#657491',
-                fontSize: '14px',
-                textAlign: 'center',
-              }}
-            >
-              Kosz jest pusty.
-            </div>
+            <div className="jobs-page-trash-empty">Kosz jest pusty.</div>
           )}
 
           {(deletedJobs || []).map((job) => (
-            <div
-              key={job.id}
-              style={{
-                padding: '14px 0',
-                borderTop: '1px solid #edf1f5',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      color: '#12234f',
-                      fontSize: '16px',
-                      fontWeight: 800,
-                    }}
-                  >
-                    {job.name}
-                  </div>
-                  <div
-                    style={{
-                      color: '#657491',
-                      fontSize: '13px',
-                      marginTop: '2px',
-                    }}
-                  >
-                    {job.location || 'Brak lokalizacji'}
-                  </div>
-                  <div
-                    style={{
-                      color: '#9aa7b8',
-                      fontSize: '12px',
-                      marginTop: '5px',
-                    }}
-                  >
-                    Usunięto:{' '}
-                    {job.deletedAt
-                      ? new Date(job.deletedAt).toLocaleDateString('pl-PL')
-                      : '—'}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '7px',
-                    flexWrap: 'wrap',
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => onRestoreJob(job)}
-                    style={{
-                      border: '1px solid #cfe7da',
-                      background: '#eefaf3',
-                      color: '#168a4b',
-                      borderRadius: '12px',
-                      padding: '9px 11px',
-                      fontSize: '13px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    ↩ Przywróć
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onPermanentDeleteJob(job)}
-                    style={{
-                      border: '1px solid #f1d0d0',
-                      background: '#fff5f5',
-                      color: '#c43d3d',
-                      borderRadius: '12px',
-                      padding: '9px 11px',
-                      fontSize: '13px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Usuń na zawsze
-                  </button>
-                </div>
+            <div key={job.id} className="jobs-page-trash-row">
+              <div>
+                <strong>{capitalizeDisplay(job.name)}</strong>
+                <span>{job.location || 'Brak lokalizacji'}</span>
+                <small>
+                  Usunięto: {job.deletedAt ? new Date(job.deletedAt).toLocaleDateString('pl-PL') : '—'}
+                </small>
+              </div>
+              <div>
+                <button type="button" onClick={() => onRestoreJob(job)}>Przywróć</button>
+                <button type="button" onClick={() => onPermanentDeleteJob(job)}>Usuń na zawsze</button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <div
-        className="job-filters"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: '8px',
-          marginBottom: '10px',
-          width: '100%',
-        }}
-      >
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'all')}
-          onClick={() => setFilter('all')}
-        >
-          Wszystkie
-        </button>
-
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'active')}
-          onClick={() => setFilter('active')}
-        >
-          W toku
-        </button>
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'receipt')}
-          onClick={() => setFilter('receipt')}
-        >
-          Odbiór
-        </button>
-
-        <button
-          type="button"
-          style={filterButtonStyle(filter === 'completed')}
-          onClick={() => setFilter('completed')}
-        >
-          Zakończone
-        </button>
-
+      <div className="jobs-page-filters" role="tablist" aria-label="Filtr realizacji">
+        {filterItems.map(([value, label, count]) => (
+          <button
+            key={value}
+            type="button"
+            className={filter === value ? 'is-active' : ''}
+            onClick={() => setFilter(value)}
+            role="tab"
+            aria-selected={filter === value}
+          >
+            <span>{label}</span>
+            <small>{count}</small>
+          </button>
+        ))}
       </div>
-
-
-      <div
-        className="job-summary"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-          gap: '8px',
-          marginBottom: '16px',
-          width: '100%',
-        }}
-      >
-        <div className="job-summary-item">
-          <strong>{jobs.length}</strong>
-          <span>{jobs.length === 1 ? 'realizacja' : 'robót'}</span>
-        </div>
-        <div className="job-summary-item">
-          <strong>{activeCount}</strong>
-          <span>w toku</span>
-        </div>
-        <div className="job-summary-item">
-          <strong>{receiptCount}</strong>
-          <span>odbiór</span>
-        </div>
-        <div className="job-summary-item">
-          <strong>{completedCount}</strong>
-          <span>zakończonych</span>
-        </div>
-      </div>
-
 
       <div className="jobs">
-
-        {filteredJobs.length === 0 && (
-
-          <div className="detail-card">
-            Brak robót w tej kategorii.
+        {filteredJobs.length === 0 ? (
+          <div className="jobs-page-empty-filter">
+            <span>Brak realizacji pasujących do filtra</span>
+            <button
+              type="button"
+              onClick={() => {
+                setFilter('all')
+                setSearchQuery('')
+              }}
+            >
+              Wyczyść filtry
+            </button>
           </div>
-
-        )}
-
-
-        {filteredJobs.map(
-          (job) => (
+        ) : (
+          filteredJobs.map((job) => (
             <JobCard
               key={job.id}
               job={job}
-              clientName={(clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.shortName || (clients || []).find((client) => String(client.id) === String(job.clientId || ''))?.name || ''}
+              clientName={clientForJob(job)?.shortName || clientForJob(job)?.name || ''}
               onClick={() => onOpenJob(job)}
               onToggleTask={onToggleJobTask}
               invoices={invoices}
             />
-          )
+          ))
         )}
-
       </div>
-
     </div>
-
   )
-
 }
 
 

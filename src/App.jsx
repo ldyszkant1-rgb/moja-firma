@@ -4999,15 +4999,6 @@ function JobDetails({
     (sum, entry) => sum + getEntryMinutes(entry),
     0
   )
-  const calendarWorkedMinutes = jobCalendarPlans.reduce(
-    (sum, plan) => sum + Math.max(0, Number(plan.hours_worked || 0)) * 60,
-    0
-  )
-  const calendarLaborMinutes = jobCalendarPlans.reduce((sum, plan) => {
-    const minutes = Math.max(0, Number(plan.hours_worked || 0)) * 60
-    if (!minutes) return sum
-    return sum + minutes * (plan.user_id ? 1 : teamSize)
-  }, 0)
   const timeByType = ['transport', 'warehouse', 'assembly'].reduce((acc, type) => {
     acc[type] = jobTimeEntries
       .filter((entry) => entry.timeType === type)
@@ -5042,6 +5033,11 @@ function JobDetails({
   // dopóki konkretna ekipa nie zostanie przypisana do realizacji.
   const teamSize = assignedTeamMembers.length || 2
   const teamLaborMinutes = teamElapsedMinutes * teamSize
+  const calendarLaborMinutes = jobCalendarPlans.reduce((sum, plan) => {
+    const minutes = Math.max(0, Number(plan.hours_worked || 0)) * 60
+    if (!minutes) return sum
+    return sum + minutes * (plan.user_id ? 1 : teamSize)
+  }, 0)
 
   const assignedEmployeeLabor = assignedTeamMembers.map((member) => {
     const hours = teamElapsedMinutes / 60

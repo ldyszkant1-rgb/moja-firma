@@ -4190,7 +4190,176 @@ section {
   font-size: 13px;
   font-weight: 700;
 }
-.job-detail-edit-sheet .jobs-page-form-actions {
+.job-detail-edit-sheet /* Nowa realizacja — uporządkowanie sekcji wartości i stawek */
+.jobs-page-form-sheet .jobs-page-value-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.jobs-page-form-sheet .jobs-page-value-toggle button {
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.jobs-page-form-sheet .jobs-page-value-toggle button.is-active {
+  background: #fff;
+  color: #0787e8;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, .08);
+}
+
+.jobs-page-form-sheet .jobs-page-total-preview {
+  margin-top: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.jobs-page-form-sheet .jobs-page-total-preview span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.jobs-page-form-sheet .jobs-page-total-preview strong {
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.jobs-page-form-sheet .jobs-page-total-preview small {
+  color: #94a3b8;
+  font-size: 10px;
+}
+
+.jobs-page-form-sheet .new-job-rate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, .9fr);
+  gap: 10px 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.jobs-page-form-sheet .new-job-rate-row:last-of-type {
+  border-bottom: 0;
+}
+
+.jobs-page-form-sheet .new-job-rate-heading {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.jobs-page-form-sheet .new-job-rate-heading strong {
+  color: #101b45;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.jobs-page-form-sheet .new-job-rate-heading small {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.jobs-page-form-sheet .new-job-rate-input-wrap {
+  min-width: 0;
+  position: relative;
+}
+
+.jobs-page-form-sheet .new-job-rate-input-wrap .rate-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 58px 0 13px;
+  border: 1px solid #dce7f1;
+  border-radius: 13px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 16px;
+  outline: 0;
+}
+
+.jobs-page-form-sheet .new-job-rate-input-wrap .rate-input:focus {
+  border-color: #0787e8;
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, .10);
+}
+
+.jobs-page-form-sheet .new-job-rate-unit {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.jobs-page-form-sheet .new-job-rate-total {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -2px;
+}
+
+.jobs-page-form-sheet .new-job-rate-total span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.jobs-page-form-sheet .new-job-rate-total strong {
+  color: #101b45;
+  font-size: 18px;
+}
+
+.jobs-page-form-sheet .job-footer {
+  margin-top: 4px;
+  padding-top: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #e5ebf0;
+}
+
+.jobs-page-form-sheet .job-footer span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.jobs-page-form-sheet .job-footer strong {
+  color: #101b45;
+  font-size: 21px;
+}
+
+@media (max-width: 520px) {
+  .jobs-page-form-sheet .new-job-rate-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 13px 0;
+  }
+
+  .jobs-page-form-sheet .new-job-rate-input-wrap {
+    width: 100%;
+  }
+
+  .jobs-page-form-sheet .new-job-rate-total {
+    margin-top: 0;
+  }
+}
+
+.jobs-page-form-actions {
   position: sticky;
   bottom: -16px;
   z-index: 2;

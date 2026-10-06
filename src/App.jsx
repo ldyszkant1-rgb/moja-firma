@@ -4436,27 +4436,33 @@ function NewJobPage({
           />
 
           <label>Klient</label>
-          <select
-            className="job-new-input"
-            value={newJob.clientId || ''}
-            onChange={(e) => change('clientId', e.target.value || null)}
-          >
-            <option value="">Klient — opcjonalnie</option>
-            {(clients || []).map((client) => (
-              <option key={client.id} value={client.id}>{client.shortName || client.name}</option>
-            ))}
-          </select>
+          <div className="jobs-page-select-wrap">
+            <select
+              className="job-new-input"
+              value={newJob.clientId || ''}
+              onChange={(e) => change('clientId', e.target.value || null)}
+            >
+              <option value="">Klient — opcjonalnie</option>
+              {(clients || []).map((client) => (
+                <option key={client.id} value={client.id}>{client.shortName || client.name}</option>
+              ))}
+            </select>
+            <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+          </div>
 
           <label>Priorytet</label>
-          <select
-            className="job-new-input"
-            value={newJob.priority || 'normal'}
-            onChange={(e) => change('priority', e.target.value)}
-          >
-            <option value="normal">🟢 Normalny priorytet</option>
-            <option value="high">🟠 Wysoki priorytet</option>
-            <option value="urgent">🔴 Pilny priorytet</option>
-          </select>
+          <div className="jobs-page-select-wrap">
+            <select
+              className="job-new-input"
+              value={newJob.priority || 'normal'}
+              onChange={(e) => change('priority', e.target.value)}
+            >
+              <option value="normal">Normalny priorytet</option>
+              <option value="high">Wysoki priorytet</option>
+              <option value="urgent">Pilny priorytet</option>
+            </select>
+            <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
+          </div>
 
           <label>Termin zakończenia</label>
           <input

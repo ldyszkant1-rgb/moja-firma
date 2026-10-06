@@ -3937,7 +3937,7 @@ function JobCard({
         >
           + Dodaj zadanie
         </button>
-      ) : (
+      ) : tasks.length > 0 && !(stage === 'Zakończone' && pendingTasks.length === 0) ? (
         <section className="job-card-tasks" aria-label="Zadania">
           <div className="job-card-tasks-header">
             <div>

@@ -12190,7 +12190,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <label>Wpis</label>
                       <input value={editingPlan.title || ''} readOnly />
                     </div>
-                  )
+                  )}
                   <div className="finance-cost-sheet-field">
                     <label>Data</label>
                     <input type="date" value={String(editingPlan.plan_date || '')} readOnly />

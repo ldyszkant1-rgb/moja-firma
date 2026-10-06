@@ -1038,11 +1038,17 @@
 .invoice-editor-full-select,
 .invoice-item-row select,
 .invoice-payment-form select {
+  appearance: none;
+  -webkit-appearance: none;
   background-color: #f7fafc;
+  background-image: linear-gradient(45deg, transparent 50%, #12234f 50%), linear-gradient(135deg, #12234f 50%, transparent 50%);
+  background-position: calc(100% - 17px) 21px, calc(100% - 12px) 21px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
   color: #12234f;
   -webkit-text-fill-color: #12234f;
   color-scheme: light;
-  -webkit-appearance: menulist;
+  padding-right: 34px;
 }
 
 @media (max-width: 760px) {

@@ -6942,23 +6942,26 @@ function JobDetails({
               {currentProfitShares.map((share, index) => (
                 <div className="job-detail-profit-share-person" key={share.employeeId || index}>
                   <span>{share.employeeName || 'Osoba'}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    inputMode="numeric"
-                    value={share.percentage}
-                    onChange={(e) => {
-                      const value = Number(e.target.value)
-                      setJobProfitShares((current) => {
-                        const source = current.length > 0 ? current : initializeProfitShares()
-                        return source.map((item, itemIndex) => item === share || itemIndex === index
-                          ? { ...item, percentage: Number.isFinite(value) ? value : 0 }
-                          : item)
-                      })
-                    }}
-                  />
+                  <div className="job-detail-profit-input">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      inputMode="numeric"
+                      value={share.percentage}
+                      onChange={(e) => {
+                        const value = Number(e.target.value)
+                        setJobProfitShares((current) => {
+                          const source = current.length > 0 ? current : initializeProfitShares()
+                          return source.map((item, itemIndex) => item === share || itemIndex === index
+                            ? { ...item, percentage: Number.isFinite(value) ? value : 0 }
+                            : item)
+                        })
+                      }}
+                    />
+                    <span>%</span>
+                  </div>
                 </div>
               ))}
             </div>

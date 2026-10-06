@@ -32,6 +32,7 @@ import {
 } from './lib/jobCostsApi'
 import {
   getJobTimeEntries,
+  getJobCalendarPlans,
   startJobTimer,
   stopJobTimer,
   deleteJobTimeEntry,
@@ -4943,6 +4944,7 @@ function JobDetails({
     .reduce((sum, cost) => sum + Number(cost.totalCost || 0), 0)
 
   const [jobTimeEntries, setJobTimeEntries] = useState([])
+  const [jobCalendarPlans, setJobCalendarPlans] = useState([])
   const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState('team')
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
@@ -4953,14 +4955,16 @@ function JobDetails({
     let cancelled = false
     Promise.all([
       getJobTimeEntries(job.id),
+      getJobCalendarPlans(job.id),
       getJobProfitShares(job.id),
     ])
-      .then(([entries, shares]) => {
+      .then(([entries, calendarPlans, shares]) => {
         if (cancelled) return
         setJobTimeEntries(Array.isArray(entries) ? entries : [])
+        setJobCalendarPlans(Array.isArray(calendarPlans) ? calendarPlans : [])
         setJobProfitShares(Array.isArray(shares) ? shares : [])
       })
-      .catch((error) => console.error('Nie udało się wczytać czasu lub podziału zysku:', error))
+      .catch((error) => console.error('Nie udało się wczytać czasu, godzin z terminarza lub podziału zysku:', error))
     return () => { cancelled = true }
   }, [job.id])
 
@@ -4995,6 +4999,15 @@ function JobDetails({
     (sum, entry) => sum + getEntryMinutes(entry),
     0
   )
+  const calendarWorkedMinutes = jobCalendarPlans.reduce(
+    (sum, plan) => sum + Math.max(0, Number(plan.hours_worked || 0)) * 60,
+    0
+  )
+  const calendarLaborMinutes = jobCalendarPlans.reduce((sum, plan) => {
+    const minutes = Math.max(0, Number(plan.hours_worked || 0)) * 60
+    if (!minutes) return sum
+    return sum + minutes * (plan.user_id ? 1 : teamSize)
+  }, 0)
   const timeByType = ['transport', 'warehouse', 'assembly'].reduce((acc, type) => {
     acc[type] = jobTimeEntries
       .filter((entry) => entry.timeType === type)
@@ -5006,6 +5019,23 @@ function JobDetails({
       (member) => String(member.user_id) === String(id)
     ))
     .filter(Boolean)
+
+  const calendarLaborCost = jobCalendarPlans.reduce((sum, plan) => {
+    const hours = Math.max(0, Number(plan.hours_worked || 0))
+    if (!hours) return sum
+
+    if (plan.user_id) {
+      const member = (organizationMembers || []).find(
+        (item) => String(item.user_id) === String(plan.user_id)
+      )
+      return sum + hours * Number(member?.hourly_rate || 0)
+    }
+
+    return sum + hours * assignedTeamMembers.reduce(
+      (teamSum, member) => teamSum + Number(member.hourly_rate || 0),
+      0
+    )
+  }, 0)
 
   const teamElapsedMinutes = totalTrackedMinutes
   // Zachowujemy dotychczasowe zachowanie 2-osobowej ekipy,
@@ -5040,13 +5070,17 @@ function JobDetails({
 
   const effectiveLaborCost = manualLaborCosts > 0
     ? manualLaborCosts
-    : automaticLaborCost
+    : calendarLaborCost > 0
+      ? calendarLaborCost
+      : automaticLaborCost
 
   const effectiveJobCosts = totalJobCosts - manualLaborCosts + effectiveLaborCost
   const jobRevenue = calculateTotal(editedJob)
   const jobProfit = jobRevenue - effectiveJobCosts
   const jobMargin = jobRevenue > 0 ? (jobProfit / jobRevenue) * 100 : 0
   const laborShareOfRevenue = jobRevenue > 0 ? (effectiveLaborCost / jobRevenue) * 100 : 0
+  const effectiveLaborMinutes = calendarLaborMinutes > 0 ? calendarLaborMinutes : teamLaborMinutes
+  const profitPerLaborHour = effectiveLaborMinutes > 0 ? jobProfit / (effectiveLaborMinutes / 60) : 0
   const materialOtherCost = totalJobCosts - manualLaborCosts
   const profitabilityStatus = jobRevenue <= 0
     ? 'Brak przychodu'
@@ -5201,7 +5235,7 @@ function JobDetails({
 
   const individualProfitHours = currentProfitShares.map((share) => {
     const percentage = Number(share.percentage || 0)
-    const hours = (teamLaborMinutes / 60) * (percentage / 100)
+    const hours = (effectiveLaborMinutes / 60) * (percentage / 100)
     const profit = jobProfit * (percentage / 100)
     const assignedMember = assignedEmployeeLabor.find(
       (member) =>

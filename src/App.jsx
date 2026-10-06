@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2 } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -3840,13 +3840,7 @@ function JobCard({
                 }}
               />
             ) : (
-              <span className="job-card-photo job-card-photo-empty" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="3" y="5" width="18" height="14" rx="2" />
-                  <circle cx="8.5" cy="9.5" r="1.5" />
-                  <path d="m5 17 4.5-4.5 3.2 3.2 2.2-2.2L19 17" />
-                </svg>
-              </span>
+              <span className="job-card-photo job-card-photo-empty" aria-hidden="true">{capitalizeDisplay(job.name || '?').charAt(0)}</span>
             )}
 
             <span className="job-card-identity-text">
@@ -6370,56 +6364,72 @@ function JobDetails({
 
 
   return (
-
-    <div className="sub-page">
-
-      <div className="details-top">
-
-        <button
-
-          className="back-button"
-
-          onClick={
-            onBack
-          }
-
-        >
+    <div className="sub-page job-detail-page">
+      <div className="job-detail-sticky">
+        <button type="button" className="job-detail-back" onClick={onBack}>
           ← Wróć
         </button>
-
-
         <button
-
-          className="edit-button"
-
-          onClick={() =>
-            setEditing(
-              !editing
-            )
-          }
-
+          type="button"
+          className="job-detail-edit-icon"
+          onClick={() => setEditing(!editing)}
+          aria-label={editing ? 'Anuluj edycję' : 'Edytuj realizację'}
+          title={editing ? 'Anuluj edycję' : 'Edytuj realizację'}
         >
-          {editing
-            ? 'Anuluj'
-            : 'Edytuj'
-          }
-
+          {editing ? <X size={20} strokeWidth={1.75} /> : <Pencil size={19} strokeWidth={1.75} />}
         </button>
-
       </div>
 
+      <header className="job-detail-header">
+        <div className="job-detail-eyebrow">REALIZACJA</div>
+        <h1>{capitalizeDisplay(editedJob.name)}</h1>
+        <div className="job-detail-location">{capitalizeDisplay(editedJob.location || 'Brak lokalizacji')}</div>
 
-      <div className="small-label">
-        REALIZACJA
-      </div>
+        {editedJob.clientId && (
+          <div className="job-detail-client">
+            <User size={16} strokeWidth={1.75} />
+            <span>
+              {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.shortName ||
+                (clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name ||
+                'Klient'}
+            </span>
+          </div>
+        )}
 
+        <div className="job-detail-pills">
+          <span className={'job-detail-pill job-detail-pill-status job-detail-pill-' + normalizeJobStage(editedJob).toLowerCase().replaceAll(' ', '-')}>
+            <span className="job-detail-pill-dot" />
+            {normalizeJobStage(editedJob)}
+          </span>
+          {editedJob.priority && editedJob.priority !== 'normal' && (
+            <span className={'job-detail-pill job-detail-pill-priority job-detail-pill-priority-' + editedJob.priority}>
+              <span className="job-detail-pill-dot" />
+              {editedJob.priority === 'urgent' ? 'Pilny' : 'Wysoki'}
+            </span>
+          )}
+          {editedJob.plannedEndDate && (
+            <span className={'job-detail-pill job-detail-pill-deadline' + (editedJob.plannedEndDate < getTodayString() ? ' is-overdue' : '')}>
+              {editedJob.plannedEndDate < getTodayString() ? 'Po terminie' : formatDeadlineShort(editedJob.plannedEndDate)}
+            </span>
+          )}
+        </div>
+      </header>
 
-      {editing ? (
-
-        <div className="jobs-page-form-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setEditing(false)
-        }}>
-          <div className="jobs-page-form-sheet" role="dialog" aria-modal="true" aria-labelledby="jobs-page-edit-title" onMouseDown={(event) => event.stopPropagation()}>
+      {editing && (
+        <div
+          className="jobs-page-form-backdrop job-detail-edit-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setEditing(false)
+          }}
+        >
+          <div
+            className="jobs-page-form-sheet job-detail-edit-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="jobs-page-edit-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <div className="finance-cost-sheet-handle" aria-hidden="true" />
             <div className="finance-cost-sheet-header">
               <div>
@@ -6427,219 +6437,133 @@ function JobDetails({
                 <p>Zmień podstawowe dane realizacji</p>
               </div>
               <button type="button" className="finance-cost-sheet-close" onClick={() => setEditing(false)} aria-label="Zamknij">
-                <X size={20} strokeWidth={1.8} />
+                <X size={20} strokeWidth={1.75} />
               </button>
             </div>
 
-        <div className="note-form jobs-page-edit-form">
-
-          <input
-
-            className="note-text-input job-edit-input"
-
-            placeholder="Nazwa realizacje"
-
-            value={
-              editedJob.name
-            }
-
-            onChange={(e) =>
-              setEditedJob({
-
-                ...editedJob,
-
-                name:
-                  e.target.value,
-
-              })
-            }
-
-          />
-
-
-          <input
-
-            className="note-text-input job-edit-input"
-
-            placeholder="Lokalizacja / statek"
-
-            value={
-              editedJob.location
-            }
-
-            onChange={(e) =>
-              setEditedJob({
-
-                ...editedJob,
-
-                location:
-                  e.target.value,
-
-              })
-            }
-
-          />
-
-          <select
-            className="note-text-input job-edit-input"
-            value={editedJob.clientId || ''}
-            onChange={(e) =>
-              setEditedJob({
-                ...editedJob,
-                clientId: e.target.value || null,
-              })
-            }
-          >
-            <option value="">Klient — brak przypisania</option>
-            {(clients || []).map((client) => (
-              <option key={client.id} value={client.id}>{client.name}</option>
-            ))}
-          </select>
-
-          <select
-            className="note-text-input job-edit-input"
-            value={editedJob.priority || 'normal'}
-            onChange={(e) =>
-              setEditedJob({
-                ...editedJob,
-                priority: e.target.value,
-              })
-            }
-          >
-            <option value="normal">🟢 Normalny priorytet</option>
-            <option value="high">🟠 Wysoki priorytet</option>
-            <option value="urgent">🔴 Pilny priorytet</option>
-          </select>
-
-          <div style={{
-            marginTop: '4px',
-            padding: '14px',
-            borderRadius: '14px',
-            background: '#f7faff',
-            border: '1px solid #dce7f1',
-          }}>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '9px', textTransform: 'uppercase' }}>
-              📅 Planowanie realizacji
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#35516f' }}>
-                Start
-                <input type="date" value={editedJob.plannedStartDate || ''} onChange={(e) => setEditedJob({ ...editedJob, plannedStartDate: e.target.value || null })} style={{ ...settingsInputStyle, marginTop: '5px' }} />
+            <div className="job-detail-edit-fields">
+              <label>
+                <span>Nazwa realizacji</span>
+                <input
+                  className="job-detail-edit-input"
+                  value={editedJob.name}
+                  onChange={(e) => setEditedJob({ ...editedJob, name: e.target.value })}
+                />
               </label>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#35516f' }}>
-                Koniec
-                <input type="date" value={editedJob.plannedEndDate || ''} min={editedJob.plannedStartDate || undefined} onChange={(e) => setEditedJob({ ...editedJob, plannedEndDate: e.target.value || null })} style={{ ...settingsInputStyle, marginTop: '5px' }} />
+
+              <label>
+                <span>Lokalizacja / statek</span>
+                <input
+                  className="job-detail-edit-input"
+                  value={editedJob.location}
+                  onChange={(e) => setEditedJob({ ...editedJob, location: e.target.value })}
+                />
               </label>
-            </div>
-            <div style={{ marginTop: '7px', fontSize: '12px', color: '#718096' }}>
-              Terminarz pokaże tę realizację w zaplanowanym okresie.
-            </div>
-          </div>
 
-          <div style={{
-            marginTop: '4px',
-            padding: '14px',
-            borderRadius: '14px',
-            background: '#f7faff',
-            border: '1px solid #dce7f1',
-          }}>
-            <div style={{
-              fontSize: '12px',
-              fontWeight: 800,
-              color: '#64748b',
-              marginBottom: '9px',
-              textTransform: 'uppercase',
-            }}>
-              Ekipa przypisana do roboty
-            </div>
+              <label>
+                <span>Klient</span>
+                <select
+                  className="job-detail-edit-input"
+                  value={editedJob.clientId || ''}
+                  onChange={(e) => setEditedJob({ ...editedJob, clientId: e.target.value || null })}
+                >
+                  <option value="">Brak przypisania</option>
+                  {(clients || []).map((client) => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+              </label>
 
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '7px', color: '#1f2f46' }}>
-                Stała ekipa
-              </div>
-              <select
-                value={editedJob.assignedTeamId || ''}
-                onChange={(e) => {
-                  const teamId = e.target.value || null
-                  const selectedTeam = jobTeams.find((team) => String(team.id) === String(teamId))
-                  setEditedJob({
-                    ...editedJob,
-                    assignedTeamId: teamId,
-                    assignedEmployeeIds: selectedTeam?.memberIds || [],
-                  })
-                }}
-                style={settingsInputStyle}
-              >
-                <option value="">— bez stałej ekipy —</option>
-                {jobTeams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name} · {team.memberIds.length} {team.memberIds.length === 1 ? 'osoba' : 'osoby'}
-                  </option>
-                ))}
-              </select>
-              {jobTeams.length === 0 && (
-                <div style={{ marginTop: '6px', fontSize: '12px', color: '#718096' }}>
-                  Najpierw utwórz ekipę w Ustawieniach → Pracownicy i dostęp.
+              <label>
+                <span>Priorytet</span>
+                <select
+                  className="job-detail-edit-input"
+                  value={editedJob.priority || 'normal'}
+                  onChange={(e) => setEditedJob({ ...editedJob, priority: e.target.value })}
+                >
+                  <option value="normal">Normalny</option>
+                  <option value="high">Wysoki</option>
+                  <option value="urgent">Pilny</option>
+                </select>
+              </label>
+
+              <div className="job-detail-edit-section">
+                <div className="job-detail-edit-section-title">PLANOWANIE REALIZACJI</div>
+                <div className="job-detail-edit-grid">
+                  <label>
+                    <span>Start</span>
+                    <input
+                      type="date"
+                      value={editedJob.plannedStartDate || ''}
+                      onChange={(e) => setEditedJob({ ...editedJob, plannedStartDate: e.target.value || null })}
+                    />
+                  </label>
+                  <label>
+                    <span>Koniec</span>
+                    <input
+                      type="date"
+                      value={editedJob.plannedEndDate || ''}
+                      min={editedJob.plannedStartDate || undefined}
+                      onChange={(e) => setEditedJob({ ...editedJob, plannedEndDate: e.target.value || null })}
+                    />
+                  </label>
                 </div>
-              )}
-            </div>
-
-            {organizationMembers.length === 0 ? (
-              <div style={{ fontSize: '13px', color: '#718096' }}>
-                Brak pracowników firmy do przypisania.
+                <small>Terminarz pokaże tę realizację w zaplanowanym okresie.</small>
               </div>
-            ) : (
-              <div style={{ display: 'grid', gap: '8px' }}>
-                {organizationMembers.map((member) => {
-                  const checked = (editedJob.assignedEmployeeIds || [])
-                    .map(String)
-                    .includes(String(member.user_id))
-                  return (
-                    <label
-                      key={member.user_id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 11px',
-                        borderRadius: '11px',
-                        background: checked ? '#eaf5ff' : '#fff',
-                        border: checked ? '1px solid #8bc7f4' : '1px solid #e1e8ef',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          const current = Array.isArray(editedJob.assignedEmployeeIds)
-                            ? editedJob.assignedEmployeeIds.map(String)
-                            : []
-                          const next = e.target.checked
-                            ? [...new Set([...current, String(member.user_id)])]
-                            : current.filter((id) => id !== String(member.user_id))
-                          setEditedJob({
-                            ...editedJob,
-                            assignedEmployeeIds: next,
-                          })
-                        }}
-                        style={{ width: '18px', height: '18px' }}
-                      />
-                      <span style={{ fontWeight: 700, color: '#1f2f46' }}>
-                        {member.display_name || member.email || 'Pracownik'}
-                      </span>
-                    </label>
-                  )
-                })}
+
+              <div className="job-detail-edit-section">
+                <div className="job-detail-edit-section-title">EKIPA PRZYPISANA DO ROBOTY</div>
+                <label>
+                  <span>Stała ekipa</span>
+                  <select
+                    className="job-detail-edit-input"
+                    value={editedJob.assignedTeamId || ''}
+                    onChange={(e) => {
+                      const teamId = e.target.value || null
+                      const selectedTeam = jobTeams.find((team) => String(team.id) === String(teamId))
+                      setEditedJob({
+                        ...editedJob,
+                        assignedTeamId: teamId,
+                        assignedEmployeeIds: selectedTeam?.memberIds || [],
+                      })
+                    }}
+                  >
+                    <option value="">Bez stałej ekipy</option>
+                    {jobTeams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} · {team.memberIds.length} {team.memberIds.length === 1 ? 'osoba' : 'osoby'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {organizationMembers.length > 0 && (
+                  <div className="job-detail-edit-members">
+                    {organizationMembers.map((member) => {
+                      const checked = (editedJob.assignedEmployeeIds || []).map(String).includes(String(member.user_id))
+                      return (
+                        <label key={member.user_id} className={checked ? 'is-checked' : ''}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              const current = Array.isArray(editedJob.assignedEmployeeIds)
+                                ? editedJob.assignedEmployeeIds.map(String)
+                                : []
+                              const next = e.target.checked
+                                ? [...new Set([...current, String(member.user_id)])]
+                                : current.filter((id) => id !== String(member.user_id))
+                              setEditedJob({ ...editedJob, assignedEmployeeIds: next })
+                            }}
+                          />
+                          <span>{member.display_name || member.email || 'Pracownik'}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-
-            <div style={{ marginTop: '8px', fontSize: '12px', color: '#718096' }}>
-              Możesz przypisać jedną lub kilka osób. Zmiana zapisze się razem z robotą.
             </div>
-          </div>
-
-        </div>
 
             <div className="jobs-page-form-actions">
               <button type="button" className="jobs-page-form-cancel" onClick={() => setEditing(false)}>Anuluj</button>
@@ -6647,101 +6571,56 @@ function JobDetails({
             </div>
           </div>
         </div>
-
-      ) : (
-
-        <>
-
-          <h1>
-            {editedJob.name}
-          </h1>
-
-
-          <div className="job-location">
-            {editedJob.location}
-          </div>
-
-          {editedJob.clientId && (
-            <div className="job-client-detail">
-              👤 {(clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.shortName || (clients || []).find((client) => String(client.id) === String(editedJob.clientId))?.name || 'Klient'}
-            </div>
-          )}
-
-          {editedJob.assignedTeamId && (
-            <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 700, color: '#35516f' }}>
-              👷 {jobTeams.find((team) => String(team.id) === String(editedJob.assignedTeamId))?.name || 'Przypisana ekipa'}
-            </div>
-          )}
-
-          {(editedJob.assignedEmployeeIds || []).length > 0 && (
-            <div style={{
-              marginTop: '8px',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '6px',
-            }}>
-              {(editedJob.assignedEmployeeIds || []).map((id) => {
-                const member = (organizationMembers || []).find(
-                  (item) => String(item.user_id) === String(id)
-                )
-                return (
-                  <span
-                    key={id}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '5px 9px',
-                      borderRadius: '999px',
-                      background: '#eef6ff',
-                      color: '#1769aa',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                    }}
-                  >
-                    👷 {member?.display_name || member?.email || 'Pracownik'}
-                  </span>
-                )
-              })}
-            </div>
-          )}
-
-        </>
-
       )}
 
+      {editedJob.completed && editedJob.completedAt && (
+        <div className="job-detail-completed-date">
+          Zakończona {formatDate(editedJob.completedAt)}
+        </div>
+      )}
 
-      {editedJob.completed &&
-        editedJob.completedAt && (
-
-          <div className="completed-date">
-
-            Zakończona{' '}
-
-            {formatDate(
-              editedJob.completedAt
-            )}
-
+      <section className="job-detail-card job-detail-stage-card">
+        <div className="job-detail-card-title-row">
+          <div>
+            <div className="job-detail-label">ETAP</div>
+            <h2>Etap realizacji</h2>
           </div>
-
-        )
-      }
-
-
-      {/* ETAP I ROZLICZENIE */}
-
-      <div className="detail-card job-stage-card">
-        <div className="detail-title">
-          <h2>Etap realizacje</h2>
-          <span
-            className="job-stage-pill"
-            style={getJobStageStyle(normalizeJobStage(editedJob))}
-          >
-            {normalizeJobStage(editedJob)}
-          </span>
+          <strong className="job-detail-progress-percent">{formatDisplayNumber(editedJob.progress, { maximumFractionDigits: 0 })}%</strong>
         </div>
 
-        {editing ? (
-          <label className="job-stage-select-label">
+        <div className="job-detail-stepper" aria-label="Etap realizacji">
+          {JOB_STAGES.map((stage, index) => {
+            const currentIndex = JOB_STAGES.indexOf(normalizeJobStage(editedJob))
+            const completed = index < currentIndex
+            const active = index === currentIndex
+            return (
+              <div
+                key={stage}
+                className={'job-detail-step ' + (completed ? 'is-complete ' : '') + (active ? 'is-active' : '')}
+              >
+                <span className="job-detail-step-dot">{completed ? '✓' : ''}</span>
+                <strong>{stage}</strong>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="job-detail-current-stage">
+          Aktualny etap: <strong>{normalizeJobStage(editedJob)}</strong>
+        </div>
+
+        <div className="job-detail-progress">
+          <div className="job-detail-progress-head">
+            <span>Postęp</span>
+            <strong>{formatDisplayNumber(editedJob.progress, { maximumFractionDigits: 0 })}%</strong>
+          </div>
+          <div className="job-detail-progress-bar">
+            <div className="job-detail-progress-fill" style={{ width: Math.max(0, Math.min(100, Number(editedJob.progress) || 0)) + '%' }} />
+          </div>
+        </div>
+
+        {editing && (
+          <label className="job-detail-stage-edit">
             <span>Aktualny etap</span>
             <select
               value={normalizeJobStage(editedJob)}
@@ -6751,2081 +6630,597 @@ function JobDetails({
                   ...editedJob,
                   status: value,
                   completed: value === 'Zakończone',
-                  completedAt: value === 'Zakończone'
-                    ? (editedJob.completedAt || getTodayString())
-                    : null,
+                  completedAt: value === 'Zakończone' ? (editedJob.completedAt || getTodayString()) : null,
                 })
               }}
             >
-              {JOB_STAGES.map((stage) => (
-                <option key={stage} value={stage}>{stage}</option>
-              ))}
+              {JOB_STAGES.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
             </select>
           </label>
-        ) : (
-          <div className="job-stage-steps">
-            {JOB_STAGES.map((stage, index) => (
-              <div
-                key={stage}
-                className={index <= JOB_STAGES.indexOf(normalizeJobStage(editedJob)) ? 'job-stage-step active' : 'job-stage-step'}
-              >
-                <span>{index + 1}</span>
-                <strong>{stage}</strong>
+        )}
+      </section>
+
+      <section className="job-detail-card">
+        <div className="job-detail-card-title-row">
+          <div>
+            <div className="job-detail-label">ZAKRES</div>
+            <h2>Zakres realizacji</h2>
+          </div>
+        </div>
+
+        <div className="job-detail-quantities">
+          {[
+            ['mb', 'MB', Number(editedJob.quantities?.mb || 0)],
+            ['m2', 'm²', Number(editedJob.quantities?.m2 || 0)],
+            ['kg', 'kg', Number(editedJob.quantities?.kg || 0)],
+          ].filter(([, , value]) => value > 0).map(([field, label, value]) => (
+            <div className="job-detail-quantity" key={field}>
+              <span>{label}</span>
+              {editing ? (
+                <input
+                  inputMode="decimal"
+                  value={editedJob.quantities?.[field] ?? ''}
+                  onChange={(e) => updateQuantity(field, e.target.value)}
+                />
+              ) : (
+                <strong>{formatDisplayNumber(value)}</strong>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="job-detail-card">
+        <div className="job-detail-card-title-row">
+          <div>
+            <div className="job-detail-label">STAWKI</div>
+            <h2>Stawki i wartość</h2>
+          </div>
+        </div>
+
+        <div className="job-detail-rates">
+          {[
+            ['mb', 'MB', Number(editedJob.quantities?.mb || 0), Number(editedJob.rates?.mb || 0)],
+            ['m2', 'm²', Number(editedJob.quantities?.m2 || 0), Number(editedJob.rates?.m2 || 0)],
+            ['kg', 'kg', Number(editedJob.quantities?.kg || 0), Number(editedJob.rates?.kg || 0)],
+          ].filter(([, , quantity]) => quantity > 0).map(([field, label, quantity, rate]) => (
+            <div className="job-detail-rate-row" key={field}>
+              <div className="job-detail-rate-main">
+                <span>{label}</span>
+                <strong>
+                  {formatDisplayNumber(quantity)} × {formatDisplayMoney(rate)}
+                </strong>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="detail-card" style={{ marginTop: '14px' }}>
-        <div className="detail-title">
-          <div>
-            <div className="small-label">FAKTURA</div>
-            <h2 style={{ marginBottom: '4px' }}>{linkedInvoice?.invoiceNumber || 'Brak faktury'}</h2>
-          </div>
-          {linkedInvoice && (
-            <span style={{ fontSize: '12px', fontWeight: 800, color: (Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) >= Number(linkedInvoice.grossAmount || 0) - 0.01 ? '#159447' : '#b77908' }}>
-              {(Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) >= Number(linkedInvoice.grossAmount || 0) - 0.01
-                ? 'Zapłacona'
-                : (Number(linkedInvoice.paidAmount || 0) + Number(linkedInvoice.vatSettledAmount || 0)) > 0
-                  ? 'Częściowo zapłacona'
-                  : linkedInvoice.status || 'Wystawiona'}
-            </span>
-          )}
-        </div>
-        {linkedInvoice ? (
-          <>
-            {(() => {
-              const invoiceNet = Math.max(0, Number(linkedInvoice.netAmount || 0))
-              const invoiceVat = Math.max(0, Number(linkedInvoice.vatAmount || 0))
-              const invoiceGross = Math.max(0, Number(linkedInvoice.grossAmount || 0))
-              const invoicePaid = Math.min(invoiceGross, Math.max(0, Number(linkedInvoice.paidAmount || 0)))
-              const vatSettled = Math.min(invoiceVat, Math.max(0, Number(linkedInvoice.vatSettledAmount || 0)))
-              const netPaid = Math.min(invoiceNet, invoicePaid)
-              const remainingNet = Math.max(0, invoiceNet - netPaid)
-
-              return (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Netto</span>
-                      <strong>{formatMoney(invoiceNet)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Brutto</span>
-                      <strong>{formatMoney(invoiceGross)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Otrzymano</span>
-                      <strong>{formatMoney(netPaid)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>VAT rozliczony</span>
-                      <strong>{formatMoney(vatSettled)}</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '14px', background: remainingNet > 0.01 ? '#fff8e8' : '#edf9f1', border: remainingNet > 0.01 ? '1px solid #f0d58a' : '1px solid #b9e3c7' }}>
-                    <span style={{ display: 'block', fontSize: '11px', color: '#718096', fontWeight: 800, textTransform: 'uppercase' }}>Do odzyskania netto</span>
-                    <strong style={{ display: 'block', marginTop: '4px', fontSize: '22px', color: remainingNet > 0.01 ? '#9a6800' : '#159447' }}>
-                      {formatMoney(remainingNet)}
-                    </strong>
-                    <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: '#718096' }}>
-                      Termin płatności: {linkedInvoice.dueDate ? formatDate(linkedInvoice.dueDate) : '—'}
-                    </span>
-                  </div>
-
-                  <button type="button" className="document-button" style={{ marginTop: '12px', width: '100%' }} onClick={() => onOpenInvoice?.(linkedInvoice)}>
-                    🧾 Otwórz fakturę i rozliczenie
-                  </button>
-                </>
-              )
-            })()}
-          </>
-        ) : (
-          <>
-            <p style={{ margin: '8px 0 12px', color: '#68758a', lineHeight: 1.5 }}>
-              Obsługa faktury i płatności znajduje się w zakładce Faktury.
-            </p>
-            {(normalizeJobStage(editedJob) === 'Odbiór' || normalizeJobStage(editedJob) === 'Zakończone') && (
-              <button type="button" className="save-button" style={{ width: '100%' }} onClick={() => onCreateInvoice?.(editedJob)}>
-                ＋ Utwórz fakturę
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* ZDJĘCIE GŁÓWNE */}
-
-      <div
-        className="detail-card"
-        tabIndex={0}
-        onPaste={handleMainPhotoPaste}
-      >
-
-        <h2>
-          Zdjęcie główne
-        </h2>
-
-        {editedJob.mainPhoto?.url ? (
-
-          <div>
-
-            <img
-              src={editedJob.mainPhoto.url}
-              alt={editedJob.mainPhoto.name || editedJob.name}
-              style={{
-                width: '100%',
-                maxHeight: '260px',
-                objectFit: 'cover',
-                borderRadius: '16px',
-                display: 'block',
-                border: '1px solid #dfe7ee',
-                cursor: 'pointer',
-              }}
-              title="Kliknij, aby zobaczyć zdjęcie"
-              onClick={() =>
-                window.open(
-                  editedJob.mainPhoto.url,
-                  '_blank'
-                )
-              }
-            />
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '8px',
-                marginTop: '8px',
-                flexWrap: 'wrap',
-              }}
-            >
-
-              <button
-                className="document-button"
-                onClick={() =>
-                  mainPhotoInputRef.current.click()
-                }
-              >
-                📷 Zmień zdjęcie
-              </button>
-
-              <button
-                className="document-remove"
-                onClick={removeMainPhoto}
-              >
-                Usuń zdjęcie główne
-              </button>
-
+              {editing ? (
+                <input
+                  inputMode="decimal"
+                  value={editedJob.rates?.[field] ?? ''}
+                  onChange={(e) => updateRate(field, e.target.value)}
+                />
+              ) : (
+                <strong className="job-detail-rate-total">{formatDisplayMoney(quantity * rate)}</strong>
+              )}
             </div>
-
+          ))}
+          <div className="job-detail-total-row">
+            <span>Łączna wartość <small>netto</small></span>
+            <strong>{formatDisplayMoney(jobRevenue)}</strong>
           </div>
-
-        ) : (
-
-          <button
-            className="document-button"
-            onClick={() =>
-              mainPhotoInputRef.current.click()
-            }
-          >
-            📷 Dodaj zdjęcie główne
-          </button>
-
-        )}
-
-        <input
-          ref={mainPhotoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          hidden
-          onChange={(e) => {
-            addMainPhoto(
-              e.target.files[0]
-            )
-            e.target.value = ''
-          }}
-        />
-
-      </div>
-
-
-      {/* POSTĘP */}
-
-      <div className="detail-card">
-
-        <div className="detail-title">
-
-          <h2>
-            Postęp
-          </h2>
-
-
-          <strong>
-            {editedJob.progress}%
-          </strong>
-
         </div>
+      </section>
 
-
-        <div className="progress-bar large-progress">
-
-          <div
-
-            className="progress-fill"
-
-            style={{
-              width:
-                `${editedJob.progress}%`,
-            }}
-
-          />
-
-        </div>
-
-
-        {editing && (
-
-          <>
-
-            <div
-
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                marginTop: '12px',
-              }}
-
-            >
-
-              <button
-                type="button"
-                onClick={() =>
-                  setEditedJob({
-                    ...editedJob,
-                    progress: Math.max(0, Number(editedJob.progress || 0) - 1),
-                  })
-                }
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  fontSize: '22px',
-                  fontWeight: '700',
-                }}
-              >
-                −
-              </button>
-
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={editedJob.progress}
-                onChange={(e) => {
-                  const value = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                  setEditedJob({
-                    ...editedJob,
-                    progress: value,
-                  });
-                }}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  textAlign: 'center',
-                  fontSize: '18px',
-                  fontWeight: '700',
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  setEditedJob({
-                    ...editedJob,
-                    progress: Math.min(100, Number(editedJob.progress || 0) + 1),
-                  })
-                }
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  fontSize: '22px',
-                  fontWeight: '700',
-                }}
-              >
-                +
-              </button>
-
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '6px',
-                flexWrap: 'wrap',
-                marginTop: '10px',
-              }}
-            >
-
-              {[0, 25, 50, 75, 100].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() =>
-                    setEditedJob({
-                      ...editedJob,
-                      progress: value,
-                    })
-                  }
-                  style={{
-                    flex: '1 1 54px',
-                    minWidth: '54px',
-                  }}
-                >
-                  {value}%
-                </button>
-              ))}
-
-            </div>
-
-          </>
-
-        )}
-
-      </div>
-
-
-      {/* ZAKRES */}
-
-      <div className="detail-card">
-
-        <h2>
-          Zakres realizacje
-        </h2>
-
-
-        <div className="detail-quantities">
-
-          <div className="quantity-box">
-
-            <span>
-              MB
-            </span>
-
-
-            {editing ? (
-
-              <input
-
-                type="text"
-
-                inputMode="decimal"
-
-                value={
-                  editedJob.quantities.mb
-                }
-
-                onChange={(e) =>
-                  updateQuantity(
-                    'mb',
-                    e.target.value
-                  )
-                }
-
-              />
-
-            ) : (
-
-              <strong>
-                {editedJob.quantities.mb}
-              </strong>
-
-            )}
-
-          </div>
-
-
-          <div className="quantity-box">
-
-            <span>
-              m²
-            </span>
-
-
-            {editing ? (
-
-              <input
-
-                type="text"
-
-                inputMode="decimal"
-
-                value={
-                  editedJob.quantities.m2
-                }
-
-                onChange={(e) =>
-                  updateQuantity(
-                    'm2',
-                    e.target.value
-                  )
-                }
-
-              />
-
-            ) : (
-
-              <strong>
-                {editedJob.quantities.m2}
-              </strong>
-
-            )}
-
-          </div>
-
-
-          <div className="quantity-box">
-
-            <span>
-              kg
-            </span>
-
-
-            {editing ? (
-
-              <input
-
-                type="text"
-
-                inputMode="decimal"
-
-                value={
-                  editedJob.quantities.kg
-                }
-
-                onChange={(e) =>
-                  updateQuantity(
-                    'kg',
-                    e.target.value
-                  )
-                }
-
-              />
-
-            ) : (
-
-              <strong>
-                {editedJob.quantities.kg}
-              </strong>
-
-            )}
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* STAWKI */}
-
-      <div className="detail-card">
-
-        <h2>
-          Stawki i wartość
-        </h2>
-
-
-        <FinanceRow
-
-          label="MB"
-
-          quantity={
-            editedJob.quantities.mb
-          }
-
-          rate={
-            editedJob.rates.mb
-          }
-
-          editing={
-            editing
-          }
-
-          onChange={(value) =>
-            updateRate(
-              'mb',
-              value
-            )
-          }
-
-        />
-
-
-        <FinanceRow
-
-          label="m²"
-
-          quantity={
-            editedJob.quantities.m2
-          }
-
-          rate={
-            editedJob.rates.m2
-          }
-
-          editing={
-            editing
-          }
-
-          onChange={(value) =>
-            updateRate(
-              'm2',
-              value
-            )
-          }
-
-        />
-
-
-        <FinanceRow
-
-          label="kg"
-
-          quantity={
-            editedJob.quantities.kg
-          }
-
-          rate={
-            editedJob.rates.kg
-          }
-
-          editing={
-            editing
-          }
-
-          onChange={(value) =>
-            updateRate(
-              'kg',
-              value
-            )
-          }
-
-        />
-
-
-        <div className="job-footer">
-
-          <span>
-            Łączna wartość
-          </span>
-
-          <strong>
-            {formatMoney(
-              calculateTotal(
-                editedJob
-              )
-            )}
-          </strong>
-
-        </div>
-
-      </div>
-
-
-      <JobDocuments
-        job={editedJob}
-        clients={clients}
-        company={company}
-      />
-
-      {/* DOKUMENTACJA */}
-
-      <div className="detail-card">
-
-        <h2>
-          Dokumentacja
-        </h2>
-
-
-        <DocumentRow
-
-          title="Rysunek materiałowy"
-
-          document={
-            editedJob.documents?.material
-          }
-
-          inputRef={
-            materialInputRef
-          }
-
-          onAdd={(file) =>
-            addDocument(
-              'material',
-              file
-            )
-          }
-
-        />
-
-
-        {editedJob.documents?.material && (
-
-          <button
-
-            className="document-open"
-
-            onClick={() =>
-              renameDocument(
-                'material'
-              )
-            }
-
-          >
-            ✎ Zmień nazwę
-          </button>
-
-        )}
-
-
-        {editedJob.documents?.material && (
-
-          <button
-
-            className="document-remove"
-
-            onClick={() =>
-              removeDocument(
-                'material'
-              )
-            }
-
-          >
-            Usuń dokument materiałowy
-          </button>
-
-        )}
-
-
-        <DocumentRow
-
-          title="Rysunek montażowy"
-
-          document={
-            editedJob.documents?.assembly
-          }
-
-          inputRef={
-            assemblyInputRef
-          }
-
-          onAdd={(file) =>
-            addDocument(
-              'assembly',
-              file
-            )
-          }
-
-        />
-
-
-        {editedJob.documents?.assembly && (
-
-          <button
-
-            className="document-open"
-
-            onClick={() =>
-              renameDocument(
-                'assembly'
-              )
-            }
-
-          >
-            ✎ Zmień nazwę
-          </button>
-
-        )}
-
-
-        {editedJob.documents?.assembly && (
-
-          <button
-
-            className="document-remove"
-
-            onClick={() =>
-              removeDocument(
-                'assembly'
-              )
-            }
-
-          >
-            Usuń dokument montażowy
-          </button>
-
-        )}
-
-      </div>
-
-
-      {/* ZDJĘCIA */}
-
-      <div className="detail-card">
-
-        <h2>
-          Zdjęcia
-        </h2>
-
-
-        <div className="photo-buttons">
-
-          <button
-
-            className="document-button"
-
-            onClick={() =>
-              photoInputRef.current.click()
-            }
-
-          >
-            📷 Zrób / dodaj zdjęcie
-          </button>
-
-
-          <input
-
-            ref={
-              photoInputRef
-            }
-
-            type="file"
-
-            accept="image/*"
-
-            capture="environment"
-
-            hidden
-
-            onChange={(e) => {
-
-              addPhoto(
-                e.target.files[0]
-              )
-
-              e.target.value = ''
-
-            }}
-
-          />
-
-        </div>
-
-
-        <div className="photos-grid">
-
-          {(editedJob.photos || [])
-            .length === 0 && (
-
-              <div className="empty-notes">
-
-                Brak zdjęć.
-
-              </div>
-
-            )}
-
-
-          {(editedJob.photos || [])
-            .map(
-              (photo) => (
-
-                <div
-
-                  className="photo-item"
-
-                  key={
-                    photo.id
-                  }
-
-                >
-
-                  <img
-
-                    src={
-                      photo.url
-                    }
-
-                    alt={
-                      photo.name
-                    }
-
-                    title="Kliknij, aby zobaczyć zdjęcie"
-
-                    onClick={() =>
-                      window.open(
-                        photo.url,
-                        '_blank'
-                      )
-                    }
-
-                  />
-
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '6px',
-                      marginTop: '6px',
-                    }}
-                  >
-
-                    <a
-
-                      href={
-                        photo.url
-                      }
-
-                      download={
-                        photo.name || 'zdjecie'
-                      }
-
-                      className="document-button"
-
-                      style={{
-                        flex: 1,
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                      }}
-
-                      onClick={(e) =>
-                        e.stopPropagation()
-                      }
-
-                    >
-                      ↓ Pobierz
-                    </a>
-
-
-                    <button
-
-                      className="document-button"
-
-                      onClick={() =>
-                        renamePhoto(
-                          photo.id
-                        )
-                      }
-
-                    >
-                      ✎
-                    </button>
-
-
-                    <button
-
-                      className="photo-remove"
-
-                      onClick={() =>
-                        removePhoto(
-                          photo.id
-                        )
-                      }
-
-                    >
-                      ×
-                    </button>
-
-                  </div>
-
-                </div>
-
-              )
-            )}
-
-        </div>
-
-      </div>
-
-
-      {/* CZAS REALIZACJI */}
-      <div className="detail-card">
-        <div className="notes-header">
+      <section className="job-detail-card job-detail-time-card">
+        <div className="job-detail-card-title-row">
           <div>
-            <div className="small-label">CZAS REALIZACJI</div>
+            <div className="job-detail-label">CZAS REALIZACJI</div>
             <h2>Czas pracy</h2>
           </div>
-          <strong style={{ fontSize: '18px', color: '#12234f' }}>
-            {formatDuration(totalTrackedMinutes)}
-          </strong>
+          <strong className="job-detail-time-total">{formatDuration(totalTrackedMinutes)}</strong>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '12px 0 16px' }}>
+        <div className="job-detail-time-summary">
           {[
-            ['transport', '🚚', 'Transport'],
-            ['warehouse', '📦', 'Magazyn'],
-            ['assembly', '🔧', 'Montaż'],
-          ].map(([type, icon, label]) => (
-            <div key={type} style={{ padding: '12px 8px', borderRadius: '14px', background: '#f6f9fc', border: '1px solid #e5ebf1', textAlign: 'center' }}>
-              <div style={{ fontSize: '20px' }}>{icon}</div>
-              <small style={{ display: 'block', marginTop: '4px', color: '#718096', fontWeight: 800 }}>{label}</small>
-              <strong style={{ display: 'block', marginTop: '3px', color: '#12234f' }}>{formatDuration(timeByType[type])}</strong>
+            ['transport', 'Transport', Truck],
+            ['warehouse', 'Magazyn', Package],
+            ['assembly', 'Montaż', Wrench],
+          ].map(([type, label, Icon]) => (
+            <div key={type}>
+              <Icon size={18} strokeWidth={1.75} />
+              <span>{label}</span>
+              <strong>{formatDuration(timeByType[type])}</strong>
             </div>
           ))}
         </div>
 
-        <div style={{ padding: '11px 13px', borderRadius: '12px', background: '#f6f9fc', border: '1px solid #e5ebf1', color: '#12234f', fontWeight: 800 }}>
-          👥 Ekipa — {teamSize > 0
-            ? (teamSize + ' ' + (teamSize === 1 ? 'osoba' : 'osoby'))
-            : 'brak przypisanej ekipy'}
-        </div>
-
-        <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
+        <div className="job-detail-time-list">
           {[
-            ['transport', '🚚', 'Transport'],
-            ['warehouse', '📦', 'Magazyn'],
-            ['assembly', '🔧', 'Montaż'],
-          ].map(([type, icon, label]) => {
-            const active = activeTimerFor(selectedTimeEmployeeId, type)
+            ['transport', 'Transport', Truck],
+            ['warehouse', 'Magazyn', Package],
+            ['assembly', 'Montaż', Wrench],
+          ].map(([type, label, Icon]) => {
+            const activeEntry = activeTimerFor('team', type)
             return (
-              <div key={type} style={{ padding: '12px', borderRadius: '14px', border: active ? '1px solid #b9e3c7' : '1px solid #e5ebf1', background: active ? '#edf9f1' : '#fff' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                  <div>
-                    <strong>{icon} {label}</strong>
-                    <div style={{ fontSize: '12px', color: '#718096', marginTop: '3px' }}>
-                      {active ? 'Trwa: ' + formatDuration(getEntryMinutes(active)) : 'Pomiar zatrzymany'}
-                    </div>
+              <div className="job-detail-time-row" key={type}>
+                <div className="job-detail-time-name">
+                  <div className="job-detail-time-name-line">
+                    <Icon size={19} strokeWidth={1.75} />
+                    <strong>{label}</strong>
                   </div>
-                  {active ? (
-                    <button type="button" className="save-button" style={{ width: 'auto', padding: '10px 14px', background: '#d9534f' }} onClick={() => stopTimer(active)}>
-                      ■ Zatrzymaj
-                    </button>
-                  ) : (
-                    <button type="button" className="document-button" onClick={() => startTimer(type)}>
-                      ▶ Start
-                    </button>
-                  )}
+                  <span>{activeEntry ? 'Pomiar aktywny' : 'Pomiar zatrzymany'}</span>
                 </div>
+                <strong className="job-detail-time-value">{formatDuration(timeByType[type])}</strong>
+                {activeEntry ? (
+                  <button type="button" className="job-detail-time-button is-stop" onClick={() => stopTimer(activeEntry)}>Stop</button>
+                ) : (
+                  <button type="button" className="job-detail-time-button" onClick={() => startTimer(type)}>Start</button>
+                )}
               </div>
             )
           })}
         </div>
 
-        {jobTimeEntries.length > 0 && (
-          <div style={{ marginTop: '16px' }}>
-            <div className="small-label">ROBOCZOGODZINY EKIPY</div>
-            <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
-                <span>Ekipa — czas rzeczywisty</span>
-                <strong>{formatDuration(teamElapsedMinutes)}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', borderRadius: '12px', background: '#edf9f1' }}>
-                <span>Roboczogodziny ({teamSize} {teamSize === 1 ? 'osoba' : 'osób'})</span>
-                <strong>{formatDuration(teamLaborMinutes)}</strong>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="job-detail-team-row">
+          <Users size={19} strokeWidth={1.75} />
+          <span>Ekipa — {teamSize} {teamSize === 1 ? 'osoba' : 'osoby'}</span>
+          {assignedTeamMembers.length > 0 && (
+            <small>{assignedTeamMembers.map((member) => member.display_name || member.email || 'Pracownik').join(', ')}</small>
+          )}
+        </div>
+      </section>
 
-        {jobTimeEntries.length > 0 && assignedTeamMembers.length > 0 && (
-          <div style={{ marginTop: '16px' }}>
-            <div className="small-label">ROZLICZENIE EKIPY</div>
-            <div style={{ display: 'grid', gap: '8px', marginTop: '8px' }}>
-              {assignedEmployeeLabor.map((member) => {
-                const isExpanded = String(expandedEmployeeHistoryId || '') === String(member.user_id)
-                const memberHistory = jobTimeEntries.filter(
-                  (entry) =>
-                    !entry.employeeId ||
-                    String(entry.employeeId) === String(member.user_id)
-                )
-                const memberHistoryMinutes = memberHistory.reduce(
-                  (sum, entry) => sum + getEntryMinutes(entry),
-                  0
-                )
-                const memberHistoryCost = (memberHistoryMinutes / 60) * member.hourlyRate
-
-                return (
-                  <div
-                    key={member.user_id}
-                    style={{
-                      padding: '11px 12px',
-                      borderRadius: '12px',
-                      background: '#f8fafc',
-                      border: '1px solid #e5ebf1',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className="document-button"
-                      onClick={() => setExpandedEmployeeHistoryId(isExpanded ? null : member.user_id)}
-                      style={{ width: '100%', textAlign: 'left', padding: '0', border: '0', background: 'transparent' }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                        <strong>{member.display_name || member.email || 'Pracownik'}</strong>
-                        <span style={{ fontSize: '18px' }}>{isExpanded ? '⌃' : '⌄'}</span>
-                      </div>
-                    </button>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '7px', fontSize: '12px', color: '#718096' }}>
-                      <span>Udział: {formatDuration(member.hours * 60)}</span>
-                      <span>{formatMoney(member.hourlyRate)} / h</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '4px' }}>
-                      <strong>Koszt: {formatMoney(member.laborCost)}</strong>
-                      {member.directMinutes > 0 && (
-                        <span style={{ fontSize: '11px', color: '#718096' }}>
-                          Własne: {formatDuration(member.directMinutes)}
-                        </span>
-                      )}
-                    </div>
-
-                    {isExpanded && (
-                      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e5ebf1' }}>
-                        <div style={{ fontSize: '11px', color: '#718096', marginBottom: '7px', fontWeight: 800 }}>
-                          HISTORIA PRACY • {formatDuration(memberHistoryMinutes)} • {formatMoney(memberHistoryCost)}
-                        </div>
-                        <div style={{ display: 'grid', gap: '6px' }}>
-                          {memberHistory.map((entry) => (
-                            <div
-                              key={entry.id}
-                              style={{
-                                padding: '8px 9px',
-                                borderRadius: '9px',
-                                background: '#fff',
-                                border: '1px solid #edf1f5',
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                                <strong>{getTimeLabel(entry.timeType)}</strong>
-                                <strong>{formatDuration(getEntryMinutes(entry))}</strong>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginTop: '3px', fontSize: '10px', color: '#718096' }}>
-                                <span>{entry.employeeId ? 'Własny wpis' : 'Ekipa'}</span>
-                                <span>{entry.startedAt ? formatCreatedAt(entry.startedAt) : ''}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '11px 12px', borderRadius: '12px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
-                <strong>Razem koszt ekipy</strong>
-                <strong>{formatMoney(automaticLaborCost)}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {jobTimeEntries.length > 0 && (
-          <div style={{ marginTop: '16px' }}>
-            <div className="small-label">HISTORIA POMIARÓW</div>
-            <div style={{ display: 'grid', gap: '7px', marginTop: '8px' }}>
-              {jobTimeEntries.map((entry) => (
-                <div key={entry.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'center', padding: '9px 10px', border: '1px solid #edf1f5', borderRadius: '11px' }}>
-                  <div>
-                    <strong>{getTimeLabel(entry.timeType)} • {entry.employeeName || 'Pracownik'}</strong>
-                    <div style={{ fontSize: '11px', color: '#718096', marginTop: '3px' }}>
-                      {entry.startedAt ? formatCreatedAt(entry.startedAt) : ''}
-                      {entry.endedAt ? ' → ' + formatCreatedAt(entry.endedAt) : ' → trwa'}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <strong>{formatDuration(getEntryMinutes(entry))}</strong>
-                    <button
-                      type="button"
-                      className="note-action-button note-delete-button"
-                      onClick={async (event) => {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        try {
-                          await deleteJobTimeEntry(entry.id)
-                          setJobTimeEntries((current) =>
-                            current.filter((item) => String(item.id) !== String(entry.id))
-                          )
-                          setTimeTick(Date.now())
-                          await showCustomAlert('Wpis czasu został usunięty.')
-                        } catch (error) {
-                          console.error('Błąd usuwania wpisu czasu:', error)
-                          await showCustomAlert(
-                            'Nie udało się usunąć wpisu czasu. ' +
-                            (error?.message || 'Sprawdź połączenie z bazą.')
-                          )
-                        }
-                      }}
-                      style={{ minWidth: '72px', minHeight: '38px', padding: '8px 12px', cursor: 'pointer', pointerEvents: 'auto' }}
-                      aria-label="Usuń wpis czasu"
-                    >
-                      🗑 Usuń
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* PODZIAŁ ZYSKU */}
-      <div className="detail-card">
-        <div className="notes-header">
+      <section className="job-detail-card">
+        <div className="job-detail-card-title-row">
           <div>
-            <div className="small-label">ROZLICZENIE</div>
-            <h2>Podział zysku realizacji</h2>
+            <div className="job-detail-label">FAKTURA</div>
+            <h2>Faktura</h2>
           </div>
-          <strong style={{ color: Math.abs(profitShareTotal - 100) < 0.01 ? '#159447' : '#b42318' }}>
-            {profitShareTotal.toFixed(0)}%
-          </strong>
+          <span className="job-detail-muted">
+            {linkedInvoice ? (getInvoiceRemaining(linkedInvoice) <= 0.01 ? 'Zapłacona' : 'Do rozliczenia') : 'Brak faktury'}
+          </span>
         </div>
-
-        <p style={{ margin: '4px 0 14px', color: '#68758a', fontSize: '13px', lineHeight: 1.45 }}>
-          Udziały dotyczą zysku tej realizacji, po odjęciu kosztów.
-        </p>
-
-        <div style={{ display: 'grid', gap: '9px' }}>
-          {currentProfitShares.map((share, index) => (
-            <div key={share.employeeId} style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '10px', alignItems: 'center' }}>
-              <div className="note-text-input" style={{ display: 'flex', alignItems: 'center', minHeight: '44px', fontWeight: 800 }}>
-                👥 {share.employeeName || 'Ekipa'}
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input
-                  className="note-text-input"
-                  inputMode="decimal"
-                  value={share.percentage}
-                  onChange={(e) => {
-                    const next = [...currentProfitShares]
-                    next[index] = { ...next[index], percentage: e.target.value }
-                    setJobProfitShares(next)
-                  }}
-                  style={{ paddingRight: '28px' }}
-                />
-                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#718096', fontWeight: 800 }}>%</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {currentProfitShares.length === 2 && (
-          <button
-            type="button"
-            className="document-button"
-            style={{ marginTop: '10px' }}
-            onClick={() => setJobProfitShares(currentProfitShares.map((share) => ({ ...share, percentage: 50 })))}
-          >
-            Ustaw 50 / 50
+        {linkedInvoice ? (
+          <button type="button" className="job-detail-list-row" onClick={() => onOpenInvoice?.(linkedInvoice)}>
+            <FileText size={19} strokeWidth={1.75} />
+            <span>{linkedInvoice.invoiceNumber || 'Faktura'} · {formatDisplayMoney(Number(linkedInvoice.grossAmount || 0))}</span>
+            <ChevronRight size={18} strokeWidth={1.75} />
           </button>
+        ) : (
+          <>
+            <p className="job-detail-muted-block">Obsługa faktury i płatności znajduje się w zakładce Faktury.</p>
+            {(normalizeJobStage(editedJob) === 'Odbiór' || normalizeJobStage(editedJob) === 'Zakończone') && (
+              <button type="button" className="job-detail-primary-text-button" onClick={() => onCreateInvoice?.(editedJob)}>
+                + Utwórz fakturę
+              </button>
+            )}
+          </>
         )}
+      </section>
 
-        <button
-          type="button"
-          className="save-button"
-          style={{ marginTop: '10px' }}
-          disabled={profitShareSaving || Math.abs(profitShareTotal - 100) > 0.01}
-          onClick={saveProfitShares}
-        >
-          {profitShareSaving ? 'Zapisywanie...' : 'Zapisz podział'}
-        </button>
-
-        <div style={{ display: 'grid', gap: '8px', marginTop: '14px' }}>
-          {individualProfitHours.map((share) => (
-            <div key={share.employeeId} style={{ padding: '12px', borderRadius: '13px', background: '#f6f9fc', border: '1px solid #e5ebf1' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                <strong>{share.employeeName}</strong>
-                <strong>{formatMoney(share.profit)}</strong>
-              </div>
-              <div style={{ display: 'grid', gap: '5px', marginTop: '7px', fontSize: '12px', color: '#718096' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <span>Udział zysku ({share.percentage}%)</span>
-                  <strong>{formatMoney(share.profit)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <span>Koszt robocizny</span>
-                  <strong>{formatMoney(share.laborCost)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <span>Roboczogodziny udziału</span>
-                  <span>{formatDuration(share.hours * 60)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', paddingTop: '5px', borderTop: '1px solid #e5ebf1' }}>
-                  <span>Zysk / roboczogodz.</span>
-                  <strong style={{ color: '#12234f' }}>{share.hours > 0 ? formatMoney(share.hourly) + ' / h' : '—'}</strong>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '13px', background: '#edf9f1', border: '1px solid #b9e3c7' }}>
-          <div style={{ display: 'grid', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Przychód</span>
-              <strong>{formatMoney(jobRevenue)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Koszty materiałów / inne</span>
-              <strong>{formatMoney(totalJobCosts - manualLaborCosts)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Koszt robocizny</span>
-              <strong>{formatMoney(effectiveLaborCost)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', paddingTop: '7px', borderTop: '1px solid #b9e3c7' }}>
-              <strong>ZYSK ROBOTY</strong>
-              <strong>{formatMoney(jobProfit)}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Marża</span>
-              <strong>{jobRevenue > 0 ? (jobProfit / jobRevenue * 100).toFixed(1) + '%' : '—'}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Roboczogodziny</span>
-              <strong>{formatDuration(teamLaborMinutes)} min</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-              <span>Zysk / roboczogodzina</span>
-              <strong>{teamLaborMinutes > 0 ? formatMoney(jobProfit / (teamLaborMinutes / 60)) + ' / h' : '—'}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* RENTOWNOŚĆ ROBOTY */}
-      <div className="detail-card">
-        <div className="notes-header">
-          <div>
-            <div className="small-label">RENTOWNOŚĆ</div>
-            <h2>Wynik tej realizacji</h2>
-          </div>
-          <strong style={{
-            color: jobProfit < 0 ? '#b42318' : jobMargin >= 30 ? '#159447' : '#12234f',
-            fontSize: '13px',
-          }}>
-            {profitabilityStatus}
-          </strong>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: '8px',
-          marginTop: '10px',
-        }}>
-          {[
-            ['PRZYCHÓD', jobRevenue],
-            ['KOSZTY', effectiveJobCosts],
-            ['ROBOCIZNA', effectiveLaborCost],
-            ['ZYSK', jobProfit],
-          ].map(([label, value]) => (
-            <div key={label} style={{
-              padding: '12px',
-              borderRadius: '12px',
-              background: '#f6f9fc',
-              border: '1px solid #e5ebf1',
-            }}>
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#718096' }}>{label}</div>
-              <strong style={{
-                display: 'block',
-                marginTop: '4px',
-                fontSize: '17px',
-                color: label === 'ZYSK' && value < 0 ? '#b42318' : '#12234f',
-              }}>
-                {formatMoney(value)}
-              </strong>
-            </div>
-          ))}
-        </div>
-
-        <div style={{
-          marginTop: '9px',
-          padding: '10px 12px',
-          borderRadius: '11px',
-          background: '#fff',
-          border: '1px solid #e5ebf1',
-          display: 'grid',
-          gap: '6px',
-          fontSize: '12px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-            <span>Marża</span>
-            <strong>{jobRevenue > 0 ? jobMargin.toFixed(1) + '%' : '—'}</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-            <span>Materiały / inne</span>
-            <strong>{formatMoney(materialOtherCost)}</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-            <span>Robocizna / przychód</span>
-            <strong>{jobRevenue > 0 ? laborShareOfRevenue.toFixed(1) + '%' : '—'}</strong>
-          </div>
-        </div>
-      </div>
-
-      {profitabilityAlerts.length > 0 ? (
-        <div className="detail-card" style={{
-          border: '1px solid #f0caca',
-          background: '#fffafa',
-        }}>
-          <div className="small-label" style={{ color: '#b42318' }}>⚠️ ALERT RENTOWNOŚCI</div>
-          <div style={{ display: 'grid', gap: '10px', marginTop: '10px' }}>
-            {profitabilityAlerts.map((alert) => {
-              const isDanger = alert.level === 'danger'
+      <section className="job-detail-card">
+        <details className="job-detail-accordion">
+          <summary>
+            <span><FileText size={19} strokeWidth={1.75} /> Dokumenty formalne</span>
+            <ChevronDown size={18} strokeWidth={1.75} />
+          </summary>
+          <div className="job-detail-accordion-body">
+            {[
+              ['material', 'Dokument materiałowy'],
+              ['assembly', 'Dokument montażowy'],
+            ].map(([type, label]) => {
+              const document = editedJob.documents?.[type]
               return (
-                <div key={alert.title} style={{
-                  padding: '12px 13px',
-                  borderRadius: '12px',
-                  border: isDanger ? '1px solid #efb4b4' : '1px solid #f0d6a0',
-                  background: isDanger ? '#fff1f1' : '#fff8e8',
-                }}>
-                  <strong style={{
-                    display: 'block',
-                    color: isDanger ? '#b42318' : '#9a6700',
-                    fontSize: '14px',
-                  }}>
-                    {alert.title}
-                  </strong>
-                  <div style={{
-                    marginTop: '4px',
-                    color: '#64748b',
-                    fontSize: '12px',
-                    lineHeight: 1.5,
-                  }}>
-                    {alert.message}
-                  </div>
+                <div className="job-detail-document-row" key={type}>
+                  <FileText size={19} strokeWidth={1.75} />
+                  <span>{document?.name || label}</span>
+                  {document?.url ? (
+                    <a href={document.url} target="_blank" rel="noreferrer" aria-label={'Otwórz ' + label}>
+                      <ChevronRight size={18} strokeWidth={1.75} />
+                    </a>
+                  ) : (
+                    <button type="button" onClick={() => {
+                      const input = type === 'material' ? materialInputRef.current : assemblyInputRef.current
+                      input?.click()
+                    }} aria-label={'Dodaj ' + label}>
+                      <ChevronRight size={18} strokeWidth={1.75} />
+                    </button>
+                  )}
+                  {document?.url && (
+                    <button type="button" className="job-detail-inline-delete" onClick={() => removeDocument(type)} aria-label={'Usuń ' + label}>
+                      <Trash2 size={17} strokeWidth={1.75} />
+                    </button>
+                  )}
                 </div>
               )
             })}
           </div>
-        </div>
-      ) : (
-        <div className="detail-card" style={{
-          border: '1px solid #cde8d8',
-          background: '#f7fcf9',
-        }}>
-          <div className="small-label" style={{ color: '#16834a' }}>✓ RENTOWNOŚĆ POD KONTROLĄ</div>
-          <div style={{
-            marginTop: '5px',
-            color: '#64748b',
-            fontSize: '12px',
-          }}>
-            Brak aktywnych alertów rentowności dla tej realizacji.
-          </div>
-        </div>
-      )}
+        </details>
+        <input ref={materialInputRef} type="file" hidden onChange={(e) => addDocument('material', e.target.files?.[0])} />
+        <input ref={assemblyInputRef} type="file" hidden onChange={(e) => addDocument('assembly', e.target.files?.[0])} />
+      </section>
 
-      {/* KOSZTY REALIZACJI */}
-      <div className="detail-card">
-        <div className="notes-header">
-          <div>
-            <div className="small-label">KOSZTY</div>
-            <h2>Koszty tej realizacji</h2>
+      <section className="job-detail-card">
+        <details className="job-detail-accordion">
+          <summary>
+            <span><ClipboardList size={19} strokeWidth={1.75} /> Dokumentacja</span>
+            <ChevronDown size={18} strokeWidth={1.75} />
+          </summary>
+          <div className="job-detail-accordion-body">
+            <div className="job-detail-document-row">
+              <ClipboardList size={19} strokeWidth={1.75} />
+              <span>{(editedJob.notes || []).length > 0 ? 'Notatki i zadania' : 'Brak notatek i zadań'}</span>
+              <ChevronRight size={18} strokeWidth={1.75} />
+            </div>
+            <div className="job-detail-document-row">
+              <FileText size={19} strokeWidth={1.75} />
+              <span>{linkedInvoice ? 'Powiązana faktura' : 'Brak powiązanej faktury'}</span>
+              <ChevronRight size={18} strokeWidth={1.75} />
+            </div>
           </div>
-          {!showCostForm && (
-            <button type="button" className="document-button" onClick={() => setShowCostForm(true)}>+ Dodaj koszt</button>
+        </details>
+      </section>
+
+      <section className="job-detail-card job-detail-photos-card" tabIndex={0} onPaste={handleMainPhotoPaste}>
+        <div className="job-detail-card-title-row">
+          <div>
+            <div className="job-detail-label">DOKUMENTY</div>
+            <h2>Zdjęcia</h2>
+          </div>
+          <button type="button" className="job-detail-primary-text-button" onClick={() => photoInputRef.current?.click()}>
+            <Camera size={18} strokeWidth={1.75} /> Dodaj zdjęcie
+          </button>
+        </div>
+
+        <div className="job-detail-main-photo">
+          <div className="job-detail-subtitle">Zdjęcie główne</div>
+          {editedJob.mainPhoto?.url ? (
+            <div className="job-detail-main-photo-wrap">
+              <img src={editedJob.mainPhoto.url} alt={editedJob.mainPhoto.name || editedJob.name} onClick={() => window.open(editedJob.mainPhoto.url, '_blank')} />
+              <button type="button" className="job-detail-inline-delete" onClick={removeMainPhoto} aria-label="Usuń zdjęcie główne">
+                <Trash2 size={17} strokeWidth={1.75} />
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="job-detail-main-photo-empty" onClick={() => mainPhotoInputRef.current?.click()}>
+              <Camera size={20} strokeWidth={1.75} />
+              <span>Dodaj zdjęcie główne</span>
+            </button>
           )}
         </div>
 
-        {showCostForm && (
-          <div className="note-form note-form-modern">
-            <select
-              className="note-text-input"
-              value={costForm.costType}
-              onChange={(e) => {
-                const costType = e.target.value
-                setCostForm({
-                  ...costForm,
-                  costType,
-                  unit: costType === 'hours' ? 'godz.' : (costForm.unit === 'godz.' ? 'szt.' : costForm.unit),
-                  employeeId: costType === 'hours' ? costForm.employeeId : '',
-                  employeeName: costType === 'hours' ? costForm.employeeName : '',
-                  unitCost: costType === 'hours' && costForm.employeeId
-                    ? String(organizationMembers.find((member) => String(member.user_id) === String(costForm.employeeId))?.hourly_rate ?? costForm.unitCost)
-                    : costForm.unitCost,
-                })
-              }}
-            >
-              <option value="material">Materiał</option>
-              <option value="hours">Robocizna / godziny</option>
-              <option value="other">Inny koszt</option>
-            </select>
+        <div className="job-detail-photo-divider" />
 
-            {costForm.costType === 'hours' && (
-              <select
-                className="note-text-input"
-                value={costForm.employeeId || ''}
-                onChange={(e) => {
-                  const employee = organizationMembers.find(
-                    (member) => String(member.user_id) === String(e.target.value)
-                  )
-                  setCostForm({
-                    ...costForm,
-                    employeeId: employee?.user_id || '',
-                    employeeName: employee?.display_name || employee?.email || '',
-                    description: costForm.description || (employee?.display_name ? `Robocizna — ${employee.display_name}` : 'Robocizna'),
-                    unit: 'godz.',
-                    unitCost: employee?.hourly_rate != null ? String(employee.hourly_rate) : costForm.unitCost,
-                  })
-                }}
-              >
-                <option value="">Wybierz pracownika</option>
-                {organizationMembers.map((member) => (
-                  <option key={member.user_id} value={member.user_id}>
-                    {member.display_name || member.email || 'Pracownik'}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <input
-              className="note-text-input"
-              type="text"
-              placeholder={costForm.costType === 'hours' ? 'Opis robocizny' : 'Np. kanał, materiał, transport...'}
-              value={costForm.description}
-              onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
-            />
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-              <input
-                className="note-text-input"
-                inputMode="decimal"
-                placeholder={costForm.costType === 'hours' ? 'Liczba godzin' : 'Ilość'}
-                value={costForm.quantity}
-                onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })}
-              />
-              <input
-                className="note-text-input"
-                placeholder="Jednostka"
-                value={costForm.unit}
-                onChange={(e) => setCostForm({ ...costForm, unit: e.target.value })}
-              />
-              <input
-                className="note-text-input"
-                inputMode="decimal"
-                placeholder={costForm.costType === 'hours' ? 'Stawka / godz.' : 'Cena jedn.'}
-                value={costForm.unitCost}
-                onChange={(e) => setCostForm({ ...costForm, unitCost: e.target.value })}
-              />
-            </div>
-
-            <input className="note-date-input" type="date" value={costForm.costDate} onChange={(e) => setCostForm({ ...costForm, costDate: e.target.value })} />
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', fontWeight: 800 }}>
-              Razem: {formatMoney(parseDecimal(costForm.quantity) * parseDecimal(costForm.unitCost))}
-            </div>
-
-            <div className="note-form-actions">
-              <button className="save-button" onClick={saveJobCost}>{editingCostId ? 'Zapisz koszt' : 'Dodaj koszt'}</button>
-              <button className="restore-button" onClick={resetCostForm}>Anuluj</button>
-            </div>
+        {(editedJob.photos || []).length > 0 ? (
+          <div className="job-detail-photo-grid">
+            {(editedJob.photos || []).map((photo) => (
+              <div className="job-detail-photo-item" key={photo.id}>
+                <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => window.open(photo.url, '_blank')} />
+                <button type="button" onClick={() => removePhoto(photo.id)} aria-label="Usuń zdjęcie">
+                  <Trash2 size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="job-detail-empty-line">Brak zdjęć</div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '14px 0' }}>
-          <div className="finance-kpi-card"><small>WARTOŚĆ</small><strong>{formatMoney(jobRevenue)}</strong></div>
-          <div className="finance-kpi-card"><small>KOSZTY</small><strong>{formatMoney(effectiveJobCosts)}</strong></div>
-          <div className="finance-kpi-card"><small>ZYSK</small><strong>{formatMoney(jobProfit)}</strong></div>
+        <input ref={photoInputRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addPhoto(e.target.files?.[0])} />
+        <input ref={mainPhotoInputRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addMainPhoto(e.target.files?.[0])} />
+      </section>
+
+      <section className="job-detail-card">
+        <div className="job-detail-card-title-row">
+          <div>
+            <div className="job-detail-label">ROZLICZENIE</div>
+            <h2>Wynik realizacji</h2>
+          </div>
+        </div>
+
+        <div className="job-detail-result-grid">
+          <div><span>Przychód</span><strong>{formatDisplayMoney(jobRevenue)}</strong></div>
+          <div><span>Koszty</span><strong>{formatDisplayMoney(effectiveJobCosts)}</strong></div>
+          <div><span>Robocizna</span><strong>{formatDisplayMoney(effectiveLaborCost)}</strong></div>
+          <div className="is-profit"><span>Zysk</span><strong>{formatDisplayMoney(jobProfit)}</strong></div>
+        </div>
+
+        <div className="job-detail-result-rows">
+          <div><span>Marża</span><strong>{formatDisplayNumber(jobMargin, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong></div>
+          <div><span>Materiały/inne</span><strong>{formatDisplayMoney(materialOtherCost)}</strong></div>
+          <div><span>Robocizna / przychód</span><strong>{formatDisplayNumber(laborShareOfRevenue, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</strong></div>
+        </div>
+      </section>
+
+      <section className="job-detail-card">
+        <details className="job-detail-accordion">
+          <summary>
+            <span><Users size={19} strokeWidth={1.75} /> Podział zysku</span>
+            <ChevronDown size={18} strokeWidth={1.75} />
+          </summary>
+
+          <div className="job-detail-profit-share-body">
+            <div className="job-detail-profit-share-people">
+              {currentProfitShares.map((share, index) => (
+                <div className="job-detail-profit-share-person" key={share.employeeId || index}>
+                  <span>{share.employeeName || 'Osoba'}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    inputMode="numeric"
+                    value={share.percentage}
+                    onChange={(e) => {
+                      const value = Number(e.target.value)
+                      setJobProfitShares((current) => {
+                        const source = current.length > 0 ? current : initializeProfitShares()
+                        return source.map((item, itemIndex) => item === share || itemIndex === index
+                          ? { ...item, percentage: Number.isFinite(value) ? value : 0 }
+                          : item)
+                      })
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="job-detail-light-button"
+              onClick={() => setJobProfitShares([
+                { employeeId: 'profit:lukasz', employeeName: 'Łukasz', percentage: 50 },
+                { employeeId: 'profit:pawel', employeeName: 'Paweł', percentage: 50 },
+              ])}
+            >
+              Ustaw 50 / 50
+            </button>
+
+            <button type="button" className="job-detail-primary-button" onClick={saveProfitShares} disabled={profitShareSaving}>
+              {profitShareSaving ? 'Zapisywanie…' : 'Zapisz podział'}
+            </button>
+
+            <div className="job-detail-profit-results">
+              {individualProfitHours.map((share) => (
+                <div key={share.employeeId}>
+                  <span>{share.employeeName || 'Osoba'}</span>
+                  <strong>{formatDisplayMoney(share.profit)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section className="job-detail-profitability">
+        <span className={'job-detail-profitability-pill ' + (profitabilityAlerts.length ? 'has-alerts ' + profitabilityAlerts[0].level : 'is-ok')}>
+          <span className="job-detail-profitability-dot" />
+          {profitabilityAlerts.length
+            ? 'Alerty: ' + formatDisplayNumber(profitabilityAlerts.length)
+            : 'Rentowność pod kontrolą'}
+        </span>
+      </section>
+
+      <section className="job-detail-card job-detail-costs-card">
+        <div className="job-detail-card-title-row">
+          <h2>Koszty</h2>
+          {!showCostForm && (
+            <button type="button" className="job-detail-primary-text-button" onClick={() => setShowCostForm(true)}>
+              + Dodaj koszt
+            </button>
+          )}
+        </div>
+
+        <div className="job-detail-three-metrics">
+          <div><span>WARTOŚĆ</span><strong>{formatDisplayMoney(jobRevenue)}</strong></div>
+          <div><span>KOSZTY</span><strong>{formatDisplayMoney(effectiveJobCosts)}</strong></div>
+          <div><span>ZYSK</span><strong>{formatDisplayMoney(jobProfit)}</strong></div>
         </div>
 
         {jobCosts.length === 0 ? (
-          <div className="empty-notes">Brak kosztów przypisanych do tej realizacji.</div>
+          <div className="job-detail-empty-line">Brak kosztów</div>
         ) : (
-          <div style={{ display: 'grid', gap: '8px' }}>
+          <div className="job-detail-cost-list">
             {jobCosts.map((cost) => (
-              <div key={cost.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center', padding: '12px', border: '1px solid #e7edf4', borderRadius: '12px' }}>
+              <div className="job-detail-cost-row" key={cost.id}>
                 <div>
                   <strong>{cost.description}</strong>
-                  <div style={{ marginTop: '4px', fontSize: '12px', color: '#718096' }}>
+                  <span>
                     {cost.costType === 'material' ? 'Materiał' : cost.costType === 'hours' ? 'Robocizna' : 'Inny koszt'}
-                    {cost.employeeName ? ' • 👤 ' + cost.employeeName : ''}
-                    {' • '}{cost.quantity} {cost.unit} × {formatMoney(cost.unitCost)}
-                    {cost.costDate ? ' • ' + formatDate(cost.costDate) : ''}
-                  </div>
+                    {cost.employeeName ? ' · ' + cost.employeeName : ''}
+                    {' · '}{formatDisplayNumber(cost.quantity)} {cost.unit} × {formatDisplayMoney(cost.unitCost)}
+                    {cost.costDate ? ' · ' + formatDate(cost.costDate) : ''}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <strong>{formatMoney(cost.totalCost)}</strong>
-                  <button type="button" className="note-action-button note-edit-button" onClick={() => startEditJobCost(cost)}>✎</button>
-                  <button type="button" className="note-action-button note-delete-button" onClick={() => removeJobCost(cost)}>🗑</button>
+                <div className="job-detail-cost-actions">
+                  <strong>{formatDisplayMoney(cost.totalCost)}</strong>
+                  <button type="button" className="job-detail-icon-button" onClick={() => startEditJobCost(cost)} aria-label="Edytuj koszt">
+                    <Pencil size={16} strokeWidth={1.75} />
+                  </button>
+                  <button type="button" className="job-detail-icon-button is-danger" onClick={() => removeJobCost(cost)} aria-label="Usuń koszt">
+                    <Trash2 size={16} strokeWidth={1.75} />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
-
-      {/* NOTATKI */}
-
-      <div className="detail-card notes-card">
-
-        <div className="notes-header">
-
-          <div>
-            <div className="small-label">
-              ZADANIA
-            </div>
-            <h2>
-              Zadania na tej realizacji
-            </h2>
-          </div>
-
+      <section className="job-detail-card job-detail-tasks-card">
+        <div className="job-detail-card-title-row">
+          <h2>Zadania</h2>
           {!showNoteForm && (
-
-            <button
-              type="button"
-              className="document-button note-add-button"
-              onClick={addNote}
-            >
+            <button type="button" className="job-detail-primary-text-button" onClick={addNote}>
               + Dodaj zadanie
             </button>
-
           )}
-
         </div>
 
-
         {showNoteForm && (
-
-          <div className="note-form note-form-modern">
-
-            <input
-              className="note-text-input"
-              type="text"
-              placeholder="Co trzeba zrobić?"
-              value={newNote.text}
-              autoFocus
-              onChange={(e) =>
-                setNewNote({
-                  ...newNote,
-                  text: e.target.value,
-                })
-              }
-            />
-
-
-            <div className="note-reminder-toggle-row">
-
-              <button
-                type="button"
-                className={
-                  newNote.reminderEnabled
-                    ? 'note-reminder-button active'
-                    : 'note-reminder-button'
-                }
-                onClick={() => {
-                  const enabled = !newNote.reminderEnabled
-                  setNewNote({
-                    ...newNote,
-                    reminderEnabled: enabled,
-                    date: enabled
-                      ? (newNote.date || getTodayString())
-                      : '',
-                    time: enabled
-                      ? (newNote.time || '')
-                      : '',
-                  })
-                }}
-              >
-                <span className="note-bell-icon">
-                  {newNote.reminderEnabled ? '🔔' : '🔕'}
-                </span>
-                <span>
-                  {newNote.reminderEnabled
-                    ? 'Przypomnienie włączone'
-                    : 'Przypomnij'}
-                </span>
-              </button>
-
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
-                marginTop: '10px',
-              }}
-            >
-              <label
-                style={{
-                  display: 'grid',
-                  gap: '5px',
-                }}
-              >
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#718096' }}>
-                  ODPOWIEDZIALNY
-                </span>
-                <select
-                  className="note-text-input"
-                  value={newNote.assignee || ''}
-                  onChange={(e) =>
-                    setNewNote({
-                      ...newNote,
-                      assignee: e.target.value,
-                    })
-                  }
-                >
+          <div className="job-detail-task-form">
+            <label>
+              <span>Zadanie</span>
+              <input
+                className="job-detail-edit-input"
+                type="text"
+                placeholder="Co trzeba zrobić?"
+                value={newNote.text}
+                autoFocus
+                onChange={(e) => setNewNote({ ...newNote, text: e.target.value })}
+              />
+            </label>
+            <div className="job-detail-edit-grid">
+              <label>
+                <span>Odpowiedzialny</span>
+                <select className="job-detail-edit-input" value={newNote.assignee || ''} onChange={(e) => setNewNote({ ...newNote, assignee: e.target.value })}>
                   <option value="">Nieprzypisane</option>
-                  {DEVICE_USERS.map((user) => (
-                    <option key={user} value={user}>{user}</option>
-                  ))}
+                  {DEVICE_USERS.map((user) => <option key={user} value={user}>{user}</option>)}
                 </select>
               </label>
-
-              <label
-                style={{
-                  display: 'grid',
-                  gap: '5px',
-                }}
-              >
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#718096' }}>
-                  PRIORYTET
-                </span>
-                <select
-                  className="note-text-input"
-                  value={newNote.priority || 'normal'}
-                  onChange={(e) =>
-                    setNewNote({
-                      ...newNote,
-                      priority: e.target.value,
-                    })
-                  }
-                >
+              <label>
+                <span>Priorytet</span>
+                <select className="job-detail-edit-input" value={newNote.priority || 'normal'} onChange={(e) => setNewNote({ ...newNote, priority: e.target.value })}>
                   <option value="normal">Normalny</option>
                   <option value="high">Wysoki</option>
                   <option value="urgent">Pilny</option>
                 </select>
               </label>
             </div>
-
-
-            {newNote.reminderEnabled && (
-
-              <div className="note-reminder-fields">
-
-                <label>
-                  <span>Data</span>
-                  <input
-                    className="note-date-input"
-                    type="date"
-                    value={newNote.date}
-                    onChange={(e) =>
-                      setNewNote({
-                        ...newNote,
-                        date: e.target.value,
-                      })
-                    }
-                  />
-                </label>
-
-                <label>
-                  <span>Godzina</span>
-                  <input
-                    className="note-time-input"
-                    type="time"
-                    value={newNote.time}
-                    onChange={(e) =>
-                      setNewNote({
-                        ...newNote,
-                        time: e.target.value,
-                      })
-                    }
-                  />
-                </label>
-
-              </div>
-
-            )}
-
-
-            <div className="note-form-actions">
-
-              <button
-                className="save-button"
-                onClick={saveNote}
-                disabled={!newNote.text.trim()}
-              >
-                Zapisz zadanie
-              </button>
-
-              <button
-                className="restore-button"
-                onClick={() => setShowNoteForm(false)}
-              >
-                Anuluj
-              </button>
-
+            <div className="job-detail-task-actions">
+              <button type="button" className="job-detail-primary-button" disabled={!newNote.text.trim()} onClick={saveNote}>Zapisz zadanie</button>
+              <button type="button" className="job-detail-light-button" onClick={() => setShowNoteForm(false)}>Anuluj</button>
             </div>
-
           </div>
-
         )}
 
-
-        <div className="notes-list notes-list-modern">
-
-          {[...(editedJob.notes || [])]
-            .sort((a, b) => {
-              if (Boolean(a.done) !== Boolean(b.done)) {
-                return a.done ? 1 : -1
-              }
-
+        {(editedJob.notes || []).length === 0 ? (
+          <div className="job-detail-empty-line">Brak zadań</div>
+        ) : (
+          <div className="job-detail-task-list">
+            {[...(editedJob.notes || [])].sort((a, b) => {
+              if (Boolean(a.done) !== Boolean(b.done)) return a.done ? 1 : -1
               const priorityOrder = { urgent: 3, high: 2, normal: 1 }
               const priorityA = priorityOrder[String(a.priority || 'normal').toLowerCase()] || 1
               const priorityB = priorityOrder[String(b.priority || 'normal').toLowerCase()] || 1
-
               if (priorityA !== priorityB) return priorityB - priorityA
-
               const dateA = a.reminderEnabled && a.date ? a.date : ''
               const dateB = b.reminderEnabled && b.date ? b.date : ''
-              const today = getTodayString()
-              const overdueA = !a.done && dateA && dateA < today ? 1 : 0
-              const overdueB = !b.done && dateB && dateB < today ? 1 : 0
-
-              if (overdueA !== overdueB) return overdueB - overdueA
-              if (dateA !== dateB) {
-                if (!dateA) return 1
-                if (!dateB) return -1
-                return dateA.localeCompare(dateB)
-              }
-
-              return String(a.createdAt || '').localeCompare(String(b.createdAt || ''))
-            })
-            .map(
-            (note) => (
-
-              <div
-                className={
-                  note.done
-                    ? 'note-item note-item-modern note-done'
-                    : 'note-item note-item-modern'
-                }
-                key={note.id}
-              >
-
+              return dateA.localeCompare(dateB)
+            }).map((note) => (
+              <div className={'job-detail-task-row ' + (note.done ? 'is-done' : '')} key={note.id}>
                 <button
                   type="button"
-                  className={
-                    note.done
-                      ? 'note-checkbox checked'
-                      : 'note-checkbox'
-                  }
-                  aria-label={
-                    note.done
-                      ? 'Oznacz jako niewykonane'
-                      : 'Oznacz jako wykonane'
-                  }
+                  className="job-detail-task-check"
                   onClick={() => toggleNote(note.id)}
+                  aria-label={note.done ? 'Oznacz jako niewykonane' : 'Oznacz jako wykonane'}
                 >
                   {note.done ? '✓' : ''}
                 </button>
-
-                <div className="note-content">
-
-                  {String(editingNoteId) === String(note.id) ? (
-
-                    <div className="note-edit-box">
-
-                      <input
-                        className="note-text-input note-edit-input"
-                        type="text"
-                        value={editingNoteText}
-                        autoFocus
-                        onChange={(e) =>
-                          setEditingNoteText(e.target.value)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            saveEditedNote(note.id)
-                          }
-
-                          if (e.key === 'Escape') {
-                            cancelEditNote()
-                          }
-                        }}
-                      />
-
-                      <div className="note-edit-actions">
-                        <button
-                          type="button"
-                          className="note-save-edit"
-                          onClick={() => saveEditedNote(note.id)}
-                        >
-                          ✓ Zapisz
-                        </button>
-
-                        <button
-                          type="button"
-                          className="note-cancel-edit"
-                          onClick={cancelEditNote}
-                        >
-                          Anuluj
-                        </button>
-                      </div>
-
-                    </div>
-
-                  ) : (
-
-                    <div className="note-text-line">
-                      <strong>{note.text}</strong>
-                    </div>
-
-                  )}
-
-                  {(note.assignee || note.priority === 'high' || note.priority === 'urgent') && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: '7px',
-                        flexWrap: 'wrap',
-                        marginTop: '5px',
-                      }}
-                    >
-                      {note.assignee && (
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: '#087fce',
-                          background: '#e9f5ff',
-                          borderRadius: '999px',
-                          padding: '4px 8px',
-                        }}>
-                          👤 {note.assignee}
-                        </span>
-                      )}
-                      {note.priority === 'urgent' && (
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: '#b42318',
-                          background: '#fff0ee',
-                          borderRadius: '999px',
-                          padding: '4px 8px',
-                        }}>
-                          🔴 PILNE
-                        </span>
-                      )}
-                      {note.priority === 'high' && (
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          color: '#9a6800',
-                          background: '#fff8e8',
-                          borderRadius: '999px',
-                          padding: '4px 8px',
-                        }}>
-                          🟠 WYSOKI
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="note-created-at">
-                    Dodano: {note.createdAt
-                      ? formatCreatedAt(note.createdAt)
-                      : `${formatDate(note.date || '')}${note.time ? ` • ${note.time}` : ''}`
-                    }
-                  </div>
-
-                  {note.reminderEnabled && note.date && (
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        marginTop: '7px',
-                        padding: '5px 9px',
-                        borderRadius: '999px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        color: note.date < getTodayString() && !note.done
-                          ? '#b42318'
-                          : note.date === getTodayString() && !note.done
-                            ? '#9a6800'
-                            : '#68758a',
-                        background: note.date < getTodayString() && !note.done
-                          ? '#fff0ee'
-                          : note.date === getTodayString() && !note.done
-                            ? '#fff8e8'
-                            : '#f1f5f9',
-                      }}
-                    >
-                      {note.date < getTodayString() && !note.done
-                        ? '⚠ PO TERMINIE'
-                        : note.date === getTodayString() && !note.done
-                          ? '📅 DZISIAJ'
-                          : ('📅 ' + formatDate(note.date) + (note.time ? ' • ' + note.time : ''))}
-                    </div>
-                  )}
-
-                  {note.reminderEnabled && (
-
-                    <div className="note-reminder-details">
-
-                      <div className="note-reminder-heading">
-                        <span className="note-bell-circle">🔔</span>
-                        <span>Przypomnienie</span>
-                      </div>
-
-                      <div className="note-reminder-fields">
-                        <label>
-                          <span>Data</span>
-                          <input
-                            className="note-date-input"
-                            type="date"
-                            value={note.date || ''}
-                            onChange={(e) =>
-                              updateNoteReminder(
-                                note.id,
-                                'date',
-                                e.target.value
-                              )
-                            }
-                          />
-                        </label>
-
-                        <label>
-                          <span>Godzina <em>opcjonalnie</em></span>
-                          <input
-                            className="note-time-input"
-                            type="time"
-                            value={note.time || ''}
-                            onChange={(e) =>
-                              updateNoteReminder(
-                                note.id,
-                                'time',
-                                e.target.value
-                              )
-                            }
-                          />
-                        </label>
-                      </div>
-
-                    </div>
-
-                  )}
-
-                  <div className="note-actions">
-
-                    {String(editingNoteId) !== String(note.id) && (
-                      <button
-                        type="button"
-                        className="note-action-button note-edit-button"
-                        onClick={() => startEditNote(note)}
-                      >
-                        ✎ Edytuj
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className={
-                        note.reminderEnabled
-                          ? 'note-action-button note-item-reminder active'
-                          : 'note-action-button note-item-reminder'
-                      }
-                      onClick={() => toggleNoteReminder(note.id)}
-                    >
-                      <span>{note.reminderEnabled ? '🔔' : '🔕'}</span>
-                      <span>
-                        {note.reminderEnabled
-                          ? 'Wyłącz przypomnienie'
-                          : 'Przypomnij'}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="note-action-button note-delete-button"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        removeNote(note.id)
-                      }}
-                    >
-                      🗑 Usuń
-                    </button>
-
-                  </div>
-
-                </div>
-
+                <button type="button" className="job-detail-task-text" onClick={() => startEditNote(note)}>
+                  <strong>{note.text}</strong>
+                  <span>{note.assignee ? note.assignee + ' · ' : ''}{note.priority === 'urgent' ? 'Pilne' : note.priority === 'high' ? 'Wysoki' : 'Normalny'}{note.date ? ' · ' + formatDate(note.date) : ''}</span>
+                </button>
+                <button type="button" className="job-detail-icon-button is-danger" onClick={() => removeNote(note.id)} aria-label="Usuń zadanie">
+                  <Trash2 size={16} strokeWidth={1.75} />
+                </button>
               </div>
-            )
-          )}
-
-          {(editedJob.notes || []).length === 0 && (
-            <div className="empty-notes">
-              Brak notatek. Dodaj pierwsze zadanie.
-            </div>
-          )}
-
-        </div>
-
-      </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {!editing && nextStage && (
-        <button
-          className="finish-button"
-          onClick={() => changeStage(nextStage)}
-        >
-          {nextStage === 'W toku' && '▶ Rozpocznij realizację'}
-          {nextStage === 'Odbiór' && '✓ Przejdź do odbioru'}
-          {nextStage === 'Zakończone' && '✓ Zakończ realizację'}
-        </button>
+        <div className="job-detail-stage-buttons">
+          <button type="button" className="job-detail-primary-button job-detail-stage-next" onClick={() => changeStage(nextStage)}>
+            {nextStage === 'Odbiór' ? 'Przejdź do odbioru' : 'Zakończ realizację'}
+          </button>
+          {JOB_STAGES.indexOf(normalizeJobStage(editedJob)) > 0 && (
+            <button
+              type="button"
+              className="job-detail-light-button job-detail-stage-back"
+              onClick={() => {
+                const currentIndex = JOB_STAGES.indexOf(normalizeJobStage(editedJob))
+                const previousStage = currentIndex > 0 ? JOB_STAGES[currentIndex - 1] : null
+                if (previousStage) changeStage(previousStage)
+              }}
+            >
+              Cofnij etap
+            </button>
+          )}
+        </div>
       )}
 
-      {!editing && (
-        <div className="job-stage-actions">
-          <span>Aktualny etap: <strong>{normalizeJobStage(editedJob)}</strong></span>
+      {!editing && !nextStage && JOB_STAGES.indexOf(normalizeJobStage(editedJob)) > 0 && (
+        <div className="job-detail-stage-buttons">
           <button
             type="button"
-            className="restore-button"
+            className="job-detail-light-button job-detail-stage-back"
             onClick={() => {
-              const stages = JOB_STAGES
-              const currentIndex = stages.indexOf(normalizeJobStage(editedJob))
-              const previousStage = currentIndex > 0 ? stages[currentIndex - 1] : null
+              const currentIndex = JOB_STAGES.indexOf(normalizeJobStage(editedJob))
+              const previousStage = currentIndex > 0 ? JOB_STAGES[currentIndex - 1] : null
               if (previousStage) changeStage(previousStage)
             }}
           >
-            ← Cofnij etap
+            Cofnij etap
           </button>
         </div>
       )}
 
       {!editing && (
-
-        <button
-
-          className="document-remove"
-
-          onClick={() =>
-            onDelete(editedJob)
-          }
-
-          style={{
-            width: '100%',
-            marginTop: '12px',
-            padding: '14px',
-            fontSize: '15px',
-          }}
-
-        >
-          🗑 Usuń realizację
-
+        <button type="button" className="job-detail-delete-link" onClick={() => onDelete(editedJob)}>
+          <Trash2 size={17} strokeWidth={1.75} /> Usuń realizację
         </button>
-
       )}
 
-    </div>
+      {showCostForm && (
+        <div
+          className="job-detail-sheet-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) resetCostForm()
+          }}
+        >
+          <div className="finance-cost-sheet job-detail-cost-sheet" role="dialog" aria-modal="true">
+            <div className="finance-cost-sheet-handle" />
+            <div className="finance-cost-sheet-header">
+              <div>
+                <h2>{editingCostId ? 'Edytuj koszt' : 'Dodaj koszt'}</h2>
+                <p>Uzupełnij dane kosztu realizacji</p>
+              </div>
+              <button type="button" className="finance-cost-sheet-close" onClick={resetCostForm} aria-label="Zamknij">
+                <X size={20} strokeWidth={1.75} />
+              </button>
+            </div>
 
+            <div className="job-detail-cost-form">
+              <label><span>Rodzaj</span><select value={costForm.costType} onChange={(e) => setCostForm({ ...costForm, costType: e.target.value })}><option value="material">Materiał</option><option value="hours">Robocizna</option><option value="other">Inny koszt</option></select></label>
+              <label><span>Nazwa kosztu</span><input value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })} /></label>
+              <div className="job-detail-edit-grid">
+                <label><span>Ilość</span><input inputMode="decimal" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })} /></label>
+                <label><span>Jednostka</span><input value={costForm.unit} onChange={(e) => setCostForm({ ...costForm, unit: e.target.value })} /></label>
+              </div>
+              <label><span>Koszt jednostkowy</span><input inputMode="decimal" value={costForm.unitCost} onChange={(e) => setCostForm({ ...costForm, unitCost: e.target.value })} /></label>
+              <label><span>Data</span><input type="date" value={costForm.costDate} onChange={(e) => setCostForm({ ...costForm, costDate: e.target.value })} /></label>
+              {costForm.costType === 'hours' && (
+                <label><span>Pracownik</span><select value={costForm.employeeId} onChange={(e) => {
+                  const member = (organizationMembers || []).find((item) => String(item.user_id) === String(e.target.value))
+                  setCostForm({ ...costForm, employeeId: e.target.value, employeeName: member?.display_name || member?.email || '' })
+                }}>
+                  <option value="">Wybierz pracownika</option>
+                  {(organizationMembers || []).map((member) => <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>)}
+                </select></label>
+              )}
+            </div>
+
+            <div className="finance-cost-sheet-actions">
+              <button type="button" className="finance-cost-sheet-cancel" onClick={resetCostForm}>Anuluj</button>
+              <button type="button" className="finance-cost-sheet-save" onClick={saveJobCost}>Zapisz</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 
-}
 
 
 /* =====================================================

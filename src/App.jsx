@@ -12159,7 +12159,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                         <div className="calendar-select-wrap">
                           <select value={editJobId} onChange={(e) => setEditJobId(e.target.value)}>
                             <option value="">Wybierz robotę</option>
-                            {jobs.filter((job) => Number(job.progress ?? 0) < 100 || String(job.id) === String(editJobId)).map((job) => (
+                            {jobs.map((job) => (
                               <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
                             ))}
                           </select>

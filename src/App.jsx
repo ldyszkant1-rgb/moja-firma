@@ -11591,16 +11591,22 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       await showCustomAlert('Podaj prawidłowy czas: godziny 0–24 i minuty 0–59. Przy 24 godzinach minuty muszą być 0.')
       return
     }
-    if (editingPlan.plan_type === 'job' && (workedHoursValue === null || workedHoursValue <= 0)) {
-      await showCustomAlert('Czas pracy musi być większy od 0.')
-      return
+    if (editingPlan.plan_type === 'job') {
+      if (!editJobId) {
+        await showCustomAlert('Wybierz robotę.')
+        return
+      }
+      if (workedHoursValue === null || workedHoursValue <= 0) {
+        await showCustomAlert('Czas pracy musi być większy od 0.')
+        return
+      }
     }
 
     setSavingEdit(true)
     try {
-      const { data, error } = await supabase.rpc('update_calendar_plan', {
+      const { data, error } = await supabase.rpc('update_calendar_plan_details', {
         p_plan_id: editingPlan.id,
-        p_job_id: editingPlan.plan_type === 'job' ? (editJobId || null) : null,
+        p_job_id: editingPlan.plan_type === 'job' ? editJobId : null,
         p_user_id: editUserId || null,
         p_hours_worked: workedHoursValue,
         p_note: editNote.trim() || null,
@@ -11676,66 +11682,37 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     setMovingJobId(job.id + ':' + date)
     try {
-      let saved = false
-      let exclusionError = null
-
-      const { data: rpcSaved, error: rpcError } = await supabase.rpc('add_calendar_job_exclusion', {
+      const { data: deleted, error } = await supabase.rpc('delete_calendar_job_day', {
+        p_organization_id: organizationId,
         p_job_id: job.id,
         p_excluded_date: date,
       })
 
-      if (!rpcError && rpcSaved) {
-        saved = true
-      } else {
-        exclusionError = rpcError
-        // Awaryjnie zapisujemy wykluczenie bezpośrednio. Dzięki temu przy
-        // problemie z RPC przycisk nadal może usunąć konkretny dzień.
-        const { error: directError } = await supabase
-          .from('calendar_job_exclusions')
-          .upsert(
-            {
-              organization_id: organizationId,
-              job_id: job.id,
-              excluded_date: date,
-            },
-            { onConflict: 'organization_id,job_id,excluded_date' }
-          )
-
-        if (!directError) {
-          saved = true
-        } else {
-          exclusionError = directError
-        }
-      }
-
-      if (!saved) {
-        console.error('Nie udało się usunąć dnia realizacji z kalendarza:', exclusionError)
-        await showCustomAlert(exclusionError?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
+      if (error || !deleted) {
+        console.error('Nie udało się usunąć dnia realizacji:', error, { deleted })
+        await showCustomAlert(error?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
         return
       }
 
-      // Jeżeli na tym dniu był zapisany ręczny czas dla tej samej roboty,
-      // usuwamy również ten wpis. Dzięki temu "Usuń ten dzień" usuwa cały
-      // dzień tej roboty, a nie tylko automatycznie wyświetlany zakres.
-      const dayJobPlans = getDayPlans(date).filter(
-        (plan) => plan.plan_type === 'job' && String(plan.job_id) === String(job.id)
-      )
-      for (const plan of dayJobPlans) {
-        const { data: deleted, error: deleteError } = await supabase.rpc('delete_calendar_plan', {
-          p_plan_id: plan.id,
-        })
-        if (deleteError || !deleted) {
-          console.error('Nie udało się usunąć wpisu godzin dla usuwanego dnia:', deleteError)
-        }
-      }
-
+      // RPC robi operację atomowo: zapisuje wykluczenie i usuwa ręczne
+      // godziny tej roboty z tego dnia.
       setPlans((current) =>
-        current.filter((plan) => !dayJobPlans.some((item) => String(item.id) === String(plan.id)))
+        current.filter(
+          (plan) =>
+            !(
+              String(plan.plan_date) === String(date) &&
+              plan.plan_type === 'job' &&
+              String(plan.job_id) === String(job.id)
+            )
+        )
       )
-      // Usuwamy dzień z widoku natychmiast, bez czekania na kolejne odświeżenie.
-      setCalendarExclusions((current) => {
 
-        if (current.some((item) => String(item.job_id) === String(job.id) && String(item.excluded_date) === String(date))) {
+      setCalendarExclusions((current) => {
+        if (current.some(
+          (item) =>
+            String(item.job_id) === String(job.id) &&
+            String(item.excluded_date) === String(date)
+        )) {
           return current
         }
         return [...current, { job_id: job.id, excluded_date: date }]
@@ -12186,7 +12163,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <div className="finance-cost-sheet-field">
                         <label>Robota</label>
                         <div className="calendar-select-wrap">
-                          <select value={editJobId} onChange={(e) => setEditJobId(e.target.value)}>
+                          <select autoComplete="off" value={editJobId} onChange={(e) => setEditJobId(e.target.value)}>
                             <option value="">Wybierz robotę</option>
                             {jobs.map((job) => (
                               <option key={job.id} value={job.id}>{job.name} · {job.location || 'brak lokalizacji'}</option>
@@ -12198,7 +12175,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                       <div className="finance-cost-sheet-field">
                         <label>Kto</label>
                         <div className="calendar-select-wrap">
-                          <select value={editUserId} onChange={(e) => setEditUserId(e.target.value)}>
+                          <select autoComplete="off" value={editUserId} onChange={(e) => setEditUserId(e.target.value)}>
                             <option value="">Cała ekipa</option>
                             {organizationMembers.map((member) => (
                               <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>

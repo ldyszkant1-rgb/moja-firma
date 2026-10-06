@@ -8777,3 +8777,571 @@ body {
     margin-top: 10px;
   }
 }
+
+
+/* =========================================================
+   KLIENCI
+   ========================================================= */
+
+.clients-page {
+  --client-blue: #0787e8;
+  --client-dark: #101b45;
+  --client-muted: #66758f;
+  --client-border: #dce7f1;
+}
+
+.clients-page .page-heading {
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.clients-page .page-heading h1 {
+  margin-top: 3px;
+}
+
+.clients-page .clients-add-button {
+  min-height: 42px;
+  padding: 9px 15px;
+  border: 1px solid var(--client-blue);
+  border-radius: 13px;
+  background: var(--client-blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.clients-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  color: var(--client-dark);
+  text-align: center;
+}
+
+.clients-summary-icon,
+.client-detail-avatar,
+.clients-empty-icon {
+  color: var(--client-blue);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.clients-summary strong {
+  margin-right: 5px;
+  font-size: 22px;
+}
+
+.clients-summary span {
+  font-size: 18px;
+}
+
+.clients-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  margin-bottom: 14px;
+  padding: 0 14px;
+  border: 1px solid var(--client-border);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.clients-search-wrap > span {
+  color: var(--client-blue);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.clients-search-wrap input,
+.client-form input,
+.client-form textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--client-border);
+  border-radius: 13px;
+  background: #f8fafc;
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  color-scheme: light;
+  font: inherit;
+  outline: none;
+}
+
+.clients-search-wrap input {
+  height: 48px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 15px;
+}
+
+.clients-search-wrap input::placeholder,
+.client-form input::placeholder,
+.client-form textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+.clients-search-wrap input:focus,
+.client-form input:focus,
+.client-form textarea:focus {
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, .10);
+}
+
+.client-editor-card {
+  margin-bottom: 14px;
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.client-editor-heading {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.client-editor-heading h2 {
+  margin: 3px 0 0;
+  color: var(--client-dark);
+  font-size: 24px;
+}
+
+.client-form {
+  width: 100%;
+}
+
+.client-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.client-form label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--client-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.client-form input {
+  height: 48px;
+  padding: 0 13px;
+  font-size: 15px;
+}
+
+.client-form-full {
+  margin-top: 10px;
+}
+
+.client-form textarea {
+  min-height: 92px;
+  padding: 12px 13px;
+  resize: vertical;
+  font-size: 15px;
+}
+
+.client-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.client-form-actions button,
+.client-card-footer button {
+  min-height: 44px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.client-cancel-button {
+  border: 1px solid var(--client-border);
+  background: #eaf4fd;
+  color: var(--client-blue);
+}
+
+.client-save-button {
+  border: 0;
+  background: var(--client-blue);
+  color: #fff;
+}
+
+.clients-list {
+  display: grid;
+  gap: 12px;
+}
+
+.client-card {
+  padding: 16px;
+  border: 1px solid var(--client-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 7px 24px rgba(30,70,105,.06);
+  text-align: left;
+}
+
+.client-card-top {
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+}
+
+.client-avatar {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border: 1px solid var(--client-border);
+  border-radius: 15px;
+  background: #f1f6fa;
+  font-size: 24px;
+}
+
+.client-card-title {
+  min-width: 0;
+}
+
+.client-card-title h2 {
+  margin: 0;
+  color: var(--client-dark);
+  font-size: 20px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-card-title span {
+  display: block;
+  margin-top: 3px;
+  color: var(--client-muted);
+  font-size: 13px;
+}
+
+.client-menu-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--client-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  color: var(--client-blue);
+  font-size: 18px;
+}
+
+.client-card-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #edf2f6;
+}
+
+.client-card-info div {
+  min-width: 0;
+}
+
+.client-card-info span,
+.client-detail-contact-grid span,
+.client-detail-stats span {
+  display: block;
+  color: var(--client-muted);
+  font-size: 11px;
+}
+
+.client-card-info strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--client-dark);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.client-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f6;
+}
+
+.client-card-footer > span {
+  color: var(--client-muted);
+  font-size: 13px;
+}
+
+.client-card-footer > div {
+  display: flex;
+  gap: 7px;
+}
+
+.client-card-footer button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--client-border);
+  background: #fff;
+  color: var(--client-blue);
+}
+
+.client-card-footer .client-delete-button {
+  color: #dc3f4b;
+}
+
+.client-detail-card {
+  margin-bottom: 14px;
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.client-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.client-back-button,
+.client-detail-edit {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid var(--client-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--client-blue);
+  font-weight: 700;
+}
+
+.client-detail-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+.client-detail-identity h2 {
+  margin: 2px 0;
+  color: var(--client-dark);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.client-detail-identity span {
+  color: var(--client-muted);
+  font-size: 13px;
+}
+
+.client-detail-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.client-detail-contact-grid > div,
+.client-detail-notes {
+  padding: 11px 12px;
+  border: 1px solid var(--client-border);
+  border-radius: 13px;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.client-detail-contact-grid strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--client-dark);
+  font-size: 14px;
+}
+
+.client-detail-notes {
+  margin-top: 10px;
+}
+
+.client-detail-notes p {
+  margin-top: 4px;
+  color: var(--client-dark);
+  font-size: 14px;
+}
+
+.client-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.client-detail-stats > div {
+  padding: 11px;
+  border: 1px solid var(--client-border);
+  border-radius: 13px;
+  background: #fff;
+  text-align: left;
+}
+
+.client-detail-stats strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--client-dark);
+  font-size: 17px;
+}
+
+.client-detail-stat-receivable {
+  grid-column: 1 / -1;
+  background: #eaf8f0 !important;
+  border-color: #c9ead7 !important;
+}
+
+.client-detail-stat-receivable strong {
+  color: #159447;
+}
+
+.client-detail-section-title {
+  margin: 16px 0 8px;
+  color: var(--client-dark);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.client-detail-job-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  border-top: 1px solid #edf2f6;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.client-detail-job-row strong,
+.client-detail-job-row span {
+  display: block;
+}
+
+.client-detail-job-row strong {
+  color: var(--client-dark);
+  font-size: 14px;
+}
+
+.client-detail-job-row > div:first-child span {
+  margin-top: 2px;
+  color: var(--client-muted);
+  font-size: 12px;
+}
+
+.client-detail-job-value {
+  text-align: right;
+}
+
+.client-detail-job-value strong {
+  font-size: 14px;
+}
+
+.client-detail-job-value span {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.client-payment-paid { color: #159447; }
+.client-payment-due { color: #d27a00; }
+.client-payment-overdue { color: #dc3f4b; }
+
+.client-detail-job-arrow {
+  color: var(--client-blue);
+  font-size: 18px;
+}
+
+.client-detail-empty {
+  padding: 14px;
+  border: 1px dashed var(--client-border);
+  border-radius: 13px;
+  color: var(--client-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.clients-empty {
+  padding: 28px 18px;
+  text-align: center;
+}
+
+.clients-empty h2 {
+  margin: 8px 0 4px;
+}
+
+.clients-empty p {
+  color: var(--client-muted);
+  font-size: 14px;
+}
+
+.clients-empty .client-save-button {
+  margin-top: 14px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 13px;
+}
+
+@media (max-width: 560px) {
+  .clients-page .clients-add-button {
+    min-height: 38px;
+    padding: 8px 11px;
+    font-size: 13px;
+  }
+
+  .clients-summary span {
+    font-size: 16px;
+  }
+
+  .client-form-grid,
+  .client-card-info,
+  .client-detail-contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .client-form-actions {
+    grid-template-columns: 1fr 1.45fr;
+  }
+
+  .client-card {
+    padding: 14px;
+  }
+
+  .client-card-footer {
+    align-items: flex-start;
+  }
+
+  .client-card-footer > span {
+    padding-top: 9px;
+  }
+
+  .client-card-footer > div {
+    flex-shrink: 0;
+  }
+
+  .client-detail-job-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .client-detail-job-arrow {
+    display: none;
+  }
+}

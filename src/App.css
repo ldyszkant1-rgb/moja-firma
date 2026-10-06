@@ -3024,7 +3024,7 @@ section {
 .job-detail-back {
   border: 0;
   background: transparent;
-  color: #0f172a;
+  color: #0787e8;
   padding: 8px 0;
   font: inherit;
   font-size: 15px;
@@ -3834,18 +3834,37 @@ section {
   font-size: 13px;
   font-weight: 700;
 }
-.job-detail-profit-share-person input {
+.job-detail-profit-input {
   width: 72px;
   height: 40px;
   flex: 0 0 72px;
-  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid #dce7f1;
   border-radius: 10px;
   background: #f8fafc;
+  overflow: hidden;
+}
+.job-detail-profit-input input {
+  width: 48px;
+  height: 38px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0 0 0 8px;
+  border: 0;
+  background: transparent;
   color: #0f172a;
   font: inherit;
   font-size: 16px;
   text-align: right;
+  outline: none;
+}
+.job-detail-profit-input span {
+  flex: 0 0 auto;
+  padding: 0 8px 0 4px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 800;
 }
 .job-detail-profit-results {
   margin-top: 12px;
@@ -4137,7 +4156,15 @@ section {
   font-weight: 700;
 }
 .job-detail-edit-sheet .jobs-page-form-actions {
+  position: sticky;
+  bottom: -16px;
+  z-index: 2;
   margin: 12px -16px -16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(255,255,255,.96);
+  border-top: 1px solid #e5ebf0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .job-detail-cost-form {

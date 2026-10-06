@@ -3471,6 +3471,38 @@ section {
   white-space: nowrap;
 }
 
+.job-detail-calendar-time-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.job-detail-calendar-time-summary > div {
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: #eaf4fd;
+}
+
+.job-detail-calendar-time-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.job-detail-calendar-time-summary strong {
+  display: block;
+  margin-top: 3px;
+  color: #0f172a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .job-detail-time-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0,1fr));

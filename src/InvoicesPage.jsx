@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import logo from './assets/logo.png'
+import './invoices.css'
 import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
 import {getJobPayments,createJobPayment,deleteJobPayment} from './lib/jobPaymentsApi'
 

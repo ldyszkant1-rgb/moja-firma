@@ -6416,7 +6416,22 @@ function JobDetails({
 
       {editing ? (
 
-        <div className="note-form">
+        <div className="jobs-page-form-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setEditing(false)
+        }}>
+          <div className="jobs-page-form-sheet" role="dialog" aria-modal="true" aria-labelledby="jobs-page-edit-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="finance-cost-sheet-handle" aria-hidden="true" />
+            <div className="finance-cost-sheet-header">
+              <div>
+                <h2 id="jobs-page-edit-title">Edytuj realizację</h2>
+                <p>Zmień podstawowe dane realizacji</p>
+              </div>
+              <button type="button" className="finance-cost-sheet-close" onClick={() => setEditing(false)} aria-label="Zamknij">
+                <X size={20} strokeWidth={1.8} />
+              </button>
+            </div>
+
+        <div className="note-form jobs-page-edit-form">
 
           <input
 
@@ -6624,6 +6639,13 @@ function JobDetails({
             </div>
           </div>
 
+        </div>
+
+            <div className="jobs-page-form-actions">
+              <button type="button" className="jobs-page-form-cancel" onClick={() => setEditing(false)}>Anuluj</button>
+              <button type="button" className="jobs-page-form-save" onClick={saveChanges}>Zapisz zmiany</button>
+            </div>
+          </div>
         </div>
 
       ) : (
@@ -8745,23 +8767,6 @@ function JobDetails({
         </div>
 
       </div>
-
-      {editing && (
-
-        <button
-
-          className="save-button"
-
-          onClick={
-            saveChanges
-          }
-
-        >
-          Zapisz zmiany
-        </button>
-
-      )}
-
 
       {!editing && nextStage && (
         <button

@@ -119,13 +119,41 @@ export async function deleteJobTimeEntry(id) {
 export async function getJobCalendarPlans(jobId) {
   if (!jobId) return []
 
-  const { data, error } = await supabase
+  const direct = await supabase
     .from('calendar_plans')
     .select('id, job_id, user_id, plan_date, hours_worked, title, note')
     .eq('job_id', jobId)
     .eq('plan_type', 'job')
     .order('plan_date', { ascending: true })
 
-  if (error) throw error
-  return data || []
+  if (!direct.error && Array.isArray(direct.data) && direct.data.length > 0) {
+    return direct.data
+  }
+
+  // Terminarz korzysta z tego RPC, więc używamy go jako pewnego źródła,
+  // gdy RLS zwróci pusty wynik dla bezpośredniego SELECT.
+  const { data, error } = await supabase.rpc('list_calendar_plans', {
+    p_start_date: '2000-01-01',
+    p_end_date: '2100-12-31',
+  })
+
+  if (error) {
+    if (direct.error) throw direct.error
+    return []
+  }
+
+  return (data || [])
+    .filter((plan) =>
+      plan.plan_type === 'job' &&
+      String(plan.job_id) === String(jobId)
+    )
+    .map((plan) => ({
+      id: plan.id,
+      job_id: plan.job_id,
+      user_id: plan.user_id || null,
+      plan_date: plan.plan_date,
+      hours_worked: plan.hours_worked,
+      title: plan.title || '',
+      note: plan.note || null,
+    }))
 }

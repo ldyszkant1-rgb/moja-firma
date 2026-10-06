@@ -2353,6 +2353,9 @@ function App() {
       priority:
         newJob.priority || 'normal',
 
+      plannedEndDate:
+        newJob.plannedEndDate || null,
+
       status: 'W toku',
 
       progress: 0,
@@ -3857,30 +3860,30 @@ function JobCard({
             </span>
           </div>
 
-          {stage === 'Zakończone' && (
-            <span className="status completed" style={stageStyle}>
-              <span className="status-dot status-dot-completed" aria-hidden="true" />
-              ZAKOŃCZONA
+          <div className="jobs-page-card-badges">
+            <span className={stage === 'Zakończone' ? 'status completed' : stage === 'Odbiór' ? 'status receipt' : 'status active'} style={stageStyle}>
+              <span className="status-dot" aria-hidden="true" />
+              {stage === 'Zakończone' ? 'ZAKOŃCZONA' : stage === 'Odbiór' ? 'ODBIÓR' : 'W TOKU'}
             </span>
-          )}
 
-          {showPriority && (
-            <span className={job.priority === 'urgent' ? 'job-priority-badge urgent' : 'job-priority-badge high'}>
-              <span className="priority-dot" aria-hidden="true" />
-              {job.priority === 'urgent' ? 'PILNY' : 'WYSOKI'}
-            </span>
-          )}
+            {showPriority && (
+              <span className={job.priority === 'urgent' ? 'job-priority-badge urgent' : 'job-priority-badge high'}>
+                <span className="priority-dot" aria-hidden="true" />
+                {job.priority === 'urgent' ? 'PILNY' : 'WYSOKI'}
+              </span>
+            )}
 
-          {job.plannedEndDate && (
-  <span className={job.plannedEndDate < today ? 'job-deadline overdue' : 'job-deadline'}>
-    {job.plannedEndDate < today ? 'po terminie' : formatDeadlineShort(job.plannedEndDate)}
-  </span>
-)}
+            {job.plannedEndDate && (
+              <span className={job.plannedEndDate < today ? 'job-deadline overdue' : 'job-deadline'}>
+                {job.plannedEndDate < today ? 'po terminie' : formatDeadlineShort(job.plannedEndDate)}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="job-card-progress">
+        <div className={stage === 'Zakończone' ? 'job-card-progress job-card-progress-completed' : 'job-card-progress'}>
           <div className="job-card-progress-label">
-            <span>Postęp realizacji</span>
+            <span>{stage === 'Zakończone' ? 'Postęp' : 'Postęp realizacji'}</span>
             <strong>{formatDisplayNumber(progress, { maximumFractionDigits: 0 })}%</strong>
           </div>
           <div className="progress-bar">
@@ -3923,7 +3926,7 @@ function JobCard({
         )}
       </div>
 
-      {tasks.length === 0 ? (
+      {tasks.length === 0 && stage !== 'Zakończone' ? (
         <button
           type="button"
           className="job-card-add-task-hint"

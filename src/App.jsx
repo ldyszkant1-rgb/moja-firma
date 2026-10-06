@@ -11687,6 +11687,24 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         return
       }
 
+      // Jeżeli na tym dniu był zapisany ręczny czas dla tej samej roboty,
+      // usuwamy również ten wpis. Dzięki temu "Usuń ten dzień" usuwa cały
+      // dzień tej roboty, a nie tylko automatycznie wyświetlany zakres.
+      const dayJobPlans = getDayPlans(date).filter(
+        (plan) => plan.plan_type === 'job' && String(plan.job_id) === String(job.id)
+      )
+      for (const plan of dayJobPlans) {
+        const { data: deleted, error: deleteError } = await supabase.rpc('delete_calendar_plan', {
+          p_plan_id: plan.id,
+        })
+        if (deleteError || !deleted) {
+          console.error('Nie udało się usunąć wpisu godzin dla usuwanego dnia:', deleteError)
+        }
+      }
+
+      setPlans((current) =>
+        current.filter((plan) => !dayJobPlans.some((item) => String(item.id) === String(plan.id)))
+      )
       setCalendarExclusions((current) => {
         if (current.some((item) => String(item.job_id) === String(job.id) && String(item.excluded_date) === String(date))) {
           return current

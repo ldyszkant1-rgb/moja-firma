@@ -11676,14 +11676,41 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     setMovingJobId(job.id + ':' + date)
     try {
-      const { data: saved, error } = await supabase.rpc('add_calendar_job_exclusion', {
+      let saved = false
+      let exclusionError = null
+
+      const { data: rpcSaved, error: rpcError } = await supabase.rpc('add_calendar_job_exclusion', {
         p_job_id: job.id,
         p_excluded_date: date,
       })
 
-      if (error || !saved) {
-        console.error('Nie udało się usunąć dnia realizacji z kalendarza:', error)
-        await showCustomAlert(error?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
+      if (!rpcError && rpcSaved) {
+        saved = true
+      } else {
+        exclusionError = rpcError
+        // Awaryjnie zapisujemy wykluczenie bezpośrednio. Dzięki temu przy
+        // problemie z RPC przycisk nadal może usunąć konkretny dzień.
+        const { error: directError } = await supabase
+          .from('calendar_job_exclusions')
+          .upsert(
+            {
+              organization_id: organizationId,
+              job_id: job.id,
+              excluded_date: date,
+            },
+            { onConflict: 'organization_id,job_id,excluded_date' }
+          )
+
+        if (!directError) {
+          saved = true
+        } else {
+          exclusionError = directError
+        }
+      }
+
+      if (!saved) {
+        console.error('Nie udało się usunąć dnia realizacji z kalendarza:', exclusionError)
+        await showCustomAlert(exclusionError?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
         return
       }
 
@@ -11705,7 +11732,9 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       setPlans((current) =>
         current.filter((plan) => !dayJobPlans.some((item) => String(item.id) === String(plan.id)))
       )
+      // Usuwamy dzień z widoku natychmiast, bez czekania na kolejne odświeżenie.
       setCalendarExclusions((current) => {
+
         if (current.some((item) => String(item.job_id) === String(job.id) && String(item.excluded_date) === String(date))) {
           return current
         }

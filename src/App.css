@@ -8694,3 +8694,86 @@ body {
     max-width: none;
   }
 }
+
+
+/* Oferta — finalne style po globalnych regułach */
+.offers-page.offers-editor-page .quantity-box input {
+  width: 100%;
+  height: 44px;
+  margin-top: 5px;
+  padding: 0 10px;
+  border: 1px solid #dce7f1;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  font-size: 15px;
+  text-align: center;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  color-scheme: light;
+  box-shadow: none;
+}
+
+.offers-page.offers-editor-page .quantity-box input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+  -webkit-text-fill-color: #94a3b8;
+}
+
+.offers-page.offers-editor-page .quantity-box input:focus {
+  border-color: #0787e8;
+  box-shadow: 0 0 0 3px rgba(7, 135, 232, .10);
+}
+
+.offers-page.offers-editor-page .offer-total-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5edf3;
+}
+
+.offers-page.offers-editor-page .offer-total-box span {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.offers-page.offers-editor-page .offer-total-box strong {
+  color: #101b45;
+  font-size: 21px;
+  white-space: nowrap;
+}
+
+.offers-page:not(.offers-editor-page) .offer-card-actions .edit-button,
+.offers-page:not(.offers-editor-page) .offer-card-actions .back-button,
+.offers-page:not(.offers-editor-page) .offer-card-actions .save-button {
+  border: 1px solid #dce7f1;
+  background: #fff;
+  color: #0787e8;
+  box-shadow: none;
+}
+
+.offers-page:not(.offers-editor-page) .offer-card-actions .edit-button:hover,
+.offers-page:not(.offers-editor-page) .offer-card-actions .back-button:hover {
+  background: #eaf4fd;
+}
+
+.offers-page:not(.offers-editor-page) .offer-card-actions .save-button {
+  border-color: #bfe8d0;
+  background: #e0f7ea;
+  color: #159447;
+}
+
+@media (max-width: 560px) {
+  .offers-page.offers-editor-page .quantity-box {
+    min-width: 0;
+  }
+
+  .offers-page.offers-editor-page .offer-total-box {
+    margin-top: 10px;
+  }
+}

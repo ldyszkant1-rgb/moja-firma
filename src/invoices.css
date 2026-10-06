@@ -1018,3 +1018,68 @@
     margin: 0;
   }
 }
+
+
+/* =========================================================
+   FAKTURY — MOBILE POLISH
+   ========================================================= */
+
+.app:has(.invoice-editor-page) .bottom-navigation,
+.app:has(.invoice-preview-shell) .bottom-navigation {
+  display: none;
+}
+
+.app:has(.invoice-editor-page),
+.app:has(.invoice-preview-shell) {
+  padding-bottom: 20px;
+}
+
+.invoice-field select,
+.invoice-editor-full-select,
+.invoice-item-row select,
+.invoice-payment-form select {
+  background-color: #f7fafc;
+  color: #12234f;
+  -webkit-text-fill-color: #12234f;
+  color-scheme: light;
+  -webkit-appearance: menulist;
+}
+
+@media (max-width: 760px) {
+  .invoice-editor-page,
+  .invoice-preview-shell {
+    padding-bottom: 24px;
+  }
+
+  .invoice-editor-card {
+    gap: 14px;
+  }
+
+  .invoice-editor-section,
+  .invoice-party {
+    padding: 17px 15px;
+  }
+
+  .invoice-field input,
+  .invoice-field select,
+  .invoice-editor-full-select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .invoice-items-table {
+    margin-top: 2px;
+  }
+
+  .invoice-totals {
+    padding-bottom: 2px;
+  }
+
+  .invoice-editor-actions {
+    position: sticky;
+    bottom: 0;
+    margin-left: -2px;
+    margin-right: -2px;
+    padding: 10px 2px calc(10px + env(safe-area-inset-bottom));
+  }
+}

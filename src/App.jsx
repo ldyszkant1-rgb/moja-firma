@@ -8378,86 +8378,6 @@ function FinancePage({
     )
   }
 
-  useEffect(() => {
-    let cancelled = false
-    const distribution = activeReportDistribution
-    setReportSharePdfReady(false)
-
-    if (!distribution) return () => { cancelled = true }
-
-    const cacheKey = JSON.stringify([
-      distribution.id || null,
-      distribution.paymentIds || [],
-      distribution.costIds || [],
-      distribution.distributionDate || null,
-      distribution.receivedNet || distribution.profit || 0,
-    ])
-
-    const cachedFile = reportSharePdfRef.current.get(cacheKey)
-    if (cachedFile) {
-      setReportSharePdfReady(true)
-      return () => { cancelled = true }
-    }
-
-    const prepareSharePdf = async () => {
-      try {
-        const svg = buildDistributionShareSvg(distribution)
-        const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-        const url = URL.createObjectURL(svgBlob)
-        const image = new Image()
-
-        await new Promise((resolve, reject) => {
-          image.onload = resolve
-          image.onerror = reject
-          image.src = url
-        })
-
-        if (cancelled) {
-          URL.revokeObjectURL(url)
-          return
-        }
-
-        const data = getDistributionReportData(distribution)
-        const canvas = document.createElement('canvas')
-        canvas.width = 1240
-        canvas.height = Math.max(1754, 1160 + data.reportCosts.length * 58)
-        const context = canvas.getContext('2d')
-        if (!context) throw new Error('Brak kontekstu canvas')
-
-        context.fillStyle = '#ffffff'
-        context.fillRect(0, 0, canvas.width, canvas.height)
-        context.drawImage(image, 0, 0, canvas.width, canvas.height)
-        URL.revokeObjectURL(url)
-
-        const jpegBlob = await new Promise((resolve, reject) => {
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob)
-            else reject(new Error('Nie udało się utworzyć obrazu raportu'))
-          }, 'image/jpeg', 0.94)
-        })
-
-        const pdfFile = await createPdfFileFromJpeg(
-          jpegBlob,
-          canvas.width,
-          canvas.height
-        )
-
-        if (!cancelled) {
-          reportSharePdfRef.current.set(cacheKey, pdfFile)
-          setReportSharePdfReady(true)
-        }
-      } catch (error) {
-        console.error('Nie udało się przygotować PDF raportu:', error)
-        if (!cancelled) setReportSharePdfReady(false)
-      }
-    }
-
-    prepareSharePdf()
-
-    return () => {
-      cancelled = true
-    }
-  }, [activeReportDistribution])
 
   // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
   // wpłaty i koszty. Dzięki temu ten sam koszt nie zostanie rozliczony drugi raz.
@@ -8932,18 +8852,42 @@ function FinancePage({
     }
   }
 
-  function buildDistributionShareSvg(distribution = null) {
+  function createDistributionPdf(distribution = null) {
     const data = getDistributionReportData(distribution)
-    const width = 1240
-    const rowHeight = 58
-    const height = Math.max(1754, 1160 + data.reportCosts.length * rowHeight)
-    const esc = (value) => String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+    const pageWidth = 595
+    const pageHeight = 842
+    const margin = 42
+    const contentWidth = pageWidth - margin * 2
+    const objects = []
+    const offsets = []
+    const winAnsiMap = {
+      '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86, '‡': 0x87,
+      'ˆ': 0x88, '‰': 0x89, 'Š': 0x8A, '‹': 0x8B, 'Œ': 0x8C, 'Ž': 0x8E, '‘': 0x91,
+      '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97, '˜': 0x98,
+      '™': 0x99, 'š': 0x9A, '›': 0x9B, 'œ': 0x9C, 'ž': 0x9E, 'Ÿ': 0x9F,
+      'Ą': 0xA5, 'ą': 0xB9, 'Ć': 0xC6, 'ć': 0xE6, 'Ę': 0xCA, 'ę': 0xEA,
+      'Ł': 0xA3, 'ł': 0xB3, 'Ń': 0xD1, 'ń': 0xF1, 'Ó': 0xD3, 'ó': 0xF3,
+      'Ś': 0xA6, 'ś': 0xB6, 'Ź': 0x8F, 'ź': 0x9F, 'Ż': 0xAF, 'ż': 0xBF
+    }
 
-    const font = '-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif'
+    const toWinAnsiHex = (value) => Array.from(String(value ?? ''))
+      .map((char) => {
+        const code = char.charCodeAt(0)
+        const byte = code <= 0x7F ? code : (winAnsiMap[char] ?? 0x3F)
+        return byte.toString(16).padStart(2, '0')
+      })
+      .join('')
+
+    const text = (x, y, size, value, font = 'F1', color = '0.07 0.10 0.20') =>
+      x + ' ' + y + ' Td /' + font + ' ' + size + ' Tf ' + color + ' rg <' + toWinAnsiHex(value) + '> Tj'
+    const textAt = (x, y, size, value, font = 'F1', color = '0.07 0.10 0.20') =>
+      'BT ' + x + ' ' + y + ' Td /' + font + ' ' + size + ' Tf ' + color + ' rg <' + toWinAnsiHex(value) + '> Tj ET'
+    const line = (x1, y1, x2, y2, color = '0.87 0.91 0.95', width = 0.7) =>
+      color + ' RG ' + width + ' w ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S'
+    const rect = (x, y, w, h, color = '0.92 0.96 0.99') =>
+      color + ' rg ' + x + ' ' + y + ' ' + w + ' ' + h + ' re f'
+    const money = (value) => formatMoney(value)
+
     const meta = [
       data.invoiceNumber ? 'Faktura: ' + data.invoiceNumber : '',
       data.paymentDateFrom ? 'Wpłata: ' + formatDate(data.paymentDateFrom) + (data.paymentDateTo && data.paymentDateTo !== data.paymentDateFrom ? '–' + formatDate(data.paymentDateTo) : '') : '',
@@ -8951,119 +8895,157 @@ function FinancePage({
       data.generatedDate ? 'Wygenerowano: ' + formatDate(data.generatedDate) : '',
     ].filter(Boolean).join('   •   ')
 
-    const costRows = data.reportCosts.map((cost, index) => {
-      const y = 430 + index * rowHeight
-      return '<text x="90" y="' + y + '" font-family="' + font + '" font-size="20" fill="#64748b">' + esc(formatDate(cost.month)) +
-        '</text><text x="255" y="' + y + '" font-family="' + font + '" font-size="20" font-weight="650" fill="#111b34">' +
-        esc(cost.description || cost.category || 'Inne') + '</text><text x="855" y="' + y + '" text-anchor="end" font-family="' + font + '" font-size="20" fill="#64748b">' +
-        esc(cost.paidBy || '—') + '</text><text x="1145" y="' + y + '" text-anchor="end" font-family="' + font + '" font-size="20" font-weight="750" fill="#111b34">' +
-        esc(formatMoney(cost.netAmount ?? cost.amount)) + '</text>' +
-        '<line x1="90" y1="' + (y + 19) + '" x2="1150" y2="' + (y + 19) + '" stroke="#e8eef4"/>'
-    }).join('')
+    const commands = [
+      '1 1 1 rg 0 0 ' + pageWidth + ' ' + pageHeight + ' re f',
+      textAt(margin, 792, 11, 'AEROINSTAL', 'F2', '0.03 0.50 0.82'),
+      textAt(margin, 756, 24, 'Rozliczenie wspólników', 'F2'),
+      textAt(margin, 735, 8, meta, 'F1', '0.47 0.53 0.60'),
+      line(margin, 716, pageWidth - margin, 716),
 
-    const lastCostY = data.reportCosts.length ? 430 + (data.reportCosts.length - 1) * rowHeight : 430
-    const costTotalY = lastCostY + 62
-    const dividerOneY = costTotalY + 32
-    const payerTitleY = dividerOneY + 52
-    const payerCardY = payerTitleY + 24
-    const payerValueY = payerCardY + 56
-    const payerTotalY = payerCardY + 112
-    const dividerTwoY = payerTotalY + 42
-    const payoutTitleY = dividerTwoY + 52
-    const payoutRowOneY = payoutTitleY + 36
-    const payoutRowTwoY = payoutTitleY + 102
-    const balanceY = payoutTitleY + 178
-    const noteY = balanceY + 62
-    const footerY = noteY + 72
-    const signatureY = footerY + 82
+      textAt(margin, 687, 8, 'WPŁATA', 'F2', '0.03 0.56 0.89'),
+      textAt(margin, 660, 24, money(data.received), 'F2'),
+      textAt(pageWidth - margin - 112, 663, 8, 'Faktycznie otrzymane', 'F1', '0.47 0.53 0.60'),
+      line(margin, 640, pageWidth - margin, 640),
 
-    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">' +
-      '<rect width="100%" height="100%" fill="#ffffff"/>' +
-      '<image href="' + esc(logo) + '" x="90" y="70" width="150" height="46" preserveAspectRatio="xMinYMid meet"/>' +
-      '<text x="90" y="165" font-family="' + font + '" font-size="40" font-weight="800" fill="#101a33">Rozliczenie wspólników</text>' +
-      '<text x="90" y="200" font-family="' + font + '" font-size="13" fill="#7a8798">' + esc(meta) + '</text>' +
-      '<line x1="90" y1="230" x2="1150" y2="230" stroke="#dfe7ef"/>' +
+      textAt(margin, 616, 8, 'KOSZTY', 'F2', '0.03 0.56 0.89'),
+      textAt(margin, 598, 7, 'Data', 'F1', '0.47 0.53 0.60'),
+      textAt(margin + 78, 598, 7, 'Opis', 'F1', '0.47 0.53 0.60'),
+      textAt(pageWidth - margin - 125, 598, 7, 'Kto zapłacił', 'F1', '0.47 0.53 0.60'),
+      textAt(pageWidth - margin - 8, 598, 7, 'Kwota', 'F1', '0.47 0.53 0.60'),
+    ]
 
-      '<text x="90" y="275" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">WPŁATA</text>' +
-      '<text x="90" y="330" font-family="' + font + '" font-size="38" font-weight="800" fill="#101a33">' + esc(formatMoney(data.received)) + '</text>' +
-      '<text x="1150" y="316" text-anchor="end" font-family="' + font + '" font-size="14" fill="#7a8798">Faktycznie otrzymane</text>' +
-      '<line x1="90" y1="365" x2="1150" y2="365" stroke="#dfe7ef"/>' +
+    const rowStartY = 580
+    const rowHeight = 25
+    data.reportCosts.forEach((cost, index) => {
+      const y = rowStartY - index * rowHeight
+      commands.push(
+        textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
+        textAt(margin + 78, y, 8, cost.description || cost.category || 'Inne', 'F1'),
+        textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
+        textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
+        line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
+      )
+    })
 
-      '<text x="90" y="405" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">KOSZTY</text>' +
-      '<text x="90" y="420" font-family="' + font + '" font-size="11" fill="#7a8798">Data</text>' +
-      '<text x="255" y="420" font-family="' + font + '" font-size="11" fill="#7a8798">Opis</text>' +
-      '<text x="855" y="420" text-anchor="end" font-family="' + font + '" font-size="11" fill="#7a8798">Kto zapłacił</text>' +
-      '<text x="1145" y="420" text-anchor="end" font-family="' + font + '" font-size="11" fill="#7a8798">Kwota</text>' +
-      costRows +
-      '<text x="855" y="' + costTotalY + '" text-anchor="end" font-family="' + font + '" font-size="15" font-weight="800" fill="#64748b">Razem koszty</text>' +
-      '<text x="1145" y="' + costTotalY + '" text-anchor="end" font-family="' + font + '" font-size="20" font-weight="800" fill="#101a33">' + esc(formatMoney(data.costsTotal)) + '</text>' +
-      '<line x1="90" y1="' + dividerOneY + '" x2="1150" y2="' + dividerOneY + '" stroke="#dfe7ef"/>' +
+    const lastY = data.reportCosts.length ? rowStartY - (data.reportCosts.length - 1) * rowHeight : rowStartY
+    const totalY = lastY - 32
+    commands.push(
+      textAt(pageWidth - margin - 125, totalY, 9, 'Razem koszty', 'F2', '0.39 0.45 0.52'),
+      textAt(pageWidth - margin - 8, totalY, 10, money(data.costsTotal), 'F2'),
+      line(margin, totalY - 18, pageWidth - margin, totalY - 18),
+    )
 
-      '<text x="90" y="' + payerTitleY + '" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">KTO POKRYŁ KOSZTY</text>' +
-      '<rect x="90" y="' + payerCardY + '" width="510" height="82" rx="14" fill="#f8fafc"/><rect x="630" y="' + payerCardY + '" width="520" height="82" rx="14" fill="#f8fafc"/>' +
-      '<text x="112" y="' + (payerCardY + 29) + '" font-family="' + font + '" font-size="14" font-weight="650" fill="#64748b">' + esc(partnerOne) + '</text>' +
-      '<text x="112" y="' + payerValueY + '" font-family="' + font + '" font-size="25" font-weight="800" fill="#101a33">' + esc(formatMoney(data.lukaszCosts)) + '</text>' +
-      '<text x="652" y="' + (payerCardY + 29) + '" font-family="' + font + '" font-size="14" font-weight="650" fill="#64748b">' + esc(partnerTwo) + '</text>' +
-      '<text x="652" y="' + payerValueY + '" font-family="' + font + '" font-size="25" font-weight="800" fill="#101a33">' + esc(formatMoney(data.pawelCosts)) + '</text>' +
-      '<text x="90" y="' + payerTotalY + '" font-family="' + font + '" font-size="13" font-weight="700" fill="#7a8798">Łącznie koszty: ' + esc(formatMoney(data.costsTotal)) + '</text>' +
-      '<line x1="90" y1="' + dividerTwoY + '" x2="1150" y2="' + dividerTwoY + '" stroke="#dfe7ef"/>' +
+    const payerTitleY = totalY - 43
+    const cardY = payerTitleY - 64
+    commands.push(
+      textAt(margin, payerTitleY, 8, 'KTO POKRYŁ KOSZTY', 'F2', '0.03 0.56 0.89'),
+      rect(margin, cardY, 245, 45, '0.97 0.98 0.99'),
+      rect(margin + 263, cardY, 248, 45, '0.97 0.98 0.99'),
+      textAt(margin + 12, cardY + 28, 8, partnerOne, 'F1', '0.39 0.45 0.52'),
+      textAt(margin + 12, cardY + 10, 12, money(data.lukaszCosts), 'F2'),
+      textAt(margin + 275, cardY + 28, 8, partnerTwo, 'F1', '0.39 0.45 0.52'),
+      textAt(margin + 275, cardY + 10, 12, money(data.pawelCosts), 'F2'),
+      textAt(margin, cardY - 18, 8, 'Łącznie koszty: ' + money(data.costsTotal), 'F2', '0.47 0.53 0.60')
+    )
 
-      '<text x="90" y="' + payoutTitleY + '" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">DO WYPŁATY</text>' +
-      '<rect x="90" y="' + (payoutRowOneY - 28) + '" width="1060" height="62" rx="14" fill="#eaf4fd"/>' +
-      '<rect x="90" y="' + (payoutRowTwoY - 28) + '" width="1060" height="62" rx="14" fill="#eaf4fd"/>' +
-      '<text x="115" y="' + payoutRowOneY + '" font-family="' + font + '" font-size="18" font-weight="700" fill="#101a33">' + esc(partnerOne) + '</text>' +
-      '<text x="1125" y="' + payoutRowOneY + '" text-anchor="end" font-family="' + font + '" font-size="27" font-weight="850" fill="#101a33">' + esc(formatMoney(data.lukaszShare)) + '</text>' +
-      '<text x="115" y="' + payoutRowTwoY + '" font-family="' + font + '" font-size="18" font-weight="700" fill="#101a33">' + esc(partnerTwo) + '</text>' +
-      '<text x="1125" y="' + payoutRowTwoY + '" text-anchor="end" font-family="' + font + '" font-size="27" font-weight="850" fill="#101a33">' + esc(formatMoney(data.pawelShare)) + '</text>' +
-      (data.balance > 0.01 ? '<text x="90" y="' + balanceY + '" font-family="' + font + '" font-size="17" font-weight="800" fill="#118fe2">' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</text>' : '') +
-      '<text x="90" y="' + noteY + '" font-family="' + font + '" font-size="12" fill="#7a8798">Połowa zysku każdy plus zwrot kosztów zapłaconych z własnej kieszeni.</text>' +
-      '<line x1="90" y1="' + footerY + '" x2="1150" y2="' + footerY + '" stroke="#dfe7ef"/>' +
-      '<text x="90" y="' + (footerY + 38) + '" font-family="' + font + '" font-size="11" fill="#7a8798">Dokument: ' + esc(data.invoiceNumber || formatDate(data.reportDate)) + '</text>' +
-      '<line x1="90" y1="' + signatureY + '" x2="420" y2="' + signatureY + '" stroke="#aeb9c6"/><line x1="650" y1="' + signatureY + '" x2="980" y2="' + signatureY + '" stroke="#aeb9c6"/>' +
-      '<text x="255" y="' + (signatureY + 24) + '" text-anchor="middle" font-family="' + font + '" font-size="11" fill="#7a8798">' + esc(partnerOne) + '</text>' +
-      '<text x="815" y="' + (signatureY + 24) + '" text-anchor="middle" font-family="' + font + '" font-size="11" fill="#7a8798">' + esc(partnerTwo) + '</text>' +
-      '<text x="90" y="' + (signatureY + 62) + '" font-family="' + font + '" font-size="10" fill="#9aa6b5">Wygenerowano w Aeroinstal</text>' +
-      '</svg>'
+    const payoutTitleY = cardY - 55
+    const payoutOneY = payoutTitleY - 28
+    const payoutTwoY = payoutTitleY - 75
+    commands.push(
+      line(margin, payoutTitleY + 18, pageWidth - margin, payoutTitleY + 18),
+      textAt(margin, payoutTitleY, 8, 'DO WYPŁATY', 'F2', '0.03 0.56 0.89'),
+      rect(margin, payoutOneY - 14, contentWidth, 32, '0.92 0.96 0.99'),
+      rect(margin, payoutTwoY - 14, contentWidth, 32, '0.92 0.96 0.99'),
+      textAt(margin + 12, payoutOneY - 3, 10, partnerOne, 'F2'),
+      textAt(pageWidth - margin - 10, payoutOneY - 3, 12, money(data.lukaszShare), 'F2'),
+      textAt(margin + 12, payoutTwoY - 3, 10, partnerTwo, 'F2'),
+      textAt(pageWidth - margin - 10, payoutTwoY - 3, 12, money(data.pawelShare), 'F2'),
+    )
 
-    return svg
+    if (data.balance > 0.01) {
+      commands.push(
+        textAt(margin, payoutTwoY - 38, 9, data.balanceDirection + ': ' + money(data.balance), 'F2', '0.03 0.56 0.89')
+      )
+    }
+
+    const noteY = payoutTwoY - 61
+    commands.push(
+      textAt(margin, noteY, 7, 'Połowa zysku każdy plus zwrot kosztów zapłaconych z własnej kieszeni.', 'F1', '0.47 0.53 0.60'),
+      line(margin, noteY - 18, pageWidth - margin, noteY - 18),
+      textAt(margin, noteY - 38, 7, 'Dokument: ' + (data.invoiceNumber || formatDate(data.reportDate)), 'F1', '0.47 0.53 0.60'),
+      line(margin, noteY - 73, margin + 150, noteY - 73, '0.68 0.73 0.78', 0.7),
+      line(pageWidth - margin - 150, noteY - 73, pageWidth - margin, noteY - 73, '0.68 0.73 0.78', 0.7),
+      textAt(margin + 75, noteY - 86, 7, partnerOne, 'F1', '0.47 0.53 0.60'),
+      textAt(pageWidth - margin - 75, noteY - 86, 7, partnerTwo, 'F1', '0.47 0.53 0.60'),
+      textAt(margin, 36, 6, 'Wygenerowano w Aeroinstal', 'F1', '0.55 0.60 0.66')
+    )
+
+    const content = commands.join('\n')
+    const objectsText = [
+      '<< /Type /Catalog /Pages 2 0 R >>',
+      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+      '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream',
+    ]
+
+    let pdf = '%PDF-1.4\n%\xFF\xFF\xFF\xFF\n'
+    objectsText.forEach((object, index) => {
+      offsets[index + 1] = pdf.length
+      pdf += (index + 1) + ' 0 obj\n' + object + '\nendobj\n'
+    })
+
+    const xrefOffset = pdf.length
+    pdf += 'xref\n0 ' + (objectsText.length + 1) + '\n'
+    pdf += '0000000000 65535 f \n'
+    for (let i = 1; i <= objectsText.length; i++) {
+      pdf += String(offsets[i]).padStart(10, '0') + ' 00000 n \n'
+    }
+    pdf += 'trailer\n<< /Size ' + (objectsText.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF'
+
+    const bytes = new Uint8Array(pdf.length)
+    for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xFF
+    return new Blob([bytes], { type: 'application/pdf' })
   }
 
-  const shareDistributionGraphic = (distribution = null) => {
-    const cacheKey = JSON.stringify([
-      distribution?.id || null,
-      distribution?.paymentIds || [],
-      distribution?.costIds || [],
-      distribution?.distributionDate || null,
-      distribution?.receivedNet || distribution?.profit || 0,
-    ])
-    const file = reportSharePdfRef.current.get(cacheKey)
+  const shareDistributionGraphic = async (distribution = null) => {
+    try {
+      setReportBusy(true)
 
-    if (!file) {
-      showCustomAlert('PDF jest jeszcze przygotowywany. Spróbuj ponownie za chwilę.')
-      return
+      // PDF jest tworzony synchronicznie przed pierwszym await.
+      // Dzięki temu kliknięcie nadal posiada aktywację i iOS może otworzyć
+      // natywne okno udostępniania.
+      const pdfBlob = createDistributionPdf(distribution)
+      const file = new File(
+        [pdfBlob],
+        'rozliczenie-wspolnikow.pdf',
+        { type: 'application/pdf' }
+      )
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file] })
+        return
+      }
+
+      const url = URL.createObjectURL(pdfBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'rozliczenie-wspolnikow.pdf'
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      await showCustomAlert('PDF został przygotowany. Możesz go teraz udostępnić z aplikacji Pliki.')
+    } catch (error) {
+      if (error?.name === 'AbortError') return
+      console.error('Nie udało się udostępnić raportu PDF:', error)
+      await showCustomAlert('Nie udało się przygotować PDF. Spróbuj ponownie.')
+    } finally {
+      setReportBusy(false)
     }
-
-    if (
-      navigator.share &&
-      navigator.canShare &&
-      navigator.canShare({ files: [file] })
-    ) {
-      // Bez await: navigator.share() musi zostać wywołane bezpośrednio
-      // z obsługi kliknięcia, aby iOS nie utracił user activation.
-      navigator.share({ files: [file] }).catch((error) => {
-        if (error?.name !== 'AbortError') {
-          console.error('Nie udało się udostępnić PDF raportu:', error)
-        }
-      })
-      return
-    }
-
-    const downloadUrl = URL.createObjectURL(file)
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = 'rozliczenie-wspolnikow.pdf'
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
   }
 
   const openDistributionPdf = (distribution = null) => {

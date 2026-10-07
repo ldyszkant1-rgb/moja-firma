@@ -7529,6 +7529,49 @@ body {
   line-height: 1.35;
 }
 
+.finance-page .finance-settlement-report {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e8eef4;
+}
+
+.finance-page .finance-report-button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #cfe5f7;
+  border-radius: 12px;
+  background: #eef8ff;
+  color: #087fca;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-page .finance-report-button:disabled {
+  opacity: .55;
+}
+
+.finance-page .finance-settlement-report span {
+  color: #7a8ba0;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+  .finance-page .finance-settlement-report {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .finance-page .finance-report-button {
+    width: 100%;
+  }
+}
+
 .finance-page .finance-settlement-actions {
   display: flex;
   gap: 8px;

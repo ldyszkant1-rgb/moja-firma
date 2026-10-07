@@ -8878,8 +8878,6 @@ function FinancePage({
       })
       .join('')
 
-    const text = (x, y, size, value, font = 'F1', color = '0.07 0.10 0.20') =>
-      x + ' ' + y + ' Td /' + font + ' ' + size + ' Tf ' + color + ' rg <' + toWinAnsiHex(value) + '> Tj'
     const textAt = (x, y, size, value, font = 'F1', color = '0.07 0.10 0.20') =>
       'BT ' + x + ' ' + y + ' Td /' + font + ' ' + size + ' Tf ' + color + ' rg <' + toWinAnsiHex(value) + '> Tj ET'
     const line = (x1, y1, x2, y2, color = '0.87 0.91 0.95', width = 0.7) =>

@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users } from 'lucide-react'
+import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
@@ -8664,6 +8664,17 @@ function FinancePage({
     ].join('\n')
   }
 
+  const copyDistributionSummary = async (distribution = null) => {
+    const report = buildDistributionReport(distribution)
+    try {
+      await navigator.clipboard.writeText(report)
+      await showCustomAlert('Podsumowanie skopiowano do schowka.')
+    } catch (error) {
+      console.error('Nie udało się skopiować podsumowania:', error)
+      await showCustomAlert('Nie udało się skopiować podsumowania.')
+    }
+  }
+
   const shareDistributionReport = async (distribution = null) => {
     const report = buildDistributionReport(distribution)
 
@@ -8726,9 +8737,15 @@ function FinancePage({
       .filter((cost) => cost.paidBy === partnerTwo)
       .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     const costBalance = (lukaszCosts - pawelCosts) / 2
+    const invoiceIds = [...new Set(payments.map((payment) => payment.invoiceId).filter(Boolean).map(String))]
+    const relatedInvoices = invoices.filter((invoice) => invoiceIds.includes(String(invoice.id)))
+    const invoiceNumbers = [...new Set(relatedInvoices.map((invoice) => invoice.invoiceNumber).filter(Boolean))]
+    const paymentDates = payments.map((payment) => payment.paidAt).filter(Boolean).sort()
+    const costDates = reportCosts.map((cost) => cost.month).filter(Boolean).sort()
 
     return {
       reportDate: distribution?.distributionDate || getTodayString(),
+      generatedDate: getTodayString(),
       payments,
       reportCosts,
       received,
@@ -8743,63 +8760,106 @@ function FinancePage({
         : costBalance < -0.01
           ? partnerOne + ' oddaje ' + partnerTwo
           : 'Brak dodatkowego wyrównania kosztów',
+      invoiceNumber: invoiceNumbers.length === 1 ? invoiceNumbers[0] : invoiceNumbers.length > 1 ? invoiceNumbers.join(', ') : '',
+      paymentDateFrom: paymentDates[0] || '',
+      paymentDateTo: paymentDates[paymentDates.length - 1] || '',
+      costDateFrom: costDates[0] || '',
+      costDateTo: costDates[costDates.length - 1] || '',
     }
   }
 
   const shareDistributionGraphic = async (distribution = null) => {
     const data = getDistributionReportData(distribution)
-    const width = 1080
-    const rowHeight = 82
-    const height = Math.max(980, 850 + data.reportCosts.length * rowHeight)
+    const width = 1240
+    const rowHeight = 58
+    const height = Math.max(1754, 1160 + data.reportCosts.length * rowHeight)
     const esc = (value) => String(value ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
 
+    const font = '-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif'
+    const meta = [
+      data.invoiceNumber ? 'Faktura: ' + data.invoiceNumber : '',
+      data.paymentDateFrom ? 'Wpłata: ' + formatDate(data.paymentDateFrom) + (data.paymentDateTo && data.paymentDateTo !== data.paymentDateFrom ? '–' + formatDate(data.paymentDateTo) : '') : '',
+      data.costDateFrom ? 'Koszty: ' + formatDate(data.costDateFrom) + (data.costDateTo && data.costDateTo !== data.costDateFrom ? '–' + formatDate(data.costDateTo) : '') : '',
+      data.generatedDate ? 'Wygenerowano: ' + formatDate(data.generatedDate) : '',
+    ].filter(Boolean).join('   •   ')
+
     const costRows = data.reportCosts.map((cost, index) => {
-      const y = 365 + index * rowHeight
-      const description = cost.description || cost.category || 'Inne'
-      return '<text x="85" y="' + y + '" font-size="23" fill="#6f8198">' + esc(formatDate(cost.month)) +
-        '</text><text x="235" y="' + y + '" font-size="23" font-weight="700" fill="#111b34">' +
-        esc(description) + '</text><text x="700" y="' + y + '" font-size="23" fill="#6f8198">' +
-        esc(cost.paidBy || '—') + '</text><text x="990" y="' + y + '" text-anchor="end" font-size="23" font-weight="800" fill="#111b34">' +
-        esc(formatMoney(cost.netAmount ?? cost.amount)) + '</text>'
+      const y = 430 + index * rowHeight
+      return '<text x="90" y="' + y + '" font-family="' + font + '" font-size="20" fill="#64748b">' + esc(formatDate(cost.month)) +
+        '</text><text x="255" y="' + y + '" font-family="' + font + '" font-size="20" font-weight="650" fill="#111b34">' +
+        esc(cost.description || cost.category || 'Inne') + '</text><text x="855" y="' + y + '" text-anchor="end" font-family="' + font + '" font-size="20" fill="#64748b">' +
+        esc(cost.paidBy || '—') + '</text><text x="1145" y="' + y + '" text-anchor="end" font-family="' + font + '" font-size="20" font-weight="750" fill="#111b34">' +
+        esc(formatMoney(cost.netAmount ?? cost.amount)) + '</text>' +
+        '<line x1="90" y1="' + (y + 19) + '" x2="1150" y2="' + (y + 19) + '" stroke="#e8eef4"/>'
     }).join('')
 
-    const dividerY = 405 + Math.max(0, data.reportCosts.length - 1) * rowHeight
-    const costSummaryY = dividerY + 55
-    const splitY = dividerY + 235
-    const balanceBlock = data.balance > 0.01
-      ? '<rect x="75" y="' + (splitY + 125) + '" width="930" height="72" rx="16" fill="#eaf6ff"/>' +
-        '<text x="100" y="' + (splitY + 155) + '" font-size="17" font-weight="900" fill="#087fca">WYRÓWNANIE KOSZTÓW</text>' +
-        '<text x="100" y="' + (splitY + 184) + '" font-size="23" font-weight="800" fill="#101a33">' +
-        esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</text>'
-      : '<text x="75" y="' + (splitY + 145) + '" font-size="21" font-weight="700" fill="#6f8198">Brak dodatkowego wyrównania kosztów</text>'
+    const lastCostY = data.reportCosts.length ? 430 + (data.reportCosts.length - 1) * rowHeight : 430
+    const costTotalY = lastCostY + 62
+    const dividerOneY = costTotalY + 32
+    const payerTitleY = dividerOneY + 52
+    const payerCardY = payerTitleY + 24
+    const payerValueY = payerCardY + 56
+    const payerTotalY = payerCardY + 112
+    const dividerTwoY = payerTotalY + 42
+    const payoutTitleY = dividerTwoY + 52
+    const payoutRowOneY = payoutTitleY + 36
+    const payoutRowTwoY = payoutTitleY + 102
+    const balanceY = payoutTitleY + 178
+    const noteY = balanceY + 62
+    const footerY = noteY + 72
+    const signatureY = footerY + 82
 
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">' +
-      '<rect width="100%" height="100%" rx="42" fill="#f4f8fc"/><rect x="35" y="35" width="1010" height="' + (height - 70) + '" rx="34" fill="#fff"/>' +
-      '<text x="75" y="100" font-family="Arial,sans-serif" font-size="22" font-weight="900" letter-spacing="5" fill="#118fe2">AEROINSTAL</text>' +
-      '<text x="75" y="160" font-family="Arial,sans-serif" font-size="42" font-weight="900" fill="#101a33">Rozliczenie 50/50</text>' +
-      '<text x="75" y="198" font-family="Arial,sans-serif" font-size="21" fill="#71839a">Data: ' + esc(formatDate(data.reportDate)) + '</text>' +
-      '<rect x="75" y="225" width="930" height="72" rx="18" fill="#eef8ff"/><text x="100" y="255" font-size="17" font-weight="900" fill="#118fe2">WPŁATA</text>' +
-      '<text x="100" y="282" font-size="29" font-weight="900" fill="#101a33">' + esc(formatMoney(data.received)) + '</text>' +
-      '<text x="75" y="318" font-size="17" font-weight="900" fill="#118fe2">KOSZTY</text>' + costRows +
-      '<line x1="75" y1="' + dividerY + '" x2="1005" y2="' + dividerY + '" stroke="#dfe8f1"/>' +
-      '<text x="75" y="' + costSummaryY + '" font-size="17" font-weight="900" fill="#118fe2">KTO POKRYŁ KOSZTY</text>' +
-      '<rect x="75" y="' + (costSummaryY + 18) + '" width="445" height="82" rx="18" fill="#f7fbff"/>' +
-      '<rect x="560" y="' + (costSummaryY + 18) + '" width="445" height="82" rx="18" fill="#f7fbff"/>' +
-      '<text x="100" y="' + (costSummaryY + 52) + '" font-size="20" font-weight="700" fill="#6f8198">' + esc(partnerOne) + '</text>' +
-      '<text x="100" y="' + (costSummaryY + 84) + '" font-size="27" font-weight="900" fill="#111b34">' + esc(formatMoney(data.lukaszCosts)) + '</text>' +
-      '<text x="585" y="' + (costSummaryY + 52) + '" font-size="20" font-weight="700" fill="#6f8198">' + esc(partnerTwo) + '</text>' +
-      '<text x="585" y="' + (costSummaryY + 84) + '" font-size="27" font-weight="900" fill="#111b34">' + esc(formatMoney(data.pawelCosts)) + '</text>' +
-      '<text x="75" y="' + (costSummaryY + 128) + '" font-size="19" font-weight="800" fill="#6f8198">Łącznie koszty: ' + esc(formatMoney(data.costsTotal)) + '</text>' +
-      '<text x="75" y="' + (splitY + 5) + '" font-size="17" font-weight="900" fill="#118fe2">PODZIAŁ 50/50 Z WPŁATY</text>' +
-      '<text x="75" y="' + (splitY + 48) + '" font-size="24" fill="#6f8198">' + esc(partnerOne) + '</text>' +
-      '<text x="500" y="' + (splitY + 48) + '" font-size="28" font-weight="900" fill="#111b34">' + esc(formatMoney(data.lukaszShare)) + '</text>' +
-      '<text x="75" y="' + (splitY + 91) + '" font-size="24" fill="#6f8198">' + esc(partnerTwo) + '</text>' +
-      '<text x="500" y="' + (splitY + 91) + '" font-size="28" font-weight="900" fill="#111b34">' + esc(formatMoney(data.pawelShare)) + '</text>' +
-      balanceBlock + '</svg>'
+      '<rect width="100%" height="100%" fill="#ffffff"/>' +
+      '<image href="' + esc(logo) + '" x="90" y="70" width="150" height="46" preserveAspectRatio="xMinYMid meet"/>' +
+      '<text x="90" y="165" font-family="' + font + '" font-size="40" font-weight="800" fill="#101a33">Rozliczenie wspólników</text>' +
+      '<text x="90" y="200" font-family="' + font + '" font-size="13" fill="#7a8798">' + esc(meta) + '</text>' +
+      '<line x1="90" y1="230" x2="1150" y2="230" stroke="#dfe7ef"/>' +
+
+      '<text x="90" y="275" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">WPŁATA</text>' +
+      '<text x="90" y="330" font-family="' + font + '" font-size="38" font-weight="800" fill="#101a33">' + esc(formatMoney(data.received)) + '</text>' +
+      '<text x="1150" y="316" text-anchor="end" font-family="' + font + '" font-size="14" fill="#7a8798">Faktycznie otrzymane</text>' +
+      '<line x1="90" y1="365" x2="1150" y2="365" stroke="#dfe7ef"/>' +
+
+      '<text x="90" y="405" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">KOSZTY</text>' +
+      '<text x="90" y="420" font-family="' + font + '" font-size="11" fill="#7a8798">Data</text>' +
+      '<text x="255" y="420" font-family="' + font + '" font-size="11" fill="#7a8798">Opis</text>' +
+      '<text x="855" y="420" text-anchor="end" font-family="' + font + '" font-size="11" fill="#7a8798">Kto zapłacił</text>' +
+      '<text x="1145" y="420" text-anchor="end" font-family="' + font + '" font-size="11" fill="#7a8798">Kwota</text>' +
+      costRows +
+      '<text x="855" y="' + costTotalY + '" text-anchor="end" font-family="' + font + '" font-size="15" font-weight="800" fill="#64748b">Razem koszty</text>' +
+      '<text x="1145" y="' + costTotalY + '" text-anchor="end" font-family="' + font + '" font-size="20" font-weight="800" fill="#101a33">' + esc(formatMoney(data.costsTotal)) + '</text>' +
+      '<line x1="90" y1="' + dividerOneY + '" x2="1150" y2="' + dividerOneY + '" stroke="#dfe7ef"/>' +
+
+      '<text x="90" y="' + payerTitleY + '" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">KTO POKRYŁ KOSZTY</text>' +
+      '<rect x="90" y="' + payerCardY + '" width="510" height="82" rx="14" fill="#f8fafc"/><rect x="630" y="' + payerCardY + '" width="520" height="82" rx="14" fill="#f8fafc"/>' +
+      '<text x="112" y="' + (payerCardY + 29) + '" font-family="' + font + '" font-size="14" font-weight="650" fill="#64748b">' + esc(partnerOne) + '</text>' +
+      '<text x="112" y="' + payerValueY + '" font-family="' + font + '" font-size="25" font-weight="800" fill="#101a33">' + esc(formatMoney(data.lukaszCosts)) + '</text>' +
+      '<text x="652" y="' + (payerCardY + 29) + '" font-family="' + font + '" font-size="14" font-weight="650" fill="#64748b">' + esc(partnerTwo) + '</text>' +
+      '<text x="652" y="' + payerValueY + '" font-family="' + font + '" font-size="25" font-weight="800" fill="#101a33">' + esc(formatMoney(data.pawelCosts)) + '</text>' +
+      '<text x="90" y="' + payerTotalY + '" font-family="' + font + '" font-size="13" font-weight="700" fill="#7a8798">Łącznie koszty: ' + esc(formatMoney(data.costsTotal)) + '</text>' +
+      '<line x1="90" y1="' + dividerTwoY + '" x2="1150" y2="' + dividerTwoY + '" stroke="#dfe7ef"/>' +
+
+      '<text x="90" y="' + payoutTitleY + '" font-family="' + font + '" font-size="12" font-weight="800" letter-spacing="1.4" fill="#118fe2">DO WYPŁATY</text>' +
+      '<rect x="90" y="' + (payoutRowOneY - 28) + '" width="1060" height="62" rx="14" fill="#eaf4fd"/>' +
+      '<rect x="90" y="' + (payoutRowTwoY - 28) + '" width="1060" height="62" rx="14" fill="#eaf4fd"/>' +
+      '<text x="115" y="' + payoutRowOneY + '" font-family="' + font + '" font-size="18" font-weight="700" fill="#101a33">' + esc(partnerOne) + '</text>' +
+      '<text x="1125" y="' + payoutRowOneY + '" text-anchor="end" font-family="' + font + '" font-size="27" font-weight="850" fill="#101a33">' + esc(formatMoney(data.lukaszShare)) + '</text>' +
+      '<text x="115" y="' + payoutRowTwoY + '" font-family="' + font + '" font-size="18" font-weight="700" fill="#101a33">' + esc(partnerTwo) + '</text>' +
+      '<text x="1125" y="' + payoutRowTwoY + '" text-anchor="end" font-family="' + font + '" font-size="27" font-weight="850" fill="#101a33">' + esc(formatMoney(data.pawelShare)) + '</text>' +
+      (data.balance > 0.01 ? '<text x="90" y="' + balanceY + '" font-family="' + font + '" font-size="17" font-weight="800" fill="#118fe2">' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</text>' : '') +
+      '<text x="90" y="' + noteY + '" font-family="' + font + '" font-size="12" fill="#7a8798">Połowa zysku każdy plus zwrot kosztów zapłaconych z własnej kieszeni.</text>' +
+      '<line x1="90" y1="' + footerY + '" x2="1150" y2="' + footerY + '" stroke="#dfe7ef"/>' +
+      '<text x="90" y="' + (footerY + 38) + '" font-family="' + font + '" font-size="11" fill="#7a8798">Dokument: ' + esc(data.invoiceNumber || formatDate(data.reportDate)) + '</text>' +
+      '<line x1="90" y1="' + signatureY + '" x2="420" y2="' + signatureY + '" stroke="#aeb9c6"/><line x1="650" y1="' + signatureY + '" x2="980" y2="' + signatureY + '" stroke="#aeb9c6"/>' +
+      '<text x="255" y="' + (signatureY + 24) + '" text-anchor="middle" font-family="' + font + '" font-size="11" fill="#7a8798">' + esc(partnerOne) + '</text>' +
+      '<text x="815" y="' + (signatureY + 24) + '" text-anchor="middle" font-family="' + font + '" font-size="11" fill="#7a8798">' + esc(partnerTwo) + '</text>' +
+      '<text x="90" y="' + (signatureY + 62) + '" font-family="' + font + '" font-size="10" fill="#9aa6b5">Wygenerowano w Aeroinstal</text>' +
+      '</svg>'
 
     try {
       setReportBusy(true)
@@ -8811,20 +8871,20 @@ function FinancePage({
           canvas.width = width
           canvas.height = height
           const ctx = canvas.getContext('2d')
-          ctx.fillStyle = '#f4f8fc'
+          ctx.fillStyle = '#ffffff'
           ctx.fillRect(0, 0, width, height)
           ctx.drawImage(image, 0, 0)
           URL.revokeObjectURL(url)
           canvas.toBlob(async (png) => {
             if (!png) throw new Error('PNG error')
-            const file = new File([png], 'rozliczenie-aeroinstal.png', { type: 'image/png' })
+            const file = new File([png], 'rozliczenie-wspolnikow.png', { type: 'image/png' })
             if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-              await navigator.share({ title: 'Rozliczenie Aeroinstal', files: [file] })
+              await navigator.share({ title: 'Rozliczenie wspólników', files: [file] })
             } else {
               const downloadUrl = URL.createObjectURL(png)
               const link = document.createElement('a')
               link.href = downloadUrl
-              link.download = 'rozliczenie-aeroinstal.png'
+              link.download = 'rozliczenie-wspolnikow.png'
               link.click()
               URL.revokeObjectURL(downloadUrl)
               await showCustomAlert('Grafika została przygotowana. Możesz ją wysłać na Messengerze.')
@@ -8850,44 +8910,44 @@ function FinancePage({
     }
   }
 
+
   const openDistributionPdf = (distribution = null) => {
     const data = getDistributionReportData(distribution)
     const esc = (value) => String(value ?? '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;')
 
+    const meta = [
+      data.invoiceNumber ? 'Faktura: ' + data.invoiceNumber : '',
+      data.paymentDateFrom ? 'Wpłata: ' + formatDate(data.paymentDateFrom) + (data.paymentDateTo && data.paymentDateTo !== data.paymentDateFrom ? '–' + formatDate(data.paymentDateTo) : '') : '',
+      data.costDateFrom ? 'Koszty: ' + formatDate(data.costDateFrom) + (data.costDateTo && data.costDateTo !== data.costDateFrom ? '–' + formatDate(data.costDateTo) : '') : '',
+      data.generatedDate ? 'Wygenerowano: ' + formatDate(data.generatedDate) : '',
+    ].filter(Boolean).join('   •   ')
+
     const paymentsHtml = data.payments.map((payment) =>
-      '<tr><td>' + esc(formatDate(payment.paidAt)) + '</td><td>' + esc(formatMoney(payment.amount)) + '</td></tr>'
+      '<tr><td>' + esc(formatDate(payment.paidAt)) + '</td><td class="money">' + esc(formatMoney(payment.amount)) + '</td></tr>'
     ).join('')
 
     const costsHtml = data.reportCosts.map((cost) =>
-      '<tr><td>' + esc(formatDate(cost.month)) + '</td><td>' + esc(cost.category || 'Inne') +
-      '</td><td>' + esc(cost.description || 'Bez opisu') + '</td><td>' + esc(cost.paidBy || '—') +
-      '</td><td>' + esc(formatMoney(cost.netAmount ?? cost.amount)) + '</td></tr>'
+      '<tr><td>' + esc(formatDate(cost.month)) + '</td><td>' + esc(cost.description || cost.category || 'Inne') +
+      '</td><td>' + esc(cost.paidBy || '—') + '</td><td class="money">' + esc(formatMoney(cost.netAmount ?? cost.amount)) + '</td></tr>'
     ).join('')
 
-    const html = '<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Rozliczenie Aeroinstal</title><style>' +
-      '*{box-sizing:border-box}body{margin:0;background:#f3f7fb;color:#101a33;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}' +
-      '.page{max-width:900px;margin:0 auto;padding:36px}.brand{font-weight:900;letter-spacing:3px;color:#118fe2;font-size:18px}' +
-      'h1{font-size:34px;margin:8px 0 4px}.date{color:#70829b;font-size:15px;margin-bottom:28px}.card{background:#fff;border:1px solid #dce8f2;border-radius:22px;padding:24px;margin:16px 0}' +
-      '.label{font-size:12px;letter-spacing:2px;color:#118fe2;font-weight:900}.big{font-size:30px;font-weight:900;margin-top:7px}' +
-      'table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #e8eef4;font-size:13px}th{color:#70829b}' +
-      '.tot{text-align:right;font-weight:900;font-size:17px;padding-top:14px}.shares{display:grid;grid-template-columns:1fr 1fr;gap:14px}.share{background:#f7fbff;border-radius:16px;padding:18px}.share span{display:block;color:#70829b;font-weight:700}.share strong{font-size:24px}' +
-      '.balance{margin-top:14px;padding:14px;border-radius:15px;background:#eaf6ff;color:#087fca;font-weight:800}.footer{margin-top:25px;color:#8a99ab;font-size:11px}@media print{body{background:#fff}.page{padding:0}.card{break-inside:avoid;box-shadow:none}}' +
-      '</style></head><body><main class="page"><div class="brand">AEROINSTAL</div><h1>Rozliczenie 50/50</h1>' +
-      '<div class="date">Data rozliczenia: ' + esc(formatDate(data.reportDate)) + '</div>' +
-      '<section class="card"><div class="label">WPŁATA</div><div class="big">' + esc(formatMoney(data.received)) + '</div>' +
-      '<table><thead><tr><th>Data</th><th>Kwota</th></tr></thead><tbody>' + (paymentsHtml || '<tr><td colspan="2">Brak wpłat</td></tr>') + '</tbody></table></section>' +
-      '<section class="card"><div class="label">KOSZTY</div><table><thead><tr><th>Data</th><th>Kategoria</th><th>Opis</th><th>Zapłacił</th><th>Kwota</th></tr></thead><tbody>' +
-      (costsHtml || '<tr><td colspan="5">Brak kosztów</td></tr>') + '</tbody></table><div class="tot">Razem koszty: ' + esc(formatMoney(data.costsTotal)) + '</div>' +
-      '<div class="shares" style="margin-top:16px"><div class="share"><span>Łącznie zapłacił ' + esc(partnerOne) +
-      '</span><strong>' + esc(formatMoney(data.lukaszCosts)) + '</strong></div><div class="share"><span>Łącznie zapłacił ' + esc(partnerTwo) +
-      '</span><strong>' + esc(formatMoney(data.pawelCosts)) + '</strong></div></div></section>' +
-      '<section class="card"><div class="label">PODZIAŁ 50/50 Z WPŁATY</div><div class="shares"><div class="share"><span>' + esc(partnerOne) +
-      '</span><strong>' + esc(formatMoney(data.lukaszShare)) + '</strong></div><div class="share"><span>' + esc(partnerTwo) +
-      '</span><strong>' + esc(formatMoney(data.pawelShare)) + '</strong></div></div>' +
-      (data.balance > 0.01 ? '<div class="balance">WYRÓWNANIE KOSZTÓW — ' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</div>' : '') +
-      '</section><div class="footer">Raport wygenerowany w aplikacji Aeroinstal.</div></main><script>window.onload=function(){window.focus();window.print()}</script></body></html>'
+    const html = '<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Rozliczenie wspólników</title><style>' +
+      '*{box-sizing:border-box}body{margin:0;background:#fff;color:#101a33;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.page{width:210mm;min-height:297mm;margin:0 auto;padding:24px;background:#fff}' +
+      '.logo{display:block;width:120px;height:auto;margin-bottom:18px}.brand-title{font-size:28px;line-height:1.15;font-weight:800;margin:0}.meta{font-size:13px;color:#7a8798;margin-top:8px;white-space:nowrap}.section{padding:20px 0;border-top:1px solid #dfe7ef}.first{margin-top:22px}.label{font-size:11px;letter-spacing:1.4px;color:#118fe2;font-weight:800}.payment{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-top:9px}.big{font-size:32px;font-weight:800}.muted{font-size:13px;color:#7a8798}.cost-table{width:100%;border-collapse:collapse;margin-top:14px}.cost-table th,.cost-table td{text-align:left;padding:9px 6px;border-bottom:1px solid #e8eef4;font-size:12px}.cost-table th{font-size:10px;color:#7a8798;font-weight:700}.cost-table .money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.total{display:flex;justify-content:flex-end;gap:24px;margin-top:12px;font-size:15px;font-weight:800}.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.tile{padding:14px;background:#f8fafc;border-radius:12px}.tile span{display:block;font-size:12px;color:#64748b}.tile strong{display:block;margin-top:5px;font-size:22px}.tile-note{margin-top:8px;font-size:12px;color:#7a8798}.payout{margin-top:12px;display:grid;gap:8px}.payout-row{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-radius:12px;background:#eaf4fd}.payout-row strong{font-size:22px;font-variant-numeric:tabular-nums}.balance{margin-top:11px;font-size:15px;font-weight:800;color:#118fe2}.note{margin-top:9px;font-size:12px;color:#7a8798}.footer{margin-top:25px;padding-top:18px;border-top:1px solid #dfe7ef;color:#7a8798;font-size:11px}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin-top:42px}.sig{border-top:1px solid #aeb9c6;text-align:center;padding-top:7px}.sig span{font-size:11px}.generated{margin-top:28px;color:#9aa6b5;font-size:10px}' +
+      '@media print{body{background:#fff}.page{width:210mm;min-height:297mm;padding:24px;margin:0;border-radius:0}.tile{border-radius:12px}}' +
+      '</style></head><body><main class="page">' +
+      '<img class="logo" src="' + esc(logo) + '" alt="Aeroinstal"/><h1 class="brand-title">Rozliczenie wspólników</h1><div class="meta">' + esc(meta) + '</div>' +
+      '<section class="section first"><div class="label">WPŁATA</div><div class="payment"><div class="big">' + esc(formatMoney(data.received)) + '</div><div class="muted">Faktycznie otrzymane</div></div></section>' +
+      '<section class="section"><div class="label">KOSZTY</div><table class="cost-table"><thead><tr><th>Data</th><th>Opis</th><th>Kto zapłacił</th><th class="money">Kwota</th></tr></thead><tbody>' +
+      (costsHtml || '<tr><td colspan="4">Brak kosztów</td></tr>') + '</tbody></table><div class="total"><span>Razem koszty</span><span>' + esc(formatMoney(data.costsTotal)) + '</span></div></section>' +
+      '<section class="section"><div class="label">KTO POKRYŁ KOSZTY</div><div class="tiles"><div class="tile"><span>' + esc(partnerOne) + '</span><strong>' + esc(formatMoney(data.lukaszCosts)) + '</strong></div><div class="tile"><span>' + esc(partnerTwo) + '</span><strong>' + esc(formatMoney(data.pawelCosts)) + '</strong></div></div><div class="tile-note">Łącznie koszty: ' + esc(formatMoney(data.costsTotal)) + '</div></section>' +
+      '<section class="section"><div class="label">DO WYPŁATY</div><div class="payout"><div class="payout-row"><span>' + esc(partnerOne) + '</span><strong>' + esc(formatMoney(data.lukaszShare)) + '</strong></div><div class="payout-row"><span>' + esc(partnerTwo) + '</span><strong>' + esc(formatMoney(data.pawelShare)) + '</strong></div></div>' +
+      (data.balance > 0.01 ? '<div class="balance">' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</div>' : '') +
+      '<div class="note">Połowa zysku każdy plus zwrot kosztów zapłaconych z własnej kieszeni.</div></section>' +
+      '<footer class="footer"><div>Dokument: ' + esc(data.invoiceNumber || formatDate(data.reportDate)) + '</div><div class="signatures"><div class="sig"><span>' + esc(partnerOne) + '</span></div><div class="sig"><span>' + esc(partnerTwo) + '</span></div></div><div class="generated">Wygenerowano w Aeroinstal</div></footer>' +
+      '</main><script>window.onload=function(){window.focus();window.print()}</script></body></html>'
 
     const printWindow = window.open('', '_blank')
     if (!printWindow) {
@@ -8898,6 +8958,7 @@ function FinancePage({
     printWindow.document.write(html)
     printWindow.document.close()
   }
+
 
   const handleReverseDistribution = async (distribution) => {
     if (!distribution?.id || distribution.status === 'reversed') return
@@ -9465,14 +9526,17 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
 
           <div className="finance-settlement-report">
             <div className="finance-report-actions">
-              <button type="button" className="finance-report-button" onClick={() => shareDistributionReport(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
-                📤 Tekst
+              <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
+                <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
+                Udostępnij
               </button>
-              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
-                🖼️ Grafika
+              <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
+                <Copy size={16} strokeWidth={1.8} aria-hidden="true" />
+                Kopiuj podsumowanie
               </button>
-              <button type="button" className="finance-report-button" onClick={() => openDistributionPdf(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
-                📄 PDF
+              <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
+                <Download size={16} strokeWidth={1.8} aria-hidden="true" />
+                Pobierz PDF
               </button>
             </div>
             <span>Po zapisaniu podziału raport zachowuje dokładnie jego wpłatę, koszty i daty.</span>
@@ -9542,9 +9606,9 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                             <div><span>{partnerTwo} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerTwo).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
                           </div>
                           <div className="finance-history-actions">
-                            <button type="button" onClick={() => shareDistributionReport(distribution)} disabled={reportBusy}>📤 Tekst</button>
-                            <button type="button" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}>🖼️ Grafika</button>
-                            <button type="button" onClick={() => openDistributionPdf(distribution)}>📄 PDF</button>
+                            <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Udostępnij</button>
+                            <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(distribution)} disabled={reportBusy}><Copy size={15} strokeWidth={1.8} aria-hidden="true" /> Kopiuj podsumowanie</button>
+                            <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(distribution)}><Download size={15} strokeWidth={1.8} aria-hidden="true" /> Pobierz PDF</button>
                             {distribution.status !== 'reversed' && (
                               <button type="button" className="finance-history-reverse" onClick={() => handleReverseDistribution(distribution)} disabled={settlementSaving}>↩️ Cofnij</button>
                             )}

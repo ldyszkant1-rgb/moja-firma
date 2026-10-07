@@ -7499,13 +7499,26 @@ function FinancePage({
     categoryOptions.length > 0
       ? categoryOptions
       : [{ name: 'Inne', enabled: true }]
-  const partnerNames = organizationMembers
-    .map((member) => String(member.display_name || member.email || '').trim())
+  // Podział zysku Aeroinstal pozostaje 50/50 między Łukaszem i Pawłem.
+  // Członkowie organization_members mogą chwilowo nie zawierać drugiego
+  // użytkownika trybu urządzeniowego, więc nie możemy uzależniać podziału
+  // zysku od samego rekordu członkostwa.
+  const configuredPartnerNames = [
+    settings?.users?.first || 'Łukasz',
+    settings?.users?.second || 'Paweł',
+  ]
+    .map((name) => String(name || '').trim())
+    .filter(Boolean)
+
+  const partnerNames = [
+    ...configuredPartnerNames,
+    ...organizationMembers.map((member) => String(member.display_name || member.email || '').trim()),
+  ]
     .filter(Boolean)
     .filter((name, index, list) => list.indexOf(name) === index)
 
-  const partnerOne = partnerNames[0] || ''
-  const partnerTwo = partnerNames[1] || ''
+  const partnerOne = partnerNames[0] || 'Łukasz'
+  const partnerTwo = partnerNames[1] || 'Paweł'
   const hasPartnerSettlement = Boolean(partnerOne && partnerTwo)
 
   const today = new Date()
@@ -7545,6 +7558,11 @@ function FinancePage({
         id: row.id,
         type: row.type,
         amount: Number(row.amount || 0),
+        amountBasis: row.amount_basis || null,
+        vatRate: row.vat_rate == null ? null : Number(row.vat_rate),
+        netAmount: row.net_amount == null ? Number(row.amount || 0) : Number(row.net_amount),
+        vatAmount: row.vat_amount == null ? 0 : Number(row.vat_amount),
+        grossAmount: row.gross_amount == null ? Number(row.amount || 0) : Number(row.gross_amount),
         category: row.category || null,
         month: row.month || null,
         description: row.description || '',
@@ -11319,23 +11337,47 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   })
 
   const loadPlans = async () => {
-    if (!organizationId) return
+    // Terminarz może być używany również w trybie anonimowego urządzenia.
+    // Lista planów jest zwracana przez zabezpieczone RPC na podstawie bieżącej
+    // sesji, więc brak lokalnie ustawionego organizationId nie może blokować
+    // odczytu godzin.
+    const loadRpcPlans = async () => {
+      const { data, error } = await supabase.rpc('list_calendar_plans', {
+        p_start_date: toDateString(gridStart),
+        p_end_date: toDateString(gridEnd),
+      })
 
-    // RPC jest głównym źródłem terminarza. Dodatkowo odczytujemy tabelę
-    // bezpośrednio i łączymy wyniki po ID, żeby godziny nie znikały przy
-    // chwilowym problemie z odświeżeniem RPC/RLS.
-    const { data: rpcPlans, error: rpcError } = await supabase.rpc('list_calendar_plans', {
-      p_start_date: toDateString(gridStart),
-      p_end_date: toDateString(gridEnd),
-    })
+      if (!error) return { data: data || [], error: null }
 
-    const { data: directPlans, error: directError } = await supabase
-      .from('calendar_plans')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .gte('plan_date', toDateString(gridStart))
-      .lte('plan_date', toDateString(gridEnd))
-      .order('plan_date', { ascending: true })
+      await new Promise((resolve) => window.setTimeout(resolve, 180))
+
+      const retry = await supabase.rpc('list_calendar_plans', {
+        p_start_date: toDateString(gridStart),
+        p_end_date: toDateString(gridEnd),
+      })
+
+      return { data: retry.data || [], error: retry.error || error }
+    }
+
+    const { data: rpcPlans, error: rpcError } = await loadRpcPlans()
+
+    let directPlans = []
+    let directError = null
+
+    // Bezpośredni SELECT jest tylko dodatkowym źródłem, gdy mamy identyfikator
+    // organizacji. RPC pozostaje źródłem podstawowym.
+    if (organizationId) {
+      const direct = await supabase
+        .from('calendar_plans')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .gte('plan_date', toDateString(gridStart))
+        .lte('plan_date', toDateString(gridEnd))
+        .order('plan_date', { ascending: true })
+
+      directPlans = direct.data || []
+      directError = direct.error || null
+    }
 
     if (rpcError && directError) {
       console.error('Nie udało się wczytać terminarza:', rpcError, directError)
@@ -11347,6 +11389,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       if (plan?.id) mergedPlans.set(String(plan.id), plan)
     })
     setPlans(Array.from(mergedPlans.values()))
+
+    if (!organizationId) {
+      setCalendarExclusions([])
+      return
+    }
 
     const { data: exclusions, error: exclusionsError } = await supabase.rpc('list_calendar_job_exclusions', {
       p_organization_id: organizationId,

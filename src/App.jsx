@@ -7618,6 +7618,7 @@ function FinancePage({
   })
   const [settlementSaving, setSettlementSaving] = useState(false)
   const [reportBusy, setReportBusy] = useState(false)
+  const [reportDistribution, setReportDistribution] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -8675,6 +8676,186 @@ function FinancePage({
     }
   }
 
+  const getDistributionReportData = (distribution = null) => {
+    const paymentIds = distribution?.paymentIds?.length
+      ? distribution.paymentIds
+      : unallocatedPayments.map((payment) => payment.id)
+    const costIds = distribution?.costIds?.length
+      ? distribution.costIds
+      : costsForCurrentDistribution.map((cost) => cost.id)
+
+    const paymentIdSet = new Set(paymentIds.map(String))
+    const costIdSet = new Set(costIds.map(String))
+    const payments = allJobPayments
+      .filter((payment) => paymentIdSet.has(String(payment.id)))
+      .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
+    const reportCosts = costs
+      .filter((cost) => costIdSet.has(String(cost.id)))
+      .sort((a, b) => String(a.month || '').localeCompare(String(b.month || '')))
+
+    const received = Number(distribution?.receivedNet ?? unallocatedReceivedNet ?? 0)
+    const lukaszShare = Number(distribution?.lukaszShare ?? partnerOneSplitAmount ?? 0)
+    const pawelShare = Number(distribution?.pawelShare ?? partnerTwoSplitAmount ?? 0)
+    const costsTotal = Number(
+      distribution?.costsNet ??
+      reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+    )
+
+    return {
+      reportDate: distribution?.distributionDate || getTodayString(),
+      payments,
+      reportCosts,
+      received,
+      costsTotal,
+      lukaszShare,
+      pawelShare,
+      balance: Math.abs(lukaszShare - pawelShare),
+      balanceDirection: lukaszShare > pawelShare
+        ? partnerTwo + ' oddaje ' + partnerOne
+        : partnerOne + ' oddaje ' + partnerTwo,
+    }
+  }
+
+  const shareDistributionGraphic = async (distribution = null) => {
+    const data = getDistributionReportData(distribution)
+    const width = 1080
+    const rowHeight = 82
+    const height = Math.max(820, 620 + data.reportCosts.length * rowHeight)
+    const esc = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+
+    const costRows = data.reportCosts.map((cost, index) => {
+      const y = 330 + index * rowHeight
+      const description = cost.description || cost.category || 'Inne'
+      return '<text x="85" y="' + y + '" font-size="23" fill="#6f8198">' + esc(formatDate(cost.month)) +
+        '</text><text x="235" y="' + y + '" font-size="23" font-weight="700" fill="#111b34">' +
+        esc(description) + '</text><text x="700" y="' + y + '" font-size="23" fill="#6f8198">' +
+        esc(cost.paidBy || '—') + '</text><text x="990" y="' + y + '" text-anchor="end" font-size="23" font-weight="800" fill="#111b34">' +
+        esc(formatMoney(cost.netAmount ?? cost.amount)) + '</text>'
+    }).join('')
+
+    const dividerY = 355 + data.reportCosts.length * rowHeight
+    const splitY = dividerY + 80
+    const balanceBlock = data.balance > 0.01
+      ? '<rect x="75" y="' + (splitY + 105) + '" width="930" height="65" rx="16" fill="#eaf6ff"/>' +
+        '<text x="100" y="' + (splitY + 147) + '" font-size="22" font-weight="800" fill="#087fca">' +
+        esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</text>'
+      : ''
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">' +
+      '<rect width="100%" height="100%" rx="42" fill="#f4f8fc"/><rect x="35" y="35" width="1010" height="' + (height - 70) + '" rx="34" fill="#fff"/>' +
+      '<text x="75" y="100" font-family="Arial,sans-serif" font-size="22" font-weight="900" letter-spacing="5" fill="#118fe2">AEROINSTAL</text>' +
+      '<text x="75" y="160" font-family="Arial,sans-serif" font-size="42" font-weight="900" fill="#101a33">Rozliczenie 50/50</text>' +
+      '<text x="75" y="198" font-family="Arial,sans-serif" font-size="21" fill="#71839a">Data: ' + esc(formatDate(data.reportDate)) + '</text>' +
+      '<rect x="75" y="225" width="930" height="72" rx="18" fill="#eef8ff"/><text x="100" y="255" font-size="17" font-weight="900" fill="#118fe2">WPŁATA</text>' +
+      '<text x="100" y="282" font-size="29" font-weight="900" fill="#101a33">' + esc(formatMoney(data.received)) + '</text>' +
+      '<text x="75" y="318" font-size="17" font-weight="900" fill="#118fe2">KOSZTY</text>' + costRows +
+      '<line x1="75" y1="' + dividerY + '" x2="1005" y2="' + dividerY + '" stroke="#dfe8f1"/>' +
+      '<text x="75" y="' + (splitY + 5) + '" font-size="17" font-weight="900" fill="#118fe2">PODZIAŁ</text>' +
+      '<text x="75" y="' + (splitY + 48) + '" font-size="24" fill="#6f8198">' + esc(partnerOne) + '</text>' +
+      '<text x="500" y="' + (splitY + 48) + '" font-size="28" font-weight="900" fill="#111b34">' + esc(formatMoney(data.lukaszShare)) + '</text>' +
+      '<text x="75" y="' + (splitY + 91) + '" font-size="24" fill="#6f8198">' + esc(partnerTwo) + '</text>' +
+      '<text x="500" y="' + (splitY + 91) + '" font-size="28" font-weight="900" fill="#111b34">' + esc(formatMoney(data.pawelShare)) + '</text>' +
+      balanceBlock + '</svg>'
+
+    try {
+      setReportBusy(true)
+      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
+      const image = new Image()
+      image.onload = async () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.fillStyle = '#f4f8fc'
+          ctx.fillRect(0, 0, width, height)
+          ctx.drawImage(image, 0, 0)
+          URL.revokeObjectURL(url)
+          canvas.toBlob(async (png) => {
+            if (!png) throw new Error('PNG error')
+            const file = new File([png], 'rozliczenie-aeroinstal.png', { type: 'image/png' })
+            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+              await navigator.share({ title: 'Rozliczenie Aeroinstal', files: [file] })
+            } else {
+              const downloadUrl = URL.createObjectURL(png)
+              const link = document.createElement('a')
+              link.href = downloadUrl
+              link.download = 'rozliczenie-aeroinstal.png'
+              link.click()
+              URL.revokeObjectURL(downloadUrl)
+              await showCustomAlert('Grafika została przygotowana. Możesz ją wysłać na Messengerze.')
+            }
+            setReportBusy(false)
+          }, 'image/png')
+        } catch (error) {
+          console.error(error)
+          setReportBusy(false)
+          await showCustomAlert('Nie udało się przygotować grafiki.')
+        }
+      }
+      image.onerror = async () => {
+        URL.revokeObjectURL(url)
+        setReportBusy(false)
+        await showCustomAlert('Nie udało się przygotować grafiki.')
+      }
+      image.src = url
+    } catch (error) {
+      console.error(error)
+      setReportBusy(false)
+      await showCustomAlert('Nie udało się przygotować grafiki.')
+    }
+  }
+
+  const openDistributionPdf = (distribution = null) => {
+    const data = getDistributionReportData(distribution)
+    const esc = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;')
+
+    const paymentsHtml = data.payments.map((payment) =>
+      '<tr><td>' + esc(formatDate(payment.paidAt)) + '</td><td>' + esc(formatMoney(payment.amount)) + '</td></tr>'
+    ).join('')
+
+    const costsHtml = data.reportCosts.map((cost) =>
+      '<tr><td>' + esc(formatDate(cost.month)) + '</td><td>' + esc(cost.category || 'Inne') +
+      '</td><td>' + esc(cost.description || 'Bez opisu') + '</td><td>' + esc(cost.paidBy || '—') +
+      '</td><td>' + esc(formatMoney(cost.netAmount ?? cost.amount)) + '</td></tr>'
+    ).join('')
+
+    const html = '<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Rozliczenie Aeroinstal</title><style>' +
+      '*{box-sizing:border-box}body{margin:0;background:#f3f7fb;color:#101a33;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}' +
+      '.page{max-width:900px;margin:0 auto;padding:36px}.brand{font-weight:900;letter-spacing:3px;color:#118fe2;font-size:18px}' +
+      'h1{font-size:34px;margin:8px 0 4px}.date{color:#70829b;font-size:15px;margin-bottom:28px}.card{background:#fff;border:1px solid #dce8f2;border-radius:22px;padding:24px;margin:16px 0}' +
+      '.label{font-size:12px;letter-spacing:2px;color:#118fe2;font-weight:900}.big{font-size:30px;font-weight:900;margin-top:7px}' +
+      'table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #e8eef4;font-size:13px}th{color:#70829b}' +
+      '.tot{text-align:right;font-weight:900;font-size:17px;padding-top:14px}.shares{display:grid;grid-template-columns:1fr 1fr;gap:14px}.share{background:#f7fbff;border-radius:16px;padding:18px}.share span{display:block;color:#70829b;font-weight:700}.share strong{font-size:24px}' +
+      '.balance{margin-top:14px;padding:14px;border-radius:15px;background:#eaf6ff;color:#087fca;font-weight:800}.footer{margin-top:25px;color:#8a99ab;font-size:11px}@media print{body{background:#fff}.page{padding:0}.card{break-inside:avoid;box-shadow:none}}' +
+      '</style></head><body><main class="page"><div class="brand">AEROINSTAL</div><h1>Rozliczenie 50/50</h1>' +
+      '<div class="date">Data rozliczenia: ' + esc(formatDate(data.reportDate)) + '</div>' +
+      '<section class="card"><div class="label">WPŁATA</div><div class="big">' + esc(formatMoney(data.received)) + '</div>' +
+      '<table><thead><tr><th>Data</th><th>Kwota</th></tr></thead><tbody>' + (paymentsHtml || '<tr><td colspan="2">Brak wpłat</td></tr>') + '</tbody></table></section>' +
+      '<section class="card"><div class="label">KOSZTY</div><table><thead><tr><th>Data</th><th>Kategoria</th><th>Opis</th><th>Zapłacił</th><th>Kwota</th></tr></thead><tbody>' +
+      (costsHtml || '<tr><td colspan="5">Brak kosztów</td></tr>') + '</tbody></table><div class="tot">Razem koszty: ' + esc(formatMoney(data.costsTotal)) + '</div></section>' +
+      '<section class="card"><div class="label">PODZIAŁ 50/50</div><div class="shares"><div class="share"><span>' + esc(partnerOne) +
+      '</span><strong>' + esc(formatMoney(data.lukaszShare)) + '</strong></div><div class="share"><span>' + esc(partnerTwo) +
+      '</span><strong>' + esc(formatMoney(data.pawelShare)) + '</strong></div></div>' +
+      (data.balance > 0.01 ? '<div class="balance">' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</div>' : '') +
+      '</section><div class="footer">Raport wygenerowany w aplikacji Aeroinstal.</div></main><script>window.onload=function(){window.focus();window.print()}</script></body></html>'
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      showCustomAlert('Przeglądarka zablokowała raport. Zezwól na wyskakujące okna.')
+      return
+    }
+    printWindow.document.open()
+    printWindow.document.write(html)
+    printWindow.document.close()
+  }
+
   const distributeAvailableProfit = async () => {
     if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
       await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
@@ -8714,6 +8895,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           ? current.map((item) => item.id === saved.id ? saved : item)
           : [saved, ...current]
       )
+      setReportDistribution(saved)
 
       await showCustomAlert(
         `Podział zapisany: ${partnerOne} ${formatMoney(saved.lukaszShare)}, ${partnerTwo} ${formatMoney(saved.pawelShare)}.`
@@ -9213,15 +9395,18 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           )}
 
           <div className="finance-settlement-report">
-            <button
-              type="button"
-              className="finance-report-button"
-              onClick={() => shareDistributionReport()}
-              disabled={reportBusy || splitTotal <= 0.01}
-            >
-              {reportBusy ? 'Przygotowuję raport…' : '📤 Wyślij rozliczenie'}
-            </button>
-            <span>Gotowy tekst z datami wpłat i kosztów do wysłania na Messengerze.</span>
+            <div className="finance-report-actions">
+              <button type="button" className="finance-report-button" onClick={() => shareDistributionReport(reportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
+                📤 Tekst
+              </button>
+              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(reportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
+                🖼️ Grafika
+              </button>
+              <button type="button" className="finance-report-button" onClick={() => openDistributionPdf(reportDistribution)} disabled={!reportDistribution && splitTotal <= 0.01}>
+                📄 PDF
+              </button>
+            </div>
+            <span>Po zapisaniu podziału raport zachowuje dokładnie jego wpłatę, koszty i daty.</span>
           </div>
 
           <div className="finance-settlement-actions">

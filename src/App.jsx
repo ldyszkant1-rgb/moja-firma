@@ -8298,17 +8298,32 @@ function FinancePage({
     0
   )
 
-  const unallocatedPartnerOneCosts = unallocatedCosts
+  // Koszt oznaczamy jako rozliczony dopiero wtedy, gdy bieżąca wpłata
+  // wystarcza na pokrycie całej puli nierozliczonych kosztów.
+  // Dzięki temu przy zbyt małej wpłacie saldo kosztów zostaje na kolejny podział.
+  const canSettleAllUnallocatedCosts =
+    unallocatedCostsNet <= unallocatedReceivedNet + 0.01
+
+  const costsForCurrentDistribution = canSettleAllUnallocatedCosts
+    ? unallocatedCosts
+    : []
+
+  const costsForCurrentDistributionNet = costsForCurrentDistribution.reduce(
+    (sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0),
+    0
+  )
+
+  const partnerOneCostsForCurrentDistribution = costsForCurrentDistribution
     .filter((cost) => cost.paidBy === partnerOne)
     .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
 
-  const unallocatedPartnerTwoCosts = unallocatedCosts
+  const partnerTwoCostsForCurrentDistribution = costsForCurrentDistribution
     .filter((cost) => cost.paidBy === partnerTwo)
     .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
 
   // Koszty nie pomniejszają przelewu. Korygują wyłącznie bazowe 50/50.
   const unallocatedCostBalance =
-    (unallocatedPartnerOneCosts - unallocatedPartnerTwoCosts) / 2
+    (partnerOneCostsForCurrentDistribution - partnerTwoCostsForCurrentDistribution) / 2
 
   // Bazą jest pełna otrzymana kwota.
   const splitTotal = unallocatedReceivedNet
@@ -8566,12 +8581,12 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
       const saved = await createProfitDistribution({
         distributionDate: getTodayString(),
         receivedNet: unallocatedReceivedNet,
-        costsNet: unallocatedCostsNet,
+        costsNet: costsForCurrentDistributionNet,
         profit: unallocatedReceivedNet,
         lukaszShare: partnerOneSplitAmount,
         pawelShare: partnerTwoSplitAmount,
         paymentIds: unallocatedPayments.map((payment) => payment.id),
-        costIds: unallocatedCosts.map((cost) => cost.id),
+        costIds: costsForCurrentDistribution.map((cost) => cost.id),
         note: 'Podział 50/50 z korektą kosztów zapłaconych przez wspólników',
       })
 

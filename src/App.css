@@ -7555,6 +7555,29 @@ body {
   opacity: .55;
 }
 
+.finance-page .finance-report-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.finance-page .finance-report-button {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cfe5f7;
+  border-radius: 12px;
+  background: #eef8ff;
+  color: #087fca;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-page .finance-report-button:disabled {
+  opacity: .5;
+}
+
 .finance-page .finance-settlement-report span {
   color: #7a8ba0;
   font-size: 10px;

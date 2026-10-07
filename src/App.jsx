@@ -8719,6 +8719,13 @@ function FinancePage({
       distribution?.costsNet ??
       reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     )
+    const lukaszCosts = reportCosts
+      .filter((cost) => cost.paidBy === partnerOne)
+      .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+    const pawelCosts = reportCosts
+      .filter((cost) => cost.paidBy === partnerTwo)
+      .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+    const costBalance = (lukaszCosts - pawelCosts) / 2
 
     return {
       reportDate: distribution?.distributionDate || getTodayString(),
@@ -8726,12 +8733,16 @@ function FinancePage({
       reportCosts,
       received,
       costsTotal,
+      lukaszCosts,
+      pawelCosts,
       lukaszShare,
       pawelShare,
-      balance: Math.abs(lukaszShare - pawelShare),
-      balanceDirection: lukaszShare > pawelShare
+      balance: Math.abs(costBalance),
+      balanceDirection: costBalance > 0.01
         ? partnerTwo + ' oddaje ' + partnerOne
-        : partnerOne + ' oddaje ' + partnerTwo,
+        : costBalance < -0.01
+          ? partnerOne + ' oddaje ' + partnerTwo
+          : 'Brak dodatkowego wyrównania kosztów',
     }
   }
 
@@ -8739,7 +8750,7 @@ function FinancePage({
     const data = getDistributionReportData(distribution)
     const width = 1080
     const rowHeight = 82
-    const height = Math.max(820, 620 + data.reportCosts.length * rowHeight)
+    const height = Math.max(980, 850 + data.reportCosts.length * rowHeight)
     const esc = (value) => String(value ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -8757,12 +8768,14 @@ function FinancePage({
     }).join('')
 
     const dividerY = 355 + data.reportCosts.length * rowHeight
-    const splitY = dividerY + 80
+    const costSummaryY = dividerY + 55
+    const splitY = dividerY + 235
     const balanceBlock = data.balance > 0.01
-      ? '<rect x="75" y="' + (splitY + 105) + '" width="930" height="65" rx="16" fill="#eaf6ff"/>' +
-        '<text x="100" y="' + (splitY + 147) + '" font-size="22" font-weight="800" fill="#087fca">' +
+      ? '<rect x="75" y="' + (splitY + 125) + '" width="930" height="72" rx="16" fill="#eaf6ff"/>' +
+        '<text x="100" y="' + (splitY + 155) + '" font-size="17" font-weight="900" fill="#087fca">WYRÓWNANIE KOSZTÓW</text>' +
+        '<text x="100" y="' + (splitY + 184) + '" font-size="23" font-weight="800" fill="#101a33">' +
         esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</text>'
-      : ''
+      : '<text x="75" y="' + (splitY + 145) + '" font-size="21" font-weight="700" fill="#6f8198">Brak dodatkowego wyrównania kosztów</text>'
 
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">' +
       '<rect width="100%" height="100%" rx="42" fill="#f4f8fc"/><rect x="35" y="35" width="1010" height="' + (height - 70) + '" rx="34" fill="#fff"/>' +
@@ -8773,7 +8786,15 @@ function FinancePage({
       '<text x="100" y="282" font-size="29" font-weight="900" fill="#101a33">' + esc(formatMoney(data.received)) + '</text>' +
       '<text x="75" y="318" font-size="17" font-weight="900" fill="#118fe2">KOSZTY</text>' + costRows +
       '<line x1="75" y1="' + dividerY + '" x2="1005" y2="' + dividerY + '" stroke="#dfe8f1"/>' +
-      '<text x="75" y="' + (splitY + 5) + '" font-size="17" font-weight="900" fill="#118fe2">PODZIAŁ</text>' +
+      '<text x="75" y="' + costSummaryY + '" font-size="17" font-weight="900" fill="#118fe2">KTO POKRYŁ KOSZTY</text>' +
+      '<rect x="75" y="' + (costSummaryY + 18) + '" width="445" height="82" rx="18" fill="#f7fbff"/>' +
+      '<rect x="560" y="' + (costSummaryY + 18) + '" width="445" height="82" rx="18" fill="#f7fbff"/>' +
+      '<text x="100" y="' + (costSummaryY + 52) + '" font-size="20" font-weight="700" fill="#6f8198">' + esc(partnerOne) + '</text>' +
+      '<text x="100" y="' + (costSummaryY + 84) + '" font-size="27" font-weight="900" fill="#111b34">' + esc(formatMoney(data.lukaszCosts)) + '</text>' +
+      '<text x="585" y="' + (costSummaryY + 52) + '" font-size="20" font-weight="700" fill="#6f8198">' + esc(partnerTwo) + '</text>' +
+      '<text x="585" y="' + (costSummaryY + 84) + '" font-size="27" font-weight="900" fill="#111b34">' + esc(formatMoney(data.pawelCosts)) + '</text>' +
+      '<text x="75" y="' + (costSummaryY + 128) + '" font-size="19" font-weight="800" fill="#6f8198">Łącznie koszty: ' + esc(formatMoney(data.costsTotal)) + '</text>' +
+      '<text x="75" y="' + (splitY + 5) + '" font-size="17" font-weight="900" fill="#118fe2">PODZIAŁ 50/50 Z WPŁATY</text>' +
       '<text x="75" y="' + (splitY + 48) + '" font-size="24" fill="#6f8198">' + esc(partnerOne) + '</text>' +
       '<text x="500" y="' + (splitY + 48) + '" font-size="28" font-weight="900" fill="#111b34">' + esc(formatMoney(data.lukaszShare)) + '</text>' +
       '<text x="75" y="' + (splitY + 91) + '" font-size="24" fill="#6f8198">' + esc(partnerTwo) + '</text>' +
@@ -8858,11 +8879,14 @@ function FinancePage({
       '<section class="card"><div class="label">WPŁATA</div><div class="big">' + esc(formatMoney(data.received)) + '</div>' +
       '<table><thead><tr><th>Data</th><th>Kwota</th></tr></thead><tbody>' + (paymentsHtml || '<tr><td colspan="2">Brak wpłat</td></tr>') + '</tbody></table></section>' +
       '<section class="card"><div class="label">KOSZTY</div><table><thead><tr><th>Data</th><th>Kategoria</th><th>Opis</th><th>Zapłacił</th><th>Kwota</th></tr></thead><tbody>' +
-      (costsHtml || '<tr><td colspan="5">Brak kosztów</td></tr>') + '</tbody></table><div class="tot">Razem koszty: ' + esc(formatMoney(data.costsTotal)) + '</div></section>' +
-      '<section class="card"><div class="label">PODZIAŁ 50/50</div><div class="shares"><div class="share"><span>' + esc(partnerOne) +
+      (costsHtml || '<tr><td colspan="5">Brak kosztów</td></tr>') + '</tbody></table><div class="tot">Razem koszty: ' + esc(formatMoney(data.costsTotal)) + '</div>' +
+      '<div class="shares" style="margin-top:16px"><div class="share"><span>Łącznie zapłacił ' + esc(partnerOne) +
+      '</span><strong>' + esc(formatMoney(data.lukaszCosts)) + '</strong></div><div class="share"><span>Łącznie zapłacił ' + esc(partnerTwo) +
+      '</span><strong>' + esc(formatMoney(data.pawelCosts)) + '</strong></div></div></section>' +
+      '<section class="card"><div class="label">PODZIAŁ 50/50 Z WPŁATY</div><div class="shares"><div class="share"><span>' + esc(partnerOne) +
       '</span><strong>' + esc(formatMoney(data.lukaszShare)) + '</strong></div><div class="share"><span>' + esc(partnerTwo) +
       '</span><strong>' + esc(formatMoney(data.pawelShare)) + '</strong></div></div>' +
-      (data.balance > 0.01 ? '<div class="balance">' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</div>' : '') +
+      (data.balance > 0.01 ? '<div class="balance">WYRÓWNANIE KOSZTÓW — ' + esc(data.balanceDirection) + ': ' + esc(formatMoney(data.balance)) + '</div>' : '') +
       '</section><div class="footer">Raport wygenerowany w aplikacji Aeroinstal.</div></main><script>window.onload=function(){window.focus();window.print()}</script></body></html>'
 
     const printWindow = window.open('', '_blank')

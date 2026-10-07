@@ -8599,6 +8599,29 @@ function FinancePage({
 
     const reportDate = distribution?.distributionDate || getTodayString()
 
+    const reportPartnerOneCosts = reportCosts
+      .filter((cost) => cost.paidBy === partnerOne)
+      .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+
+    const reportPartnerTwoCosts = reportCosts
+      .filter((cost) => cost.paidBy === partnerTwo)
+      .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+
+    // To jest faktyczne wyrównanie kosztów między wspólnikami.
+    // Nie wolno go mylić z różnicą między końcowymi udziałami z wpłaty,
+    // która jest dwa razy większa.
+    const reportCostBalance =
+      (reportPartnerOneCosts - reportPartnerTwoCosts) / 2
+
+    const reportBalanceDirection =
+      reportCostBalance > 0.01
+        ? partnerTwo + ' oddaje ' + partnerOne
+        : reportCostBalance < -0.01
+          ? partnerOne + ' oddaje ' + partnerTwo
+          : 'Brak dodatkowego wyrównania kosztów'
+
+    const reportBalanceAmount = Math.abs(reportCostBalance)
+
     return [
       'ROZLICZENIE AEROINSTAL',
       'Data rozliczenia: ' + formatDate(reportDate),
@@ -8615,9 +8638,9 @@ function FinancePage({
       partnerOne + ': ' + formatMoney(lukaszShare),
       partnerTwo + ': ' + formatMoney(pawelShare),
       '',
-      Math.abs(lukaszShare - pawelShare) > 0.01
-        ? partnerTwo + ' oddaje ' + partnerOne + ': ' + formatMoney(Math.abs(lukaszShare - pawelShare))
-        : 'Podział po równo: ' + formatMoney(lukaszShare) + ' na osobę',
+      reportBalanceAmount > 0.01
+        ? reportBalanceDirection + ': ' + formatMoney(reportBalanceAmount)
+        : 'Brak dodatkowego wyrównania kosztów',
     ].join('\n')
   }
 

@@ -10163,7 +10163,7 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteDeletedJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteClients] = await Promise.all([
+      const [remoteJobs, remoteDeletedJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteProfitDistributions, remoteClients] = await Promise.all([
         getJobs(),
         getDeletedJobs(),
         getOffers(),
@@ -10172,6 +10172,7 @@ function SettingsPage({
         getAllJobPayments(),
         getPartnerSettlements(),
         getPartnerTransfers(),
+        getProfitDistributions(),
         getClients(),
       ])
 
@@ -10192,7 +10193,8 @@ function SettingsPage({
         jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
         partnerSettlements: Array.isArray(remotePartnerSettlements) ? remotePartnerSettlements : [],
         partnerTransfers: Array.isArray(remotePartnerTransfers) ? remotePartnerTransfers : [],
-        note: 'Kopia zawiera dane aplikacji, klientów, płatności i rozliczenia wspólników. Zdjęcia i dokumenty pozostają w Supabase Storage.',
+        profitDistributions: Array.isArray(remoteProfitDistributions) ? remoteProfitDistributions : [],
+        note: 'Kopia zawiera dane aplikacji, klientów, płatności, podziały zysku i rozliczenia wspólników. Zdjęcia i dokumenty pozostają w Supabase Storage.',
       }
 
       const blob = new Blob(
@@ -10450,6 +10452,29 @@ function SettingsPage({
           .from('partner_transfers')
           .upsert(transferRows, { onConflict: 'id' })
         if (transferError) throw transferError
+      }
+
+      const profitDistributionRows = (backup.profitDistributions || []).map((item) => ({
+        id: item.id,
+        organization_id: authOrganizationId,
+        distribution_date: item.distributionDate || getTodayString(),
+        received_net: Number(item.receivedNet || 0),
+        costs_net: Number(item.costsNet || 0),
+        profit: Number(item.profit || 0),
+        lukasz_share: Number(item.lukaszShare || 0),
+        pawel_share: Number(item.pawelShare || 0),
+        payment_ids: Array.isArray(item.paymentIds) ? item.paymentIds : [],
+        cost_ids: Array.isArray(item.costIds) ? item.costIds : [],
+        note: item.note || null,
+        created_at: item.createdAt || undefined,
+      }))
+
+      if (profitDistributionRows.length > 0) {
+        const { error: profitDistributionError } = await supabase
+          .from('profit_distributions')
+          .upsert(profitDistributionRows, { onConflict: 'id' })
+
+        if (profitDistributionError) throw profitDistributionError
       }
 
       if (Array.isArray(backup.generalReminders) && backup.generalReminders.length > 0) {

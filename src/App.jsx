@@ -8334,8 +8334,7 @@ function FinancePage({
   )
 
   // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
-  // wpłaty i koszty. Dzięki temu ZUS rozliczony przy pierwszym podziale
-  // nie zostanie odjęty ponownie przy następnym przelewie.
+  // wpłaty i koszty. Dzięki temu ten sam koszt nie zostanie rozliczony drugi raz.
   const unallocatedPayments = allJobPayments.filter(
     (payment) => !distributedPaymentIds.has(String(payment.id))
   )
@@ -8352,8 +8351,25 @@ function FinancePage({
     0
   )
 
-  const splitTotal = Math.max(0, unallocatedReceivedNet - unallocatedCostsNet)
-  const splitAmount = splitTotal / 2
+  const unallocatedPartnerOneCosts = unallocatedCosts
+    .filter((cost) => cost.paidBy === partnerOne)
+    .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+
+  const unallocatedPartnerTwoCosts = unallocatedCosts
+    .filter((cost) => cost.paidBy === partnerTwo)
+    .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+
+  // Koszty nie pomniejszają przelewu. Korygują wyłącznie bazowe 50/50.
+  const unallocatedCostBalance =
+    (unallocatedPartnerOneCosts - unallocatedPartnerTwoCosts) / 2
+
+  // Bazą jest pełna otrzymana kwota.
+  const splitTotal = unallocatedReceivedNet
+  const splitAmount = unallocatedReceivedNet / 2
+  const partnerOneSplitAmount =
+    Math.round((splitAmount + unallocatedCostBalance) * 100) / 100
+  const partnerTwoSplitAmount =
+    Math.round((unallocatedReceivedNet - partnerOneSplitAmount) * 100) / 100
 
   // Spływ płatności liczymy w tej samej bazie co należności:
   // netto. Dzięki temu wpłata brutto nie może sztucznie zawyżyć wskaźnika
@@ -8579,20 +8595,20 @@ function FinancePage({
   }
 
   const distributeAvailableProfit = async () => {
-    if (splitAmount <= 0.01) {
-      await showCustomAlert('Brak pieniędzy do podziału po uwzględnieniu nowych kosztów.')
+    if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
+      await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
       return
     }
 
     const confirmed = await showCustomConfirm(
       `Podzielić ${formatMoney(splitTotal)}?
-      
-Otrzymane netto: ${formatMoney(unallocatedReceivedNet)}
-Nowe koszty: ${formatMoney(unallocatedCostsNet)}
-Do podziału: ${formatMoney(splitTotal)}
 
-Łukasz: ${formatMoney(splitAmount)}
-Paweł: ${formatMoney(splitAmount)}`
+Bazowo 50/50: ${formatMoney(splitAmount)} na osobę
+Nierozliczone koszty: ${formatMoney(unallocatedCostsNet)}
+Saldo kosztów: ${formatMoney(Math.abs(unallocatedCostBalance))}
+
+${partnerOne}: ${formatMoney(partnerOneSplitAmount)}
+${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     )
 
     if (!confirmed) return
@@ -8604,18 +8620,22 @@ Paweł: ${formatMoney(splitAmount)}`
         distributionDate: getTodayString(),
         receivedNet: unallocatedReceivedNet,
         costsNet: unallocatedCostsNet,
-        profit: splitTotal,
-        lukaszShare: splitAmount,
-        pawelShare: splitAmount,
+        profit: unallocatedReceivedNet,
+        lukaszShare: partnerOneSplitAmount,
+        pawelShare: partnerTwoSplitAmount,
         paymentIds: unallocatedPayments.map((payment) => payment.id),
         costIds: unallocatedCosts.map((cost) => cost.id),
-        note: 'Podział pieniędzy po uwzględnieniu nowych kosztów',
+        note: 'Podział 50/50 z korektą kosztów zapłaconych przez wspólników',
       })
 
-      setProfitDistributions((current) => [...current, saved])
+      setProfitDistributions((current) =>
+        current.some((item) => item.id === saved.id)
+          ? current.map((item) => item.id === saved.id ? saved : item)
+          : [saved, ...current]
+      )
 
       await showCustomAlert(
-        `Podział zapisany: Łukasz ${formatMoney(splitAmount)}, Paweł ${formatMoney(splitAmount)}.`
+        `Podział zapisany: ${partnerOne} ${formatMoney(saved.lukaszShare)}, ${partnerTwo} ${formatMoney(saved.pawelShare)}.`
       )
     } catch (error) {
       console.error('Nie udało się zapisać podziału pieniędzy:', error)

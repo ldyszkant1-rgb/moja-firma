@@ -8275,6 +8275,12 @@ function FinancePage({
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
   const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
 
+  const latestSavedDistribution = [...profitDistributions]
+    .filter((item) => Number(item.receivedNet || 0) > 0.01 || Number(item.profit || 0) > 0.01)
+    .sort((a, b) => String(b.distributionDate || '').localeCompare(String(a.distributionDate || '')))[0] || null
+
+  const activeReportDistribution = reportDistribution || latestSavedDistribution
+
   const distributedPaymentIds = new Set(
     profitDistributions.flatMap((item) => item.paymentIds || []).map(String)
   )
@@ -9396,13 +9402,13 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
 
           <div className="finance-settlement-report">
             <div className="finance-report-actions">
-              <button type="button" className="finance-report-button" onClick={() => shareDistributionReport(reportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
+              <button type="button" className="finance-report-button" onClick={() => shareDistributionReport(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 📤 Tekst
               </button>
-              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(reportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
+              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
                 🖼️ Grafika
               </button>
-              <button type="button" className="finance-report-button" onClick={() => openDistributionPdf(reportDistribution)} disabled={!reportDistribution && splitTotal <= 0.01}>
+              <button type="button" className="finance-report-button" onClick={() => openDistributionPdf(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
                 📄 PDF
               </button>
             </div>

@@ -8562,7 +8562,7 @@ function FinancePage({
       return
     }
 
-    const confirmed = await showCustomConfirm(
+    const confirmed = window.confirm(
       `Podzielić ${formatMoney(splitTotal)}?
 
 Bazowo 50/50: ${formatMoney(splitAmount)} na osobę

@@ -9028,47 +9028,42 @@ function FinancePage({
     return svg
   }
 
-  const shareDistributionGraphic = async (distribution = null) => {
-    try {
-      setReportBusy(true)
+  const shareDistributionGraphic = (distribution = null) => {
+    const cacheKey = JSON.stringify([
+      distribution?.id || null,
+      distribution?.paymentIds || [],
+      distribution?.costIds || [],
+      distribution?.distributionDate || null,
+      distribution?.receivedNet || distribution?.profit || 0,
+    ])
+    const file = reportSharePdfRef.current.get(cacheKey)
 
-      const cacheKey = JSON.stringify([
-        distribution?.id || null,
-        distribution?.paymentIds || [],
-        distribution?.costIds || [],
-        distribution?.distributionDate || null,
-        distribution?.receivedNet || distribution?.profit || 0,
-      ])
-      const file = reportSharePdfRef.current.get(cacheKey)
-
-      if (!file) {
-        await showCustomAlert('PDF jest jeszcze przygotowywany. Spróbuj ponownie za chwilę.')
-        return
-      }
-
-      if (
-        navigator.share &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        await navigator.share({ files: [file] })
-        return
-      }
-
-      const downloadUrl = URL.createObjectURL(file)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = 'rozliczenie-wspolnikow.pdf'
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
-      await showCustomAlert('PDF został przygotowany. Udostępnianie plików nie jest dostępne na tym urządzeniu.')
-    } catch (error) {
-      if (error?.name === 'AbortError') return
-      console.error('Nie udało się udostępnić PDF raportu:', error)
-      await showCustomAlert('Nie udało się udostępnić PDF. Spróbuj ponownie.')
-    } finally {
-      setReportBusy(false)
+    if (!file) {
+      showCustomAlert('PDF jest jeszcze przygotowywany. Spróbuj ponownie za chwilę.')
+      return
     }
+
+    if (
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      // Bez await: navigator.share() musi zostać wywołane bezpośrednio
+      // z obsługi kliknięcia, aby iOS nie utracił user activation.
+      navigator.share({ files: [file] }).catch((error) => {
+        if (error?.name !== 'AbortError') {
+          console.error('Nie udało się udostępnić PDF raportu:', error)
+        }
+      })
+      return
+    }
+
+    const downloadUrl = URL.createObjectURL(file)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = 'rozliczenie-wspolnikow.pdf'
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
   }
 
   const openDistributionPdf = (distribution = null) => {
@@ -9688,7 +9683,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             <div className="aero-report-actions">
               <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || !reportSharePdfReady || (!activeReportDistribution && splitTotal <= 0.01)}>
                 <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
-                {reportBusy ? 'Przygotowywanie…' : !reportSharePdfReady ? 'Przygotowuję PDF…' : 'Udostępnij PDF'}
+                {!reportSharePdfReady ? 'Przygotowuję PDF…' : 'Udostępnij PDF'}
               </button>
               <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
                 <Copy size={16} strokeWidth={1.8} aria-hidden="true" />

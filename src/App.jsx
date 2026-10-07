@@ -8029,6 +8029,8 @@ function FinancePage({
       cost.type !== 'revenue'
   )
 
+  const activeProfitDistributions = profitDistributions.filter((item) => item.status !== 'reversed')
+
   // Koszt przestaje być długiem między wspólnikami dopiero wtedy,
   // gdy został faktycznie uwzględniony w zapisanym podziale pieniędzy.
   // Dzięki temu wrześniowy koszt może przejść do październikowej wpłaty,
@@ -8280,7 +8282,6 @@ function FinancePage({
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
   const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
 
-  const activeProfitDistributions = profitDistributions.filter((item) => item.status !== 'reversed')
   const distributedPaymentIds = new Set(
     activeProfitDistributions.flatMap((item) => item.paymentIds || []).map(String)
   )

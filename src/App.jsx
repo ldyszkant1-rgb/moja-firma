@@ -7909,6 +7909,20 @@ function FinancePage({
     0
   )
 
+  const previousCosts = costs
+    .filter(
+      (cost) =>
+        cost.type !== 'revenue' &&
+        cost.month &&
+        cost.month < selectedMonthKey + '-01'
+    )
+    .sort((a, b) => String(b.month || '').localeCompare(String(a.month || '')))
+
+  const previousCostsTotal = previousCosts.reduce(
+    (sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0),
+    0
+  )
+
   const profit = monthRevenueNet - totalCosts
   const share = hasPartnerSettlement ? profit / 2 : 0
 
@@ -9319,6 +9333,48 @@ Paweł: ${formatMoney(splitAmount)}`
           </div>
         )}
       </div>
+
+      {previousCosts.length > 0 && (
+        <section className="detail-card finance-cost-card">
+          <div className="finance-cost-header finance-cost-header-modern">
+            <div className="finance-cost-title-wrap">
+              <div>
+                <h2>Koszty z poprzednich miesięcy</h2>
+                <span>Historia — nie są ponownie potrącane z nowych podziałów</span>
+              </div>
+            </div>
+            <strong className="finance-cost-total">{formatMoney(previousCostsTotal)}</strong>
+          </div>
+          <div className="cost-table">
+            <div className="cost-table-header" aria-hidden="true">
+              <span>Kategoria</span>
+              <span>Opis</span>
+              <span>Data</span>
+              <span>Zapłacił</span>
+              <span className="cost-table-header-amount">Kwota</span>
+              <span></span>
+            </div>
+            <div className="cost-table-body">
+              {previousCosts.map((cost) => (
+                <div key={cost.id} className="cost-table-row">
+                  <div className="cost-category-cell">
+                    <CostIcon category={cost.category} />
+                    <div>
+                      <strong>{cost.category || 'Inne'}</strong>
+                      <span className="cost-mobile-date">{formatDate(cost.month)}</span>
+                    </div>
+                  </div>
+                  <div className="cost-description-cell"><span>{cost.description || 'Bez opisu'}</span></div>
+                  <div className="cost-date-cell">{formatDate(cost.month)}</div>
+                  <div className="cost-payer-cell"><span>{cost.paidBy || '—'}</span></div>
+                  <div className="cost-amount-cell">{formatMoney(cost.amount)}</div>
+                  <div />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {editingCostId && (
         <div className="finance-cost-sheet-backdrop" role="presentation" onMouseDown={(event) => {

@@ -7619,7 +7619,8 @@ function FinancePage({
   })
   const [settlementSaving, setSettlementSaving] = useState(false)
   const [reportBusy, setReportBusy] = useState(false)
-  const reportSharePngRef = useRef(new Map())
+  const reportSharePdfRef = useRef(new Map())
+  const [reportSharePdfReady, setReportSharePdfReady] = useState(false)
   const [reportDistribution, setReportDistribution] = useState(null)
   const [historyOpenId, setHistoryOpenId] = useState(null)
 
@@ -8296,9 +8297,92 @@ function FinancePage({
 
   const activeReportDistribution = reportDistribution || latestSavedDistribution
 
+  async function createPdfFileFromJpeg(jpegBlob, width, height) {
+    const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer())
+    const pageWidth = 595
+    const pageHeight = 842
+    const encoder = new TextEncoder()
+    const chunks = []
+    let offset = 0
+    const offsets = []
+
+    const pushText = (value) => {
+      const bytes = encoder.encode(value)
+      chunks.push(bytes)
+      offset += bytes.length
+    }
+
+    const pushBytes = (bytes) => {
+      chunks.push(bytes)
+      offset += bytes.length
+    }
+
+    pushText('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')
+
+    offsets[1] = offset
+    pushText('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n')
+
+    offsets[2] = offset
+    pushText('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n')
+
+    offsets[3] = offset
+    pushText(
+      '3 0 obj\n' +
+      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] ' +
+      '/Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\n' +
+      'endobj\n'
+    )
+
+    offsets[4] = offset
+    pushText(
+      '4 0 obj\n' +
+      '<< /Type /XObject /Subtype /Image /Width ' + width +
+      ' /Height ' + height +
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpegBytes.length + ' >>\n' +
+      'stream\n'
+    )
+    pushBytes(jpegBytes)
+    pushText('\nendstream\nendobj\n')
+
+    const content = 'q\n' + pageWidth + ' 0 0 ' + pageHeight + ' 0 0 cm\n/Im0 Do\nQ\n'
+    const contentBytes = encoder.encode(content)
+
+    offsets[5] = offset
+    pushText('5 0 obj\n<< /Length ' + contentBytes.length + ' >>\nstream\n')
+    pushBytes(contentBytes)
+    pushText('endstream\nendobj\n')
+
+    const xrefOffset = offset
+    pushText('xref\n0 6\n')
+    pushText('0000000000 65535 f \n')
+    for (let index = 1; index <= 5; index += 1) {
+      pushText(String(offsets[index]).padStart(10, '0') + ' 00000 n \n')
+    }
+    pushText(
+      'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' +
+      xrefOffset + '\n%%EOF'
+    )
+
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const pdfBytes = new Uint8Array(totalLength)
+    let position = 0
+    for (const chunk of chunks) {
+      pdfBytes.set(chunk, position)
+      position += chunk.length
+    }
+
+    return new File(
+      [pdfBytes],
+      'rozliczenie-wspolnikow.pdf',
+      { type: 'application/pdf' }
+    )
+  }
+
   useEffect(() => {
     let cancelled = false
     const distribution = activeReportDistribution
+    setReportSharePdfReady(false)
+
     if (!distribution) return () => { cancelled = true }
 
     const cacheKey = JSON.stringify([
@@ -8309,11 +8393,13 @@ function FinancePage({
       distribution.receivedNet || distribution.profit || 0,
     ])
 
-    if (reportSharePngRef.current.has(cacheKey)) {
+    const cachedFile = reportSharePdfRef.current.get(cacheKey)
+    if (cachedFile) {
+      setReportSharePdfReady(true)
       return () => { cancelled = true }
     }
 
-    const prepareSharePng = async () => {
+    const prepareSharePdf = async () => {
       try {
         const svg = buildDistributionShareSvg(distribution)
         const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
@@ -8343,25 +8429,30 @@ function FinancePage({
         context.drawImage(image, 0, 0, canvas.width, canvas.height)
         URL.revokeObjectURL(url)
 
-        const pngBlob = await new Promise((resolve, reject) => {
+        const jpegBlob = await new Promise((resolve, reject) => {
           canvas.toBlob((blob) => {
             if (blob) resolve(blob)
-            else reject(new Error('Nie udało się utworzyć PNG'))
-          }, 'image/png')
+            else reject(new Error('Nie udało się utworzyć obrazu raportu'))
+          }, 'image/jpeg', 0.94)
         })
 
+        const pdfFile = await createPdfFileFromJpeg(
+          jpegBlob,
+          canvas.width,
+          canvas.height
+        )
+
         if (!cancelled) {
-          reportSharePngRef.current.set(
-            cacheKey,
-            new File([pngBlob], 'rozliczenie-wspolnikow.png', { type: 'image/png' })
-          )
+          reportSharePdfRef.current.set(cacheKey, pdfFile)
+          setReportSharePdfReady(true)
         }
       } catch (error) {
-        console.error('Nie udało się przygotować PNG raportu:', error)
+        console.error('Nie udało się przygotować PDF raportu:', error)
+        if (!cancelled) setReportSharePdfReady(false)
       }
     }
 
-    prepareSharePng()
+    prepareSharePdf()
 
     return () => {
       cancelled = true
@@ -8948,10 +9039,14 @@ function FinancePage({
         distribution?.distributionDate || null,
         distribution?.receivedNet || distribution?.profit || 0,
       ])
-      const file = reportSharePngRef.current.get(cacheKey)
+      const file = reportSharePdfRef.current.get(cacheKey)
+
+      if (!file) {
+        await showCustomAlert('PDF jest jeszcze przygotowywany. Spróbuj ponownie za chwilę.')
+        return
+      }
 
       if (
-        file &&
         navigator.share &&
         navigator.canShare &&
         navigator.canShare({ files: [file] })
@@ -8960,18 +9055,17 @@ function FinancePage({
         return
       }
 
-      if (navigator.share) {
-        await navigator.share({
-          text: buildDistributionReport(distribution),
-        })
-        return
-      }
-
-      await showCustomAlert('Na tym urządzeniu nie ma funkcji udostępniania.')
+      const downloadUrl = URL.createObjectURL(file)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = 'rozliczenie-wspolnikow.pdf'
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
+      await showCustomAlert('PDF został przygotowany. Udostępnianie plików nie jest dostępne na tym urządzeniu.')
     } catch (error) {
       if (error?.name === 'AbortError') return
-      console.error('Nie udało się udostępnić raportu:', error)
-      await showCustomAlert('Nie udało się udostępnić raportu. Spróbuj ponownie lub użyj „Pobierz PDF”.')
+      console.error('Nie udało się udostępnić PDF raportu:', error)
+      await showCustomAlert('Nie udało się udostępnić PDF. Spróbuj ponownie.')
     } finally {
       setReportBusy(false)
     }
@@ -9592,9 +9686,9 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
 
           <div className="aero-report-shell">
             <div className="aero-report-actions">
-              <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
+              <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || !reportSharePdfReady || (!activeReportDistribution && splitTotal <= 0.01)}>
                 <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
-                Udostępnij
+                {reportBusy ? 'Przygotowywanie…' : !reportSharePdfReady ? 'Przygotowuję PDF…' : 'Udostępnij PDF'}
               </button>
               <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
                 <Copy size={16} strokeWidth={1.8} aria-hidden="true" />

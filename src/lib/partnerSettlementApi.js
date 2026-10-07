@@ -28,6 +28,24 @@ function mapTransfer(row) {
 }
 
 
+async function getOrganizationId() {
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
+  const userId = userData?.user?.id
+  if (!userId) throw new Error('Brak zalogowanego użytkownika.')
+
+  const { data, error } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .single()
+
+  if (error) throw error
+  return data.organization_id
+}
+
 function mapProfitDistribution(row) {
   return {
     id: row.id,
@@ -65,9 +83,12 @@ export async function createProfitDistribution({
   costIds,
   note,
 }) {
+  const organizationId = await getOrganizationId()
+
   const { data, error } = await supabase
     .from('profit_distributions')
     .insert({
+      organization_id: organizationId,
       distribution_date: distributionDate || new Date().toISOString().slice(0, 10),
       received_net: Number(receivedNet || 0),
       costs_net: Number(costsNet || 0),

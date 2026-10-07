@@ -8022,7 +8022,19 @@ function FinancePage({
       cost.type !== 'revenue'
   )
 
-  const historicalCostBalance = costsThroughSelectedMonth.reduce(
+  // Koszt przestaje być długiem między wspólnikami dopiero wtedy,
+  // gdy został faktycznie uwzględniony w zapisanym podziale pieniędzy.
+  // Dzięki temu wrześniowy koszt może przejść do październikowej wpłaty,
+  // a po jej podziale nie wraca drugi raz jako saldo do oddania.
+  const settledCostIdsForBalance = new Set(
+    profitDistributions.flatMap((item) => item.costIds || []).map(String)
+  )
+
+  const unsettledCostsThroughSelectedMonth = costsThroughSelectedMonth.filter(
+    (cost) => !settledCostIdsForBalance.has(String(cost.id))
+  )
+
+  const historicalCostBalance = unsettledCostsThroughSelectedMonth.reduce(
     (sum, cost) => {
       const amount = Number(cost.netAmount ?? cost.amount ?? 0)
       if (cost.paidBy === partnerOne) return sum + amount / 2
@@ -8066,28 +8078,21 @@ function FinancePage({
 
   const balanceAmount = Math.abs(partnerCostBalance)
 
-  const previousCostBalance =
-    costs
-      .filter(
-        (cost) =>
-          cost.month &&
-          cost.month < `${selectedMonthKey}-01` &&
-          cost.type !== 'revenue'
-      )
-      .reduce(
-        (sum, cost) => {
-          const amount = Number(cost.netAmount ?? cost.amount ?? 0)
-          if (cost.paidBy === partnerOne) return sum + amount / 2
-          if (cost.paidBy === partnerTwo) return sum - amount / 2
-          return sum
-        },
-        0
-      ) +
-    partnerTransfers
+  const previousCostBalance = unsettledCostsThroughSelectedMonth
+    .filter((cost) => cost.month && cost.month < selectedMonthKey + '-01')
+    .reduce(
+      (sum, cost) => {
+        const amount = Number(cost.netAmount ?? cost.amount ?? 0)
+        if (cost.paidBy === partnerOne) return sum + amount / 2
+        if (cost.paidBy === partnerTwo) return sum - amount / 2
+        return sum
+      },
+      0
+    ) + partnerTransfers
       .filter(
         (item) =>
           item.transferDate &&
-          item.transferDate < `${selectedMonthKey}-01`
+          item.transferDate < selectedMonthKey + '-01'
       )
       .reduce(
         (sum, item) => {
@@ -9024,7 +9029,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           <div className="finance-kpi-card finance-kpi-split">
             <span>DO PODZIAŁU 50/50</span>
             <strong>{formatMoney(splitAmount)}</strong>
-            <small>Nowe wpłaty − nowe koszty</small>
+            <small>Nowe wpłaty + korekta nierozliczonych kosztów</small>
           </div>
         </div>
 

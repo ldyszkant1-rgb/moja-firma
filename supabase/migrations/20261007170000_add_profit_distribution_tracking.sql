@@ -64,7 +64,15 @@ select
   o.id,
   current_date,
   0, 0, 0, 0, 0,
-  '[]'::jsonb,
+  coalesce(
+    (
+      select jsonb_agg(to_jsonb(p.id))
+      from public.job_payments p
+      where p.organization_id = o.id
+        and p.paid_at < current_date
+    ),
+    '[]'::jsonb
+  ),
   coalesce(
     (
       select jsonb_agg(to_jsonb(f.id))

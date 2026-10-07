@@ -7529,6 +7529,37 @@ body {
   line-height: 1.35;
 }
 
+.finance-page .aero-report-shell {
+  display: block;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e8eef4;
+}
+
+.finance-page .aero-report-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.finance-page .aero-report-note {
+  display: block;
+  margin-top: 7px;
+  color: #7a8ba0;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.finance-page .aero-report-history-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
 .finance-page .aero-report-action {
   flex: 1 1 0;
   min-width: 0;
@@ -7610,6 +7641,11 @@ body {
 }
 
 @media (max-width: 700px) {
+  .finance-page .aero-report-actions,
+  .finance-page .aero-report-history-actions {
+    grid-template-columns: 1fr;
+  }
+
   .finance-page .aero-report-action {
     width: 100%;
     flex: 1 1 100%;

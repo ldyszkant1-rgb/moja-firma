@@ -58,25 +58,6 @@ function parseDecimal(value) {
 }
 
 
-async function getOrganizationId() {
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-  if (userError) throw userError
-
-  const userId = userData?.user?.id
-  if (!userId) throw new Error('Brak zalogowanego użytkownika.')
-
-  const { data, error } = await supabase
-    .from('organization_members')
-    .select('organization_id')
-    .eq('user_id', userId)
-    .limit(1)
-    .single()
-
-  if (error) throw error
-  return data.organization_id
-}
-
-
 /* =========================
    SUPABASE → APP
 ========================= */
@@ -179,9 +160,6 @@ function mapAppFinanceToSupabase(
   }
 
   return {
-
-    organization_id:
-      item.organizationId || null,
 
     type:
       item.type || 'cost',
@@ -352,11 +330,10 @@ export async function createFinance(
   item
 ) {
 
-  const organizationId = await getOrganizationId()
-  const payload = mapAppFinanceToSupabase({
-    ...item,
-    organizationId,
-  })
+  const payload =
+    mapAppFinanceToSupabase(
+      item
+    )
 
   console.log(
     'Wysyłanie kosztu do Supabase:',
@@ -421,11 +398,10 @@ export async function updateFinance(
 
   }
 
-  const organizationId = await getOrganizationId()
-  const payload = mapAppFinanceToSupabase({
-    ...item,
-    organizationId,
-  })
+  const payload =
+    mapAppFinanceToSupabase(
+      item
+    )
 
   console.log(
     'Aktualizacja kosztu w Supabase:',

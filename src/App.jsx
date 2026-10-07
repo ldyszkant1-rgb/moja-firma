@@ -8034,7 +8034,7 @@ function FinancePage({
   // Dzięki temu wrześniowy koszt może przejść do październikowej wpłaty,
   // a po jej podziale nie wraca drugi raz jako saldo do oddania.
   const settledCostIdsForBalance = new Set(
-    profitDistributions.flatMap((item) => item.costIds || []).map(String)
+    activeProfitDistributions.flatMap((item) => item.costIds || []).map(String)
   )
 
   const unsettledCostsThroughSelectedMonth = costsThroughSelectedMonth.filter(
@@ -8280,12 +8280,6 @@ function FinancePage({
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
   const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
 
-  const latestSavedDistribution = [...activeProfitDistributions]
-    .filter((item) => Number(item.receivedNet || 0) > 0.01 || Number(item.profit || 0) > 0.01)
-    .sort((a, b) => String(b.distributionDate || '').localeCompare(String(a.distributionDate || '')))[0] || null
-
-  const activeReportDistribution = reportDistribution || latestSavedDistribution
-
   const activeProfitDistributions = profitDistributions.filter((item) => item.status !== 'reversed')
   const distributedPaymentIds = new Set(
     activeProfitDistributions.flatMap((item) => item.paymentIds || []).map(String)
@@ -8293,6 +8287,12 @@ function FinancePage({
   const distributedCostIds = new Set(
     activeProfitDistributions.flatMap((item) => item.costIds || []).map(String)
   )
+
+  const latestSavedDistribution = [...activeProfitDistributions]
+    .filter((item) => Number(item.receivedNet || 0) > 0.01 || Number(item.profit || 0) > 0.01)
+    .sort((a, b) => String(b.distributionDate || '').localeCompare(String(a.distributionDate || '')))[0] || null
+
+  const activeReportDistribution = reportDistribution || latestSavedDistribution
 
   // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
   // wpłaty i koszty. Dzięki temu ten sam koszt nie zostanie rozliczony drugi raz.
@@ -8900,7 +8900,7 @@ function FinancePage({
     }
   }
 
-  const distributeAvailableProfit = async () =>
+  const distributeAvailableProfit = async () => {
     if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
       await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
       return

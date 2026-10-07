@@ -7722,6 +7722,32 @@ function FinancePage({
           )
         }
       }
+
+      if (type === 'profitDistribution') {
+        if (payload.eventType === 'DELETE' && payload.old?.id) {
+          setProfitDistributions((current) => current.filter((item) => item.id !== payload.old.id))
+        } else if (payload.new?.id) {
+          const row = payload.new
+          const incoming = {
+            id: row.id,
+            distributionDate: row.distribution_date,
+            receivedNet: Number(row.received_net || 0),
+            costsNet: Number(row.costs_net || 0),
+            profit: Number(row.profit || 0),
+            lukaszShare: Number(row.lukasz_share || 0),
+            pawelShare: Number(row.pawel_share || 0),
+            paymentIds: Array.isArray(row.payment_ids) ? row.payment_ids.map(String) : [],
+            costIds: Array.isArray(row.cost_ids) ? row.cost_ids.map(String) : [],
+            note: row.note || '',
+            createdAt: row.created_at || null,
+          }
+          setProfitDistributions((current) =>
+            current.some((item) => item.id === incoming.id)
+              ? current.map((item) => item.id === incoming.id ? incoming : item)
+              : [...current, incoming]
+          )
+        }
+      }
     })
 
     return () => {

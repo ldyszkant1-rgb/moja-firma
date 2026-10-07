@@ -8863,50 +8863,40 @@ function FinancePage({
 
     try {
       setReportBusy(true)
-      const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
-      const image = new Image()
-      image.onload = async () => {
-        try {
-          const canvas = document.createElement('canvas')
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, width, height)
-          ctx.drawImage(image, 0, 0)
-          URL.revokeObjectURL(url)
-          canvas.toBlob(async (png) => {
-            if (!png) throw new Error('PNG error')
-            const file = new File([png], 'rozliczenie-wspolnikow.png', { type: 'image/png' })
-            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-              await navigator.share({ title: 'Rozliczenie wspólników', files: [file] })
-            } else {
-              const downloadUrl = URL.createObjectURL(png)
-              const link = document.createElement('a')
-              link.href = downloadUrl
-              link.download = 'rozliczenie-wspolnikow.png'
-              link.click()
-              URL.revokeObjectURL(downloadUrl)
-              await showCustomAlert('Grafika została przygotowana. Możesz ją wysłać na Messengerze.')
-            }
-            setReportBusy(false)
-          }, 'image/png')
-        } catch (error) {
-          console.error(error)
-          setReportBusy(false)
-          await showCustomAlert('Nie udało się przygotować grafiki.')
-        }
+
+      const file = new File(
+        [svg],
+        'rozliczenie-wspolnikow.svg',
+        { type: 'image/svg+xml' }
+      )
+
+      // Web Share wymaga bezpośredniego user activation. Nie generujemy
+      // PNG asynchronicznie po kliknięciu, bo na iOS może wtedy wygasnąć
+      // aktywacja i navigator.share() niczego nie otworzy.
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file] })
+        return
       }
-      image.onerror = async () => {
-        URL.revokeObjectURL(url)
-        setReportBusy(false)
-        await showCustomAlert('Nie udało się przygotować grafiki.')
-      }
-      image.src = url
+
+      const downloadUrl = URL.createObjectURL(
+        new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+      )
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = 'rozliczenie-wspolnikow.svg'
+      link.click()
+      URL.revokeObjectURL(downloadUrl)
+      await showCustomAlert('Grafika została przygotowana.')
     } catch (error) {
-      console.error(error)
+      if (error?.name === 'AbortError') return
+      console.error('Nie udało się udostępnić raportu:', error)
+      await showCustomAlert('Nie udało się udostępnić raportu. Użyj „Pobierz PDF”.')
+    } finally {
       setReportBusy(false)
-      await showCustomAlert('Nie udało się przygotować grafiki.')
     }
   }
 
@@ -9524,8 +9514,8 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             </div>
           )}
 
-          <div className="finance-settlement-report">
-            <div className="finance-report-actions">
+          <div className="aero-report-shell">
+            <div className="aero-report-actions">
               <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
                 Udostępnij
@@ -9539,7 +9529,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                 Pobierz PDF
               </button>
             </div>
-            <span>Po zapisaniu podziału raport zachowuje dokładnie jego wpłatę, koszty i daty.</span>
+            <span className="aero-report-note">Po zapisaniu podziału raport zachowuje dokładnie jego wpłatę, koszty i daty.</span>
           </div>
 
           <div className="finance-settlement-actions">
@@ -9605,7 +9595,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                             <div><span>{partnerOne} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerOne).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
                             <div><span>{partnerTwo} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerTwo).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
                           </div>
-                          <div className="finance-history-actions">
+                          <div className="aero-report-history-actions">
                             <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Udostępnij</button>
                             <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(distribution)} disabled={reportBusy}><Copy size={15} strokeWidth={1.8} aria-hidden="true" /> Kopiuj podsumowanie</button>
                             <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(distribution)}><Download size={15} strokeWidth={1.8} aria-hidden="true" /> Pobierz PDF</button>

@@ -1,5 +1,43 @@
 import { supabase } from './supabase'
 
+/* =========================
+   ORGANIZACJA UŻYTKOWNIKA
+========================= */
+
+const LEGACY_ORGANIZATION_ID = 'c6565617-8988-41aa-899a-e0c21327d8fe'
+
+async function getFinanceOrganizationId() {
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+
+  const userId = userData?.user?.id
+  if (!userId) return null
+
+  const { data: membership, error: membershipError } = await supabase
+    .from('organization_members')
+    .select('organization_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipError) throw membershipError
+  if (membership?.organization_id) return membership.organization_id
+
+  const { data: deviceUser, error: deviceError } = await supabase
+    .from('device_users')
+    .select('auth_user_id, user_name')
+    .eq('auth_user_id', userId)
+    .limit(1)
+    .maybeSingle()
+
+  if (deviceError) throw deviceError
+  if (deviceUser?.auth_user_id && ['Łukasz', 'Paweł'].includes(deviceUser.user_name)) {
+    return LEGACY_ORGANIZATION_ID
+  }
+
+  return null
+}
+
 
 /* =========================
    LICZBY DZIESIĘTNE
@@ -214,15 +252,20 @@ function mapAppFinanceToSupabase(
 
 export async function getFinance() {
 
+  const organizationId = await getFinanceOrganizationId()
+
+  let query = supabase
+    .from('finance')
+    .select('*')
+
+  if (organizationId) {
+    query = query.eq('organization_id', organizationId)
+  }
+
   const {
     data,
     error,
-  } =
-    await supabase
-
-      .from('finance')
-
-      .select('*')
+  } = await query
 
       .order(
         'month',
@@ -335,6 +378,11 @@ export async function createFinance(
       item
     )
 
+  const organizationId = await getFinanceOrganizationId()
+  if (organizationId) {
+    payload.organization_id = organizationId
+  }
+
   console.log(
     'Wysyłanie kosztu do Supabase:',
     payload
@@ -402,6 +450,11 @@ export async function updateFinance(
     mapAppFinanceToSupabase(
       item
     )
+
+  const organizationId = await getFinanceOrganizationId()
+  if (organizationId) {
+    payload.organization_id = organizationId
+  }
 
   console.log(
     'Aktualizacja kosztu w Supabase:',

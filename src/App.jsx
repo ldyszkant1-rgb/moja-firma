@@ -7821,24 +7821,40 @@ function FinancePage({
       ? invoices.find((item) => String(item.id) === String(payment.invoiceId))
       : null
 
-    if (invoice) {
-      const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const net = Math.max(0, Number(invoice.netAmount || 0))
+    const resolveNet = (candidate) => {
+      if (!candidate) return null
+
+      const gross = Math.max(0, Number(candidate.grossAmount || 0))
+      const net = Math.max(0, Number(candidate.netAmount || 0))
+      const vat = Math.max(0, Number(candidate.vatAmount || (gross - net)))
+      const vatSettled = Math.min(
+        vat,
+        Math.max(0, Number(candidate.vatSettledAmount || 0))
+      )
+
+      // Jeżeli VAT z faktury został już wcześniej rozliczony, późniejszy
+      // przelew klienta traktujemy jako kwotę netto. Nie przeliczamy go
+      // ponownie proporcją netto/brutto.
+      if (vatSettled >= vat - 0.01) {
+        return Math.min(amount, net > 0 ? net : amount)
+      }
+
       if (gross > 0 && net >= 0) {
         return Math.min(amount, amount * (net / gross))
       }
+
+      return amount
     }
 
+    const directNet = resolveNet(invoice)
+    if (directNet !== null) return directNet
+
     const jobInvoices = invoices.filter(
-      (invoice) => String(invoice.jobId || '') === String(payment.jobId || '')
+      (item) => String(item.jobId || '') === String(payment.jobId || '')
     )
     if (jobInvoices.length === 1) {
-      const invoice = jobInvoices[0]
-      const gross = Math.max(0, Number(invoice.grossAmount || 0))
-      const net = Math.max(0, Number(invoice.netAmount || 0))
-      if (gross > 0 && net >= 0) {
-        return Math.min(amount, amount * (net / gross))
-      }
+      const jobNet = resolveNet(jobInvoices[0])
+      if (jobNet !== null) return jobNet
     }
 
     return amount
@@ -8238,8 +8254,8 @@ function FinancePage({
     0
   )
 
-  const splitAmount = Math.max(0, unallocatedReceivedNet - unallocatedCostsNet)
-  const splitTotal = splitAmount * 2
+  const splitTotal = Math.max(0, unallocatedReceivedNet - unallocatedCostsNet)
+  const splitAmount = splitTotal / 2
 
   // Spływ płatności liczymy w tej samej bazie co należności:
   // netto. Dzięki temu wpłata brutto nie może sztucznie zawyżyć wskaźnika

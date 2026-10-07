@@ -323,27 +323,26 @@ export async function getFinanceForMonth(
       : String(month).slice(0, 7) +
         '-01'
 
+  const organizationId = await getFinanceOrganizationId()
+
+  let query = supabase
+    .from('finance')
+    .select('*')
+    .eq('month', monthDate)
+
+  if (organizationId) {
+    query = query.eq('organization_id', organizationId)
+  }
+
   const {
     data,
     error,
-  } =
-    await supabase
-
-      .from('finance')
-
-      .select('*')
-
-      .eq(
-        'month',
-        monthDate
-      )
-
-      .order(
-        'created_at',
-        {
-          ascending: false,
-        }
-      )
+  } = await query.order(
+    'created_at',
+    {
+      ascending: false,
+    }
+  )
 
   if (error) {
 

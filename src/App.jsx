@@ -9021,11 +9021,6 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             <strong>{formatMoney(totalCosts)}</strong>
             <small>{monthCosts.length} wpisów w miesiącu</small>
           </div>
-          <div className="finance-kpi-card finance-kpi-profit">
-            <span>ZYSK</span>
-            <strong>{formatMoney(profit)}</strong>
-            <small>Otrzymane netto − koszty</small>
-          </div>
           <div className="finance-kpi-card finance-kpi-split">
             <span>DO PODZIAŁU 50/50</span>
             <strong>{formatMoney(splitAmount)}</strong>
@@ -9034,10 +9029,6 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
         </div>
 
         <div className="finance-quick-actions">
-          <button type="button" className="finance-quick-action finance-quick-action-primary" onClick={() => setShowForm(true)}>
-            <Wallet size={20} strokeWidth={1.75} aria-hidden="true" />
-            <div><strong>Dodaj koszt</strong><small>Zapisz nowy wydatek</small></div>
-          </button>
           <button type="button" className="finance-quick-action" onClick={() => onOpenInvoices?.()}>
             <Receipt size={20} strokeWidth={1.75} aria-hidden="true" />
             <div><strong>Faktury</strong><small>{invoicesToIssue} do wystawienia</small></div>
@@ -9048,74 +9039,71 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           </button>
         </div>
 
-        <div className="finance-command-grid">
-          <div className="finance-command-card">
-            <div className="finance-command-card-header">
-              <div>
-                <div className="finance-overview-label">PŁATNOŚCI</div>
-                <h2>Gotówka i należności</h2>
-              </div>
-              <Wallet className="finance-command-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
+        <div className="finance-settlement-card">
+          <div className="finance-settlement-header">
+            <div>
+              <div className="finance-overview-label">PODZIAŁ WPŁATY</div>
+              <h2>{formatMoney(splitTotal)} do podziału</h2>
+              <p>Podział 50/50 z automatycznym uwzględnieniem nierozliczonych kosztów.</p>
             </div>
+            <Wallet className="finance-command-icon" size={22} strokeWidth={1.75} aria-hidden="true" />
+          </div>
 
-            <div className="finance-payment-row">
-              <span>Otrzymane w miesiącu</span>
-              <strong>{formatMoney(monthPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0))}</strong>
+          <div className="finance-settlement-people">
+            <div className="finance-settlement-person">
+              <span>{partnerOne}</span>
+              <strong>{formatMoney(partnerOneSplitAmount)}</strong>
             </div>
-            <div className="finance-payment-row">
-              <span>Do otrzymania</span>
-              <strong className="finance-warning-value">{formatMoney(totalReceivables)}</strong>
-            </div>
-
-            <div className="finance-payment-progress">
-              <div className="finance-payment-progress-label">
-                <span>Ogólny poziom spływu płatności netto</span>
-                <strong>{Math.round(paymentCollectionPercent)}%</strong>
-              </div>
-              <div className="finance-payment-progress-track">
-                <div
-                  className="finance-payment-progress-fill"
-                  style={{ width: `${paymentCollectionPercent}%` }}
-                />
-              </div>
+            <div className="finance-settlement-divider" aria-hidden="true" />
+            <div className="finance-settlement-person">
+              <span>{partnerTwo}</span>
+              <strong>{formatMoney(partnerTwoSplitAmount)}</strong>
             </div>
           </div>
 
-          {hasPartnerSettlement && (
-          <div className="finance-command-card">
-            <div className="finance-command-card-header">
-              <div>
-                <div className="finance-overview-label">WSPÓLNICY</div>
-                <h2>Podział i koszty</h2>
-              </div>
-              <Wallet className="finance-command-icon" size={20} strokeWidth={1.75} aria-hidden="true" />
-            </div>
-
-            <div className="finance-partner-mini-grid">
-              <div>
-                <span>{partnerOne}</span>
-                <strong>{formatMoney(partnerOneSplitAmount)}</strong>
-              </div>
-              <div>
-                <span>{partnerTwo}</span>
-                <strong>{formatMoney(partnerTwoSplitAmount)}</strong>
-              </div>
-            </div>
-
-            <div className="finance-payment-row finance-payment-row-border">
-              <span>Nowe koszty</span>
+          <div className="finance-settlement-details">
+            <div>
+              <span>Nierozliczone koszty</span>
               <strong>{formatMoney(unallocatedCostsNet)}</strong>
             </div>
+            <div>
+              <span>Saldo wspólników</span>
+              <strong>{Math.abs(partnerCostBalance) > 0.01 ? formatMoney(Math.abs(partnerCostBalance)) : '0 zł'}</strong>
+            </div>
+          </div>
+
+          {Math.abs(partnerCostBalance) > 0.01 && (
+            <div className="finance-settlement-balance-note">
+              {balanceDirection} <strong>{formatMoney(balanceAmount)}</strong>
+            </div>
+          )}
+
+          <div className="finance-settlement-actions">
             <button
               type="button"
               className="finance-settle-button"
               onClick={distributeAvailableProfit}
               disabled={settlementSaving || splitAmount <= 0.01}
             >
-              Podziel teraz {formatMoney(splitTotal)}
+              Podziel {formatMoney(splitTotal)}
             </button>
+
+            {Math.abs(partnerCostBalance) > 0.01 && (
+              <button
+                type="button"
+                className="finance-partial-settle-button"
+                onClick={confirmFullPartnerSettlement}
+                disabled={settlementSaving}
+              >
+                Rozlicz saldo
+              </button>
+            )}
           </div>
 
+          {!canSettleAllUnallocatedCosts && unallocatedCostsNet > 0.01 && (
+            <div className="finance-settlement-warning">
+              Koszty są większe niż bieżąca wpłata. Zostaną przeniesione do kolejnej wpłaty.
+            </div>
           )}
         </div>
 
@@ -9190,80 +9178,6 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           </div>
         </div>
       </section>
-
-      {hasPartnerSettlement && (
-      <div className="finance-partner-card">
-        <div className="finance-partner-card-header">
-          <div>
-            <div className="finance-overview-label">SALDO WSPÓLNIKÓW</div>
-            <h2>Rozliczenie kosztów</h2>
-            <p>Saldo przechodzi automatycznie na kolejne miesiące.</p>
-          </div>
-
-          {Math.abs(partnerCostBalance) <= 0.01 && (
-            <span className="finance-status-ok">Rozliczone</span>
-          )}
-        </div>
-
-        <div className={
-          `finance-balance-box ${
-            partnerCostBalance > 0.01
-              ? 'is-lukasz-creditor'
-              : partnerCostBalance < -0.01
-                ? 'is-pawel-creditor'
-                : 'is-settled'
-          }`
-        }>
-          <span className="finance-balance-caption">Aktualne saldo</span>
-
-          {Math.abs(partnerCostBalance) > 0.01 ? (
-            <>
-              <strong className="finance-balance-direction">{balanceDirection}</strong>
-              <strong className="finance-balance-amount">{formatMoney(balanceAmount)}</strong>
-            </>
-          ) : (
-            <strong className="finance-balance-direction">Nikt nikomu nic nie jest winien</strong>
-          )}
-
-          {Math.abs(previousCostBalance) > 0.01 && (
-            <span className="finance-balance-note">
-              Z poprzednich miesięcy: {formatMoney(Math.abs(previousCostBalance))}
-            </span>
-          )}
-        </div>
-
-        {Math.abs(partnerCostBalance) > 0.01 && (
-          <div className="finance-settlement-actions">
-            <button
-              type="button"
-              className="finance-settle-button"
-              onClick={confirmFullPartnerSettlement}
-              disabled={settlementSaving}
-            >
-              ✓ Rozlicz {formatMoney(balanceAmount)}
-            </button>
-
-            <button
-              type="button"
-              className="finance-partial-settle-button"
-              onClick={confirmPartialPartnerSettlement}
-              disabled={settlementSaving}
-            >
-              Rozlicz część
-            </button>
-          </div>
-        )}
-
-        <div className="finance-partner-explanation">
-          <span>Jak to działa?</span>
-          <p>
-            Każdy koszt dzielimy po 50/50. Jeśli jedna osoba zapłaci więcej, druga oddaje jej tylko swoją połowę tego kosztu.
-            Przykład: przy koszcie 2000 zł zapłaconym przez jednego wspólnika, drugi oddaje 1000 zł. Nierozliczone saldo przechodzi dalej.
-          </p>
-        </div>
-      </div>
-
-      )}
 
       <div className="detail-card finance-cost-card">
         <div className="finance-cost-header finance-cost-header-modern">

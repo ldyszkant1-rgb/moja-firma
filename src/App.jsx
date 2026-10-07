@@ -7619,6 +7619,7 @@ function FinancePage({
   })
   const [settlementSaving, setSettlementSaving] = useState(false)
   const [reportBusy, setReportBusy] = useState(false)
+  const reportSharePngRef = useRef(new Map())
   const [reportDistribution, setReportDistribution] = useState(null)
   const [historyOpenId, setHistoryOpenId] = useState(null)
 
@@ -8295,6 +8296,78 @@ function FinancePage({
 
   const activeReportDistribution = reportDistribution || latestSavedDistribution
 
+  useEffect(() => {
+    let cancelled = false
+    const distribution = activeReportDistribution
+    if (!distribution) return () => { cancelled = true }
+
+    const cacheKey = JSON.stringify([
+      distribution.id || null,
+      distribution.paymentIds || [],
+      distribution.costIds || [],
+      distribution.distributionDate || null,
+      distribution.receivedNet || distribution.profit || 0,
+    ])
+
+    if (reportSharePngRef.current.has(cacheKey)) {
+      return () => { cancelled = true }
+    }
+
+    const prepareSharePng = async () => {
+      try {
+        const svg = buildDistributionShareSvg(distribution)
+        const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+        const url = URL.createObjectURL(svgBlob)
+        const image = new Image()
+
+        await new Promise((resolve, reject) => {
+          image.onload = resolve
+          image.onerror = reject
+          image.src = url
+        })
+
+        if (cancelled) {
+          URL.revokeObjectURL(url)
+          return
+        }
+
+        const data = getDistributionReportData(distribution)
+        const canvas = document.createElement('canvas')
+        canvas.width = 1240
+        canvas.height = Math.max(1754, 1160 + data.reportCosts.length * 58)
+        const context = canvas.getContext('2d')
+        if (!context) throw new Error('Brak kontekstu canvas')
+
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        context.drawImage(image, 0, 0, canvas.width, canvas.height)
+        URL.revokeObjectURL(url)
+
+        const pngBlob = await new Promise((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob)
+            else reject(new Error('Nie udało się utworzyć PNG'))
+          }, 'image/png')
+        })
+
+        if (!cancelled) {
+          reportSharePngRef.current.set(
+            cacheKey,
+            new File([pngBlob], 'rozliczenie-wspolnikow.png', { type: 'image/png' })
+          )
+        }
+      } catch (error) {
+        console.error('Nie udało się przygotować PNG raportu:', error)
+      }
+    }
+
+    prepareSharePng()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeReportDistribution])
+
   // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
   // wpłaty i koszty. Dzięki temu ten sam koszt nie zostanie rozliczony drugi raz.
   const unallocatedPayments = allJobPayments.filter(
@@ -8768,7 +8841,7 @@ function FinancePage({
     }
   }
 
-  const shareDistributionGraphic = async (distribution = null) => {
+  function buildDistributionShareSvg(distribution = null) {
     const data = getDistributionReportData(distribution)
     const width = 1240
     const rowHeight = 58
@@ -8861,19 +8934,24 @@ function FinancePage({
       '<text x="90" y="' + (signatureY + 62) + '" font-family="' + font + '" font-size="10" fill="#9aa6b5">Wygenerowano w Aeroinstal</text>' +
       '</svg>'
 
+    return svg
+  }
+
+  const shareDistributionGraphic = async (distribution = null) => {
     try {
       setReportBusy(true)
 
-      const file = new File(
-        [svg],
-        'rozliczenie-wspolnikow.svg',
-        { type: 'image/svg+xml' }
-      )
+      const cacheKey = JSON.stringify([
+        distribution?.id || null,
+        distribution?.paymentIds || [],
+        distribution?.costIds || [],
+        distribution?.distributionDate || null,
+        distribution?.receivedNet || distribution?.profit || 0,
+      ])
+      const file = reportSharePngRef.current.get(cacheKey)
 
-      // Web Share wymaga bezpośredniego user activation. Nie generujemy
-      // PNG asynchronicznie po kliknięciu, bo na iOS może wtedy wygasnąć
-      // aktywacja i navigator.share() niczego nie otworzy.
       if (
+        file &&
         navigator.share &&
         navigator.canShare &&
         navigator.canShare({ files: [file] })
@@ -8882,24 +8960,22 @@ function FinancePage({
         return
       }
 
-      const downloadUrl = URL.createObjectURL(
-        new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-      )
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = 'rozliczenie-wspolnikow.svg'
-      link.click()
-      URL.revokeObjectURL(downloadUrl)
-      await showCustomAlert('Grafika została przygotowana.')
+      if (navigator.share) {
+        await navigator.share({
+          text: buildDistributionReport(distribution),
+        })
+        return
+      }
+
+      await showCustomAlert('Na tym urządzeniu nie ma funkcji udostępniania.')
     } catch (error) {
       if (error?.name === 'AbortError') return
       console.error('Nie udało się udostępnić raportu:', error)
-      await showCustomAlert('Nie udało się udostępnić raportu. Użyj „Pobierz PDF”.')
+      await showCustomAlert('Nie udało się udostępnić raportu. Spróbuj ponownie lub użyj „Pobierz PDF”.')
     } finally {
       setReportBusy(false)
     }
   }
-
 
   const openDistributionPdf = (distribution = null) => {
     const data = getDistributionReportData(distribution)

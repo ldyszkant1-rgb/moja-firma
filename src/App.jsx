@@ -59,6 +59,8 @@ import {
 import {
   getPartnerSettlements,
   savePartnerSettlement,
+  getProfitDistributions,
+  createProfitDistribution,
   getPartnerTransfers,
   createPartnerTransfer,
   deletePartnerTransfer,
@@ -7602,6 +7604,7 @@ function FinancePage({
   const [allJobPayments, setAllJobPayments] = useState([])
   const [partnerSettlements, setPartnerSettlements] = useState([])
   const [partnerTransfers, setPartnerTransfers] = useState([])
+  const [profitDistributions, setProfitDistributions] = useState([])
   const [settlementForm, setSettlementForm] = useState({
     lukaszPaid: '',
     pawelPaid: '',
@@ -7620,16 +7623,18 @@ function FinancePage({
 
     const loadPaymentAndSettlementData = async () => {
       try {
-        const [payments, settlements, transfers] = await Promise.all([
+        const [payments, settlements, transfers, distributions] = await Promise.all([
           getAllJobPayments(),
           getPartnerSettlements(),
           getPartnerTransfers(),
+          getProfitDistributions(),
         ])
 
         if (!cancelled) {
           setAllJobPayments(payments)
           setPartnerSettlements(settlements)
           setPartnerTransfers(transfers)
+          setProfitDistributions(distributions)
         }
       } catch (error) {
         console.error('Nie udało się wczytać płatności lub rozliczeń wspólników:', error)
@@ -8207,7 +8212,34 @@ function FinancePage({
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
   const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
 
-  const splitAmount = share
+  const distributedPaymentIds = new Set(
+    profitDistributions.flatMap((item) => item.paymentIds || []).map(String)
+  )
+  const distributedCostIds = new Set(
+    profitDistributions.flatMap((item) => item.costIds || []).map(String)
+  )
+
+  // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
+  // wpłaty i koszty. Dzięki temu ZUS rozliczony przy pierwszym podziale
+  // nie zostanie odjęty ponownie przy następnym przelewie.
+  const unallocatedPayments = allJobPayments.filter(
+    (payment) => !distributedPaymentIds.has(String(payment.id))
+  )
+  const unallocatedCosts = costs.filter(
+    (cost) => cost.type !== 'revenue' && !distributedCostIds.has(String(cost.id))
+  )
+
+  const unallocatedReceivedNet = unallocatedPayments.reduce(
+    (sum, payment) => sum + getReceivedNetAmount(payment),
+    0
+  )
+  const unallocatedCostsNet = unallocatedCosts.reduce(
+    (sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0),
+    0
+  )
+
+  const splitAmount = Math.max(0, unallocatedReceivedNet - unallocatedCostsNet)
+  const splitTotal = splitAmount * 2
 
   // Spływ płatności liczymy w tej samej bazie co należności:
   // netto. Dzięki temu wpłata brutto nie może sztucznie zawyżyć wskaźnika
@@ -8430,6 +8462,53 @@ function FinancePage({
     }
 
     await recordPartnerTransfer(amount)
+  }
+
+  const distributeAvailableProfit = async () => {
+    if (splitAmount <= 0.01) {
+      await showCustomAlert('Brak pieniędzy do podziału po uwzględnieniu nowych kosztów.')
+      return
+    }
+
+    const confirmed = await showCustomConfirm(
+      `Podzielić ${formatMoney(splitTotal)}?
+      
+Otrzymane netto: ${formatMoney(unallocatedReceivedNet)}
+Nowe koszty: ${formatMoney(unallocatedCostsNet)}
+Do podziału: ${formatMoney(splitTotal)}
+
+Łukasz: ${formatMoney(splitAmount)}
+Paweł: ${formatMoney(splitAmount)}`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setSettlementSaving(true)
+
+      const saved = await createProfitDistribution({
+        distributionDate: getTodayString(),
+        receivedNet: unallocatedReceivedNet,
+        costsNet: unallocatedCostsNet,
+        profit: splitTotal,
+        lukaszShare: splitAmount,
+        pawelShare: splitAmount,
+        paymentIds: unallocatedPayments.map((payment) => payment.id),
+        costIds: unallocatedCosts.map((cost) => cost.id),
+        note: 'Podział pieniędzy po uwzględnieniu nowych kosztów',
+      })
+
+      setProfitDistributions((current) => [...current, saved])
+
+      await showCustomAlert(
+        `Podział zapisany: Łukasz ${formatMoney(splitAmount)}, Paweł ${formatMoney(splitAmount)}.`
+      )
+    } catch (error) {
+      console.error('Nie udało się zapisać podziału pieniędzy:', error)
+      await showCustomAlert('Nie udało się zapisać podziału pieniędzy.')
+    } finally {
+      setSettlementSaving(false)
+    }
   }
 
   const openCostSheet = () => {
@@ -8869,7 +8948,7 @@ function FinancePage({
           <div className="finance-kpi-card finance-kpi-split">
             <span>DO PODZIAŁU 50/50</span>
             <strong>{formatMoney(splitAmount)}</strong>
-            <small>Na osobę · netto</small>
+            <small>Nowe wpłaty − nowe koszty</small>
           </div>
         </div>
 
@@ -8943,11 +9022,17 @@ function FinancePage({
             </div>
 
             <div className="finance-payment-row finance-payment-row-border">
-              <span>Saldo kosztów</span>
-              <strong className={partnerCostBalance > 0.01 || partnerCostBalance < -0.01 ? 'finance-warning-value' : 'finance-success-value'}>
-                {Math.abs(partnerCostBalance) > 0.01 ? formatMoney(balanceAmount) : 'Rozliczone'}
-              </strong>
+              <span>Nowe koszty</span>
+              <strong>{formatMoney(unallocatedCostsNet)}</strong>
             </div>
+            <button
+              type="button"
+              className="finance-settle-button"
+              onClick={distributeAvailableProfit}
+              disabled={settlementSaving || splitAmount <= 0.01}
+            >
+              Podziel teraz {formatMoney(splitTotal)}
+            </button>
           </div>
 
           )}

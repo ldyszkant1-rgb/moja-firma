@@ -7617,6 +7617,7 @@ function FinancePage({
     note: '',
   })
   const [settlementSaving, setSettlementSaving] = useState(false)
+  const [reportBusy, setReportBusy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -8556,6 +8557,101 @@ function FinancePage({
     await recordPartnerTransfer(amount)
   }
 
+  const buildDistributionReport = (distribution = null) => {
+    const paymentIds = distribution?.paymentIds?.length
+      ? distribution.paymentIds
+      : unallocatedPayments.map((payment) => payment.id)
+    const costIds = distribution?.costIds?.length
+      ? distribution.costIds
+      : costsForCurrentDistribution.map((cost) => cost.id)
+
+    const paymentIdSet = new Set(paymentIds.map(String))
+    const costIdSet = new Set(costIds.map(String))
+    const payments = allJobPayments.filter((payment) => paymentIdSet.has(String(payment.id)))
+    const reportCosts = costs.filter((cost) => costIdSet.has(String(cost.id)))
+
+    const received = Number(distribution?.receivedNet ?? unallocatedReceivedNet ?? 0)
+    const lukaszShare = Number(distribution?.lukaszShare ?? partnerOneSplitAmount ?? 0)
+    const pawelShare = Number(distribution?.pawelShare ?? partnerTwoSplitAmount ?? 0)
+    const costsTotal = Number(
+      distribution?.costsNet ??
+      reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+    )
+
+    const paymentLines = payments
+      .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
+      .map((payment) => '• ' + formatDate(payment.paidAt) + ' — ' + formatMoney(payment.amount))
+
+    const costLines = reportCosts
+      .sort((a, b) => String(a.month || '').localeCompare(String(b.month || '')))
+      .map((cost) =>
+        '• ' +
+        formatDate(cost.month) +
+        ' — ' +
+        (cost.category || 'Inne') +
+        ' — ' +
+        (cost.description || 'Bez opisu') +
+        ' — ' +
+        (cost.paidBy || '—') +
+        ' — ' +
+        formatMoney(cost.netAmount ?? cost.amount)
+      )
+
+    const reportDate = distribution?.distributionDate || getTodayString()
+
+    return [
+      'ROZLICZENIE AEROINSTAL',
+      'Data rozliczenia: ' + formatDate(reportDate),
+      '',
+      'WPŁATA',
+      ...(paymentLines.length ? paymentLines : ['• Razem: ' + formatMoney(received)]),
+      'Razem wpłata: ' + formatMoney(received),
+      '',
+      'KOSZTY',
+      ...(costLines.length ? costLines : ['• Brak kosztów']),
+      'Razem koszty: ' + formatMoney(costsTotal),
+      '',
+      'PODZIAŁ 50/50',
+      partnerOne + ': ' + formatMoney(lukaszShare),
+      partnerTwo + ': ' + formatMoney(pawelShare),
+      '',
+      Math.abs(lukaszShare - pawelShare) > 0.01
+        ? partnerTwo + ' oddaje ' + partnerOne + ': ' + formatMoney(Math.abs(lukaszShare - pawelShare))
+        : 'Podział po równo: ' + formatMoney(lukaszShare) + ' na osobę',
+    ].join('\n')
+  }
+
+  const shareDistributionReport = async (distribution = null) => {
+    const report = buildDistributionReport(distribution)
+
+    try {
+      setReportBusy(true)
+
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Rozliczenie Aeroinstal',
+          text: report,
+        })
+        return
+      }
+
+      await navigator.clipboard.writeText(report)
+      await showCustomAlert('Raport skopiowano do schowka. Możesz wkleić go na Messengerze.')
+    } catch (error) {
+      if (error?.name === 'AbortError') return
+
+      try {
+        await navigator.clipboard.writeText(report)
+        await showCustomAlert('Raport skopiowano do schowka. Możesz wkleić go na Messengerze.')
+      } catch (clipboardError) {
+        console.error('Nie udało się udostępnić raportu:', clipboardError)
+        await showCustomAlert('Nie udało się przygotować raportu.')
+      }
+    } finally {
+      setReportBusy(false)
+    }
+  }
+
   const distributeAvailableProfit = async () => {
     if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
       await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
@@ -9092,6 +9188,18 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               {balanceDirection} <strong>{formatMoney(balanceAmount)}</strong>
             </div>
           )}
+
+          <div className="finance-settlement-report">
+            <button
+              type="button"
+              className="finance-report-button"
+              onClick={() => shareDistributionReport()}
+              disabled={reportBusy || splitTotal <= 0.01}
+            >
+              {reportBusy ? 'Przygotowuję raport…' : '📤 Wyślij rozliczenie'}
+            </button>
+            <span>Gotowy tekst z datami wpłat i kosztów do wysłania na Messengerze.</span>
+          </div>
 
           <div className="finance-settlement-actions">
             <button

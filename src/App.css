@@ -7529,6 +7529,31 @@ body {
   line-height: 1.35;
 }
 
+.finance-page .aero-report-action {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid #cfe5f7;
+  border-radius: 12px;
+  background: #eef8ff;
+  color: #087fca;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.finance-page .aero-report-action:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
 .finance-page .finance-settlement-report {
   display: flex;
   align-items: center;
@@ -7585,6 +7610,11 @@ body {
 }
 
 @media (max-width: 700px) {
+  .finance-page .aero-report-action {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
   .finance-page .finance-settlement-report {
     align-items: flex-start;
     flex-direction: column;

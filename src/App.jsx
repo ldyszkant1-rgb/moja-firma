@@ -61,6 +61,7 @@ import {
   savePartnerSettlement,
   getProfitDistributions,
   createProfitDistribution,
+  reverseProfitDistribution,
   getPartnerTransfers,
   createPartnerTransfer,
   deletePartnerTransfer,
@@ -7619,6 +7620,7 @@ function FinancePage({
   const [settlementSaving, setSettlementSaving] = useState(false)
   const [reportBusy, setReportBusy] = useState(false)
   const [reportDistribution, setReportDistribution] = useState(null)
+  const [historyOpenId, setHistoryOpenId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -7742,6 +7744,9 @@ function FinancePage({
             costIds: Array.isArray(row.cost_ids) ? row.cost_ids.map(String) : [],
             note: row.note || '',
             createdAt: row.created_at || null,
+            status: row.status || 'active',
+            reversedAt: row.reversed_at || null,
+            reversalReason: row.reversal_reason || '',
           }
           setProfitDistributions((current) =>
             current.some((item) => item.id === incoming.id)
@@ -8275,17 +8280,18 @@ function FinancePage({
   const invoicesToIssue = invoices.filter((invoice) => invoice.status === 'Do wystawienia').length
   const partiallyPaidReceivables = receivables.filter((item) => item.paid > 0.01 && item.remaining > 0.01).length
 
-  const latestSavedDistribution = [...profitDistributions]
+  const latestSavedDistribution = [...activeProfitDistributions]
     .filter((item) => Number(item.receivedNet || 0) > 0.01 || Number(item.profit || 0) > 0.01)
     .sort((a, b) => String(b.distributionDate || '').localeCompare(String(a.distributionDate || '')))[0] || null
 
   const activeReportDistribution = reportDistribution || latestSavedDistribution
 
+  const activeProfitDistributions = profitDistributions.filter((item) => item.status !== 'reversed')
   const distributedPaymentIds = new Set(
-    profitDistributions.flatMap((item) => item.paymentIds || []).map(String)
+    activeProfitDistributions.flatMap((item) => item.paymentIds || []).map(String)
   )
   const distributedCostIds = new Set(
-    profitDistributions.flatMap((item) => item.costIds || []).map(String)
+    activeProfitDistributions.flatMap((item) => item.costIds || []).map(String)
   )
 
   // Do kolejnego podziału trafiają wyłącznie nowe, jeszcze nierozliczone
@@ -8641,7 +8647,13 @@ function FinancePage({
       ...(costLines.length ? costLines : ['• Brak kosztów']),
       'Razem koszty: ' + formatMoney(costsTotal),
       '',
-      'PODZIAŁ 50/50',
+      'KTO POKRYŁ KOSZTY',
+      partnerOne + ': ' + formatMoney(reportPartnerOneCosts),
+      partnerTwo + ': ' + formatMoney(reportPartnerTwoCosts),
+      'Łącznie: ' + formatMoney(reportPartnerOneCosts + reportPartnerTwoCosts),
+      '',
+      'PODZIAŁ KOŃCOWY 50/50',
+      'Do podziału z wpłaty: ' + formatMoney(received),
       partnerOne + ': ' + formatMoney(lukaszShare),
       partnerTwo + ': ' + formatMoney(pawelShare),
       '',
@@ -8862,7 +8874,33 @@ function FinancePage({
     printWindow.document.close()
   }
 
-  const distributeAvailableProfit = async () => {
+  const handleReverseDistribution = async (distribution) => {
+    if (!distribution?.id || distribution.status === 'reversed') return
+
+    const confirmed = await showCustomConfirm(
+      'Cofnąć to rozliczenie?\n\nWpłaty i koszty wrócą do nierozliczonych i będą mogły zostać użyte w kolejnym podziale.'
+    )
+    if (!confirmed) return
+
+    try {
+      setSettlementSaving(true)
+      const reversed = await reverseProfitDistribution(distribution.id, 'Cofnięte przez użytkownika')
+      setProfitDistributions((current) =>
+        current.map((item) => item.id === reversed.id ? reversed : item)
+      )
+      if (reportDistribution?.id === reversed.id) {
+        setReportDistribution(null)
+      }
+      await showCustomAlert('Rozliczenie zostało cofnięte. Wpłaty i koszty są ponownie dostępne do podziału.')
+    } catch (error) {
+      console.error('Nie udało się cofnąć rozliczenia:', error)
+      await showCustomAlert('Nie udało się cofnąć rozliczenia.')
+    } finally {
+      setSettlementSaving(false)
+    }
+  }
+
+  const distributeAvailableProfit = async () =>
     if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
       await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
       return
@@ -9405,7 +9443,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <button type="button" className="finance-report-button" onClick={() => shareDistributionReport(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 📤 Tekst
               </button>
-              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!reportDistribution && splitTotal <= 0.01)}>
+              <button type="button" className="finance-report-button" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 🖼️ Grafika
               </button>
               <button type="button" className="finance-report-button" onClick={() => openDistributionPdf(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
@@ -9443,6 +9481,61 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             </div>
           )}
         </div>
+
+        {activeProfitDistributions.length > 0 && (
+          <section className="finance-history-card detail-card">
+            <div className="finance-history-header">
+              <div>
+                <div className="finance-overview-label">ARCHIWUM</div>
+                <h2>Historia podziałów</h2>
+                <p>Każde rozliczenie jest zapisane osobno. Możesz wrócić do dowolnego dnia i ponownie wygenerować raport.</p>
+              </div>
+            </div>
+            <div className="finance-history-list">
+              {[...profitDistributions]
+                .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
+                .sort((a, b) => String(b.createdAt || b.distributionDate || '').localeCompare(String(a.createdAt || a.distributionDate || '')))
+                .map((distribution) => {
+                  const isOpen = historyOpenId === distribution.id
+                  const reportData = getDistributionReportData(distribution)
+                  return (
+                    <div key={distribution.id} className={'finance-history-item' + (isOpen ? ' is-open' : '')}>
+                      <button type="button" className="finance-history-main" onClick={() => setHistoryOpenId(isOpen ? null : distribution.id)}>
+                        <span className="finance-history-date">{formatDate(distribution.distributionDate)}</span>
+                        <span className="finance-history-summary">
+                          <strong>{formatMoney(distribution.receivedNet)}</strong>
+                          <small>{partnerOne} {formatMoney(distribution.lukaszShare)} · {partnerTwo} {formatMoney(distribution.pawelShare)}</small>
+                        </span>
+                        <span className="finance-history-chevron">{isOpen ? '⌃' : '⌄'}</span>
+                      </button>
+                      {isOpen && (
+                        <div className="finance-history-detail">
+                          <div className="finance-history-stats">
+                            <div><span>Wpłata</span><strong>{formatMoney(reportData.received)}</strong></div>
+                            <div><span>Koszty razem</span><strong>{formatMoney(reportData.costsTotal)}</strong></div>
+                            <div><span>{partnerOne} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerOne).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
+                            <div><span>{partnerTwo} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerTwo).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
+                          </div>
+                          <div className="finance-history-actions">
+                            <button type="button" onClick={() => shareDistributionReport(distribution)} disabled={reportBusy}>📤 Tekst</button>
+                            <button type="button" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}>🖼️ Grafika</button>
+                            <button type="button" onClick={() => openDistributionPdf(distribution)}>📄 PDF</button>
+                            {distribution.status !== 'reversed' && (
+                              <button type="button" className="finance-history-reverse" onClick={() => handleReverseDistribution(distribution)} disabled={settlementSaving}>↩️ Cofnij</button>
+                            )}
+                          </div>
+                          <div className="finance-history-final">
+                            <span>Podział końcowy</span>
+                            <strong>{partnerOne} {formatMoney(distribution.lukaszShare)} · {partnerTwo} {formatMoney(distribution.pawelShare)}</strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+          </section>
+        )}
 
         <div className="finance-command-grid finance-command-grid-bottom">
           <div className="finance-command-card">

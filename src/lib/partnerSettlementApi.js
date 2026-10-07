@@ -206,6 +206,11 @@ export function subscribeToPartnerSettlements(callback) {
       { event: '*', schema: 'public', table: 'partner_transfers' },
       (payload) => callback({ type: 'transfer', payload })
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'profit_distributions' },
+      (payload) => callback({ type: 'profitDistribution', payload })
+    )
     .subscribe()
 
   return () => supabase.removeChannel(channel)

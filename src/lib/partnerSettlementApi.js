@@ -59,6 +59,9 @@ function mapProfitDistribution(row) {
     costIds: Array.isArray(row.cost_ids) ? row.cost_ids.map(String) : [],
     note: row.note || '',
     createdAt: row.created_at || null,
+    status: row.status || 'active',
+    reversedAt: row.reversed_at || null,
+    reversalReason: row.reversal_reason || '',
   }
 }
 
@@ -98,7 +101,25 @@ export async function createProfitDistribution({
       payment_ids: Array.isArray(paymentIds) ? paymentIds.map(String) : [],
       cost_ids: Array.isArray(costIds) ? costIds.map(String) : [],
       note: note?.trim() || null,
+      status: 'active',
     })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapProfitDistribution(data)
+}
+
+export async function reverseProfitDistribution(id, reason = '') {
+  const { data, error } = await supabase
+    .from('profit_distributions')
+    .update({
+      status: 'reversed',
+      reversed_at: new Date().toISOString(),
+      reversal_reason: reason?.trim() || null,
+    })
+    .eq('id', id)
+    .eq('status', 'active')
     .select()
     .single()
 

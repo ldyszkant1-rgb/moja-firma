@@ -27,6 +27,64 @@ function mapTransfer(row) {
   }
 }
 
+
+function mapProfitDistribution(row) {
+  return {
+    id: row.id,
+    distributionDate: row.distribution_date,
+    receivedNet: Number(row.received_net || 0),
+    costsNet: Number(row.costs_net || 0),
+    profit: Number(row.profit || 0),
+    lukaszShare: Number(row.lukasz_share || 0),
+    pawelShare: Number(row.pawel_share || 0),
+    paymentIds: Array.isArray(row.payment_ids) ? row.payment_ids.map(String) : [],
+    costIds: Array.isArray(row.cost_ids) ? row.cost_ids.map(String) : [],
+    note: row.note || '',
+    createdAt: row.created_at || null,
+  }
+}
+
+export async function getProfitDistributions() {
+  const { data, error } = await supabase
+    .from('profit_distributions')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return (data || []).map(mapProfitDistribution)
+}
+
+export async function createProfitDistribution({
+  distributionDate,
+  receivedNet,
+  costsNet,
+  profit,
+  lukaszShare,
+  pawelShare,
+  paymentIds,
+  costIds,
+  note,
+}) {
+  const { data, error } = await supabase
+    .from('profit_distributions')
+    .insert({
+      distribution_date: distributionDate || new Date().toISOString().slice(0, 10),
+      received_net: Number(receivedNet || 0),
+      costs_net: Number(costsNet || 0),
+      profit: Number(profit || 0),
+      lukasz_share: Number(lukaszShare || 0),
+      pawel_share: Number(pawelShare || 0),
+      payment_ids: Array.isArray(paymentIds) ? paymentIds.map(String) : [],
+      cost_ids: Array.isArray(costIds) ? costIds.map(String) : [],
+      note: note?.trim() || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapProfitDistribution(data)
+}
+
 export async function getPartnerSettlements() {
   const { data, error } = await supabase
     .from('partner_settlements')

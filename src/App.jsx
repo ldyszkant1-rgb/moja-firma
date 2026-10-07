@@ -8758,7 +8758,7 @@ function FinancePage({
       .replace(/"/g, '&quot;')
 
     const costRows = data.reportCosts.map((cost, index) => {
-      const y = 330 + index * rowHeight
+      const y = 365 + index * rowHeight
       const description = cost.description || cost.category || 'Inne'
       return '<text x="85" y="' + y + '" font-size="23" fill="#6f8198">' + esc(formatDate(cost.month)) +
         '</text><text x="235" y="' + y + '" font-size="23" font-weight="700" fill="#111b34">' +
@@ -8767,7 +8767,7 @@ function FinancePage({
         esc(formatMoney(cost.netAmount ?? cost.amount)) + '</text>'
     }).join('')
 
-    const dividerY = 355 + data.reportCosts.length * rowHeight
+    const dividerY = 405 + Math.max(0, data.reportCosts.length - 1) * rowHeight
     const costSummaryY = dividerY + 55
     const splitY = dividerY + 235
     const balanceBlock = data.balance > 0.01

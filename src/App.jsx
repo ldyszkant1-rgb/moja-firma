@@ -47,6 +47,9 @@ import {
   updateFinance,
   deleteFinance,
   subscribeToFinance,
+  getProfitDistributions,
+  createProfitDistribution,
+  subscribeToProfitDistributions,
 } from './lib/financeApi'
 import {
   getJobPayments,
@@ -7621,6 +7624,61 @@ function FinancePage({
   useEffect(() => {
     let cancelled = false
 
+    const loadProfitDistributions = async () => {
+      try {
+        const rows = await getProfitDistributions()
+        if (!cancelled) setProfitDistributions(rows)
+      } catch (error) {
+        console.error('Nie udało się wczytać historii podziałów:', error)
+      }
+    }
+
+    if (!dataAccessReady) return () => { cancelled = true }
+    loadProfitDistributions()
+
+    const unsubscribe = subscribeToProfitDistributions((payload) => {
+      if (!payload) return
+
+      const mapDistribution = (row) => ({
+        id: row.id,
+        organizationId: row.organization_id || null,
+        distributionDate: row.distribution_date || null,
+        receivedNet: Number(row.received_net || 0),
+        costsNet: Number(row.costs_net || 0),
+        profit: Number(row.profit || 0),
+        lukaszShare: Number(row.lukasz_share || 0),
+        pawelShare: Number(row.pawel_share || 0),
+        paymentIds: Array.isArray(row.payment_ids) ? row.payment_ids : [],
+        costIds: Array.isArray(row.cost_ids) ? row.cost_ids : [],
+        note: row.note || '',
+        createdAt: row.created_at || null,
+        updatedAt: row.updated_at || null,
+      })
+
+      if (payload.eventType === 'DELETE' && payload.old?.id) {
+        setProfitDistributions((current) => current.filter((item) => item.id !== payload.old.id))
+        return
+      }
+
+      if (payload.new?.id) {
+        const incoming = mapDistribution(payload.new)
+        setProfitDistributions((current) =>
+          current.some((item) => item.id === incoming.id)
+            ? current.map((item) => item.id === incoming.id ? incoming : item)
+            : [incoming, ...current]
+        )
+      }
+    })
+
+    return () => {
+      cancelled = true
+      unsubscribe()
+    }
+  }, [dataAccessReady])
+
+  useEffect(() => {
+    let cancelled = false
+
     const loadPaymentAndSettlementData = async () => {
       try {
         const [payments, settlements, transfers, distributions] = await Promise.all([
@@ -9069,11 +9127,11 @@ Paweł: ${formatMoney(splitAmount)}`
             <div className="finance-partner-mini-grid">
               <div>
                 <span>{partnerOne}</span>
-                <strong>{formatMoney(splitAmount)}</strong>
+                <strong>{formatMoney(partnerOneSplitAmount)}</strong>
               </div>
               <div>
                 <span>{partnerTwo}</span>
-                <strong>{formatMoney(splitAmount)}</strong>
+                <strong>{formatMoney(partnerTwoSplitAmount)}</strong>
               </div>
             </div>
 

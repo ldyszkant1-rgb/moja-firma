@@ -10,7 +10,7 @@ declare
 begin
   if current_user_id is null then raise exception 'Brak sesji użytkownika.'; end if;
   if coalesce((select auth.jwt()->>'is_anonymous'), 'false')::boolean is not true then raise exception 'To urządzenie wymaga sesji anonimowej.'; end if;
-  if p_user_name not in ('Łukasz', 'Paweł') then raise exception 'Nieprawidłowy użytkownik urządzenia.'; end if;
+  if p_user_name is null or p_user_name not in ('Łukasz', 'Paweł') then raise exception 'Nieprawidłowy użytkownik urządzenia.'; end if;
   if p_device_id is null or length(trim(p_device_id)) < 8 then raise exception 'Nieprawidłowy identyfikator urządzenia.'; end if;
   select du.user_name into assigned_user from public.device_users du where du.device_id = p_device_id for update;
   if assigned_user is null then raise exception 'To urządzenie nie jest zarejestrowane. Skontaktuj się z administratorem Aeroinstal.'; end if;

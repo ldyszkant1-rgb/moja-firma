@@ -8408,15 +8408,26 @@ function FinancePage({
     0
   )
 
-  // Koszt oznaczamy jako rozliczony dopiero wtedy, gdy bieżąca wpłata
-  // wystarcza na pokrycie całej puli nierozliczonych kosztów.
-  // Dzięki temu przy zbyt małej wpłacie saldo kosztów zostaje na kolejny podział.
-  const canSettleAllUnallocatedCosts =
-    unallocatedCostsNet <= unallocatedReceivedNet + 0.01
+  // Każdy uwzględniony koszt obciąża wspólny wynik po połowie,
+  // niezależnie od tego, który wspólnik zapłacił. Rozliczamy całe pozycje
+  // kosztowe mieszczące się w bieżącej puli wpływów; pozostałe zostają
+  // nierozliczone i przejdą do kolejnego podziału, bez duplikowania.
+  const costsInStableOrder = [...unallocatedCosts].sort((a, b) => {
+    const dateA = String(a.date ?? a.month ?? '')
+    const dateB = String(b.date ?? b.month ?? '')
+    return dateA.localeCompare(dateB) || String(a.id).localeCompare(String(b.id))
+  })
 
-  const costsForCurrentDistribution = canSettleAllUnallocatedCosts
-    ? unallocatedCosts
-    : []
+  const costsForCurrentDistribution = []
+  let remainingReceiptBudget = Math.max(0, unallocatedReceivedNet)
+
+  for (const cost of costsInStableOrder) {
+    const costNet = Math.max(0, Number(cost.netAmount ?? cost.amount ?? 0))
+    if (costNet <= remainingReceiptBudget + 0.01) {
+      costsForCurrentDistribution.push(cost)
+      remainingReceiptBudget = Math.max(0, remainingReceiptBudget - costNet)
+    }
+  }
 
   const costsForCurrentDistributionNet = costsForCurrentDistribution.reduce(
     (sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0),

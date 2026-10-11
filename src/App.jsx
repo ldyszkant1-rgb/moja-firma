@@ -16,6 +16,8 @@ import {
   uploadSupabaseFile,
   deleteSupabaseFile,
   appendSupabaseJobPhoto,
+  renameSupabaseJobPhoto,
+  removeSupabaseJobPhoto,
   appendSupabaseJobNote,
   updateSupabaseJobNote,
   deleteSupabaseJobNote,
@@ -5983,36 +5985,18 @@ function JobDetails({
     )
       return
 
-    const updatedJob = {
-
-      ...editedJob,
-
-      photos:
-        (editedJob.photos || [])
-          .map(
-            (item) =>
-
-              String(item.id) === String(photoId)
-
-                ? {
-                    ...item,
-                    name:
-                      newName.trim(),
-                  }
-
-                : item
-
-          ),
-
+    try {
+      const savedJob = await renameSupabaseJobPhoto(
+        editedJob.id,
+        photoId,
+        newName.trim()
+      )
+      setEditedJob(savedJob)
+      onUpdate(savedJob, { skipSupabase: true })
+    } catch (error) {
+      console.error('Nie udało się zmienić nazwy zdjęcia:', error)
+      await showCustomAlert(error?.message || 'Nie udało się zmienić nazwy zdjęcia.')
     }
-
-    setEditedJob(
-      updatedJob
-    )
-
-    onUpdate(
-      updatedJob
-    )
 
   }
 
@@ -6032,33 +6016,23 @@ function JobDetails({
       return
 
     try {
+      // Remove the photo from the shared job record first. If this fails,
+      // keep the Storage object so another user's metadata cannot point
+      // at a deleted file.
+      const savedJob = await removeSupabaseJobPhoto(editedJob.id, photoId)
+      setEditedJob(savedJob)
+      onUpdate(savedJob, { skipSupabase: true })
 
       if (photo.path) {
-        await deleteSupabaseFile(
-          photo.path
-        )
+        try {
+          await deleteSupabaseFile(photo.path)
+        } catch (storageError) {
+          // The metadata is already removed safely. Keep the orphaned file
+          // rather than reverting the shared record or risking data loss.
+          console.error('Zdjęcie usunięto z realizacji, ale nie udało się usunąć pliku ze Storage:', storageError)
+          await showCustomAlert('Zdjęcie usunięto z realizacji. Nie udało się jednak usunąć pliku ze schowka; można go posprzątać później.')
+        }
       }
-
-      const updatedJob = {
-
-        ...editedJob,
-
-        photos:
-          (editedJob.photos || [])
-            .filter(
-              (item) =>
-                String(item.id) !== String(photoId)
-            ),
-
-      }
-
-      setEditedJob(
-        updatedJob
-      )
-
-      onUpdate(
-        updatedJob
-      )
 
     } catch (error) {
 
@@ -6947,6 +6921,9 @@ function JobDetails({
             {(editedJob.photos || []).map((photo) => (
               <div className="job-detail-photo-item" key={photo.id}>
                 <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => window.open(photo.url, '_blank')} />
+                <button type="button" onClick={() => renamePhoto(photo.id)} aria-label="Zmień nazwę zdjęcia" title="Zmień nazwę">
+                  <Pencil size={15} strokeWidth={1.75} />
+                </button>
                 <button type="button" onClick={() => removePhoto(photo.id)} aria-label="Usuń zdjęcie">
                   <Trash2 size={15} strokeWidth={1.75} />
                 </button>

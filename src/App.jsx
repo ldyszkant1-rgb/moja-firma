@@ -12747,17 +12747,23 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     )
     if (!confirmed) return
 
-    const ids = new Set(dayPlans.map((plan) => String(plan.id)))
-    setPlans((current) => current.filter((plan) => !ids.has(String(plan.id))))
+    try {
+      const { data: deletedCount, error } = await supabase.rpc('delete_calendar_day', {
+        p_plan_date: date,
+      })
 
-    const { data: deletedCount, error } = await supabase.rpc('delete_calendar_day', {
-      p_plan_date: date,
-    })
+      if (error) throw error
+      if (Number(deletedCount) !== dayPlans.length) {
+        throw new Error(`Baza usunęła ${Number(deletedCount) || 0} z ${dayPlans.length} wpisów. Odświeżam terminarz.`)
+      }
 
-    if (error || Number(deletedCount) !== dayPlans.length) {
-      console.error('Nie udało się usunąć planu dnia:', error, { deletedCount, expected: dayPlans.length })
-      await loadPlans()
+      const ids = new Set(dayPlans.map((plan) => String(plan.id)))
+      setPlans((current) => current.filter((plan) => !ids.has(String(plan.id))))
+    } catch (error) {
+      console.error('Nie udało się usunąć planu dnia:', error, { expected: dayPlans.length })
       await showCustomAlert(error?.message || 'Nie udało się usunąć wszystkich wpisów z tego dnia.')
+    } finally {
+      await loadPlans()
     }
   }
 
@@ -12767,16 +12773,22 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     )
     if (!confirmed) return
 
-    setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
+    try {
+      const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
+        p_plan_id: plan.id,
+      })
 
-    const { data: deleted, error } = await supabase.rpc('delete_calendar_plan', {
-      p_plan_id: plan.id,
-    })
+      if (error) throw error
+      if (deleted !== true) {
+        throw new Error('Baza nie potwierdziła usunięcia wpisu. Sprawdź, czy nadal należy on do Twojej firmy.')
+      }
 
-    if (error || !deleted) {
-      console.error('Nie udało się usunąć wpisu:', error, { deleted })
-      await loadPlans()
+      setPlans((current) => current.filter((item) => String(item.id) !== String(plan.id)))
+    } catch (error) {
+      console.error('Nie udało się usunąć wpisu:', error, { planId: plan.id })
       await showCustomAlert(error?.message || 'Nie udało się usunąć wpisu.')
+    } finally {
+      await loadPlans()
     }
   }
 
@@ -12796,10 +12808,9 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         p_excluded_date: date,
       })
 
-      if (error || !deleted) {
-        console.error('Nie udało się usunąć dnia realizacji:', error, { deleted })
-        await showCustomAlert(error?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
-        return
+      if (error) throw error
+      if (deleted !== true) {
+        throw new Error('Baza nie potwierdziła usunięcia dnia z terminarza.')
       }
 
       // RPC robi operację atomowo: zapisuje wykluczenie i usuwa ręczne
@@ -12825,8 +12836,12 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
         }
         return [...current, { job_id: job.id, excluded_date: date }]
       })
+    } catch (error) {
+      console.error('Nie udało się usunąć dnia realizacji:', error, { jobId: job.id, date })
+      await showCustomAlert(error?.message || 'Nie udało się usunąć tego dnia z kalendarza.')
     } finally {
       setMovingJobId(null)
+      await loadPlans()
     }
   }
 

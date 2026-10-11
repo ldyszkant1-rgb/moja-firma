@@ -41,29 +41,25 @@ export async function getJobProfitShares(jobId) {
 }
 
 export async function saveJobProfitShares(jobId, shares) {
-  const organizationId = await getOrganizationId()
+  if (!jobId) throw new Error('Brak ID realizacji.')
+
   const cleanShares = (shares || [])
     .filter((share) => share?.employeeId === 'team' || share?.employeeId)
     .map((share) => ({
-      organization_id: organizationId,
-      job_id: jobId,
-      employee_id: String(share.employeeId || '').startsWith('participant:') || String(share.employeeId || '').startsWith('profit:') ? null : share.employeeId,
+      employee_id:
+        String(share.employeeId || '').startsWith('participant:') ||
+        String(share.employeeId || '').startsWith('profit:')
+          ? null
+          : share.employeeId,
       employee_name: String(share.employeeName || '').trim(),
       percentage: Math.max(0, Math.min(100, Number(share.percentage || 0))),
     }))
 
-  const { error: deleteError } = await supabase
-    .from('job_profit_shares')
-    .delete()
-    .eq('job_id', jobId)
-  if (deleteError) throw deleteError
+  const { data, error } = await supabase.rpc('save_job_profit_shares', {
+    p_job_id: jobId,
+    p_shares: cleanShares,
+  })
 
-  if (cleanShares.length === 0) return []
-
-  const { data, error } = await supabase
-    .from('job_profit_shares')
-    .insert(cleanShares)
-    .select()
   if (error) throw error
   return (data || []).map(mapShare)
 }

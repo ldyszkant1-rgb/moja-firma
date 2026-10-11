@@ -69,7 +69,7 @@ export default function AuthPage({ session = null, recovery = false }) {
     if (mode === 'reset') return 'Ustaw nowe hasło'
     if (mode === 'login') return 'Zaloguj się'
     if (mode === 'accept') return 'Dołącz do firmy'
-    if (mode === 'setup') return 'Utwórz swoją firmę'
+    if (mode === 'setup') return 'Brak przypisanej firmy'
     return 'Zaloguj się'
   }, [mode])
 
@@ -77,7 +77,7 @@ export default function AuthPage({ session = null, recovery = false }) {
     if (mode === 'reset') return 'Ustaw nowe hasło do swojego konta.'
     if (mode === 'login') return 'Zaloguj się do swojej przestrzeni firmy.'
     if (mode === 'accept') return 'Otrzymałeś zaproszenie. Po akceptacji uzyskasz dostęp do przestrzeni tej firmy.'
-    if (mode === 'setup') return 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
+    if (mode === 'setup') return 'Samodzielne tworzenie firmy jest wyłączone. Poproś administratora Aeroinstal o zaproszenie.'
     return 'Zaloguj się do istniejącego konta Aeroinstal.'
   }, [mode])
 
@@ -230,7 +230,7 @@ export default function AuthPage({ session = null, recovery = false }) {
 
   const showAccountFields = mode === 'login'
   const showResetField = mode === 'reset'
-  const showCompanyFields = mode === 'setup'
+  const showCompanyFields = false
 
   return (
     <main style={pageStyle}>
@@ -330,24 +330,24 @@ export default function AuthPage({ session = null, recovery = false }) {
             </button>
           )}
 
-          <button type="submit" disabled={loading} style={{ ...submitStyle, opacity: loading ? 0.65 : 1 }}>
-            {loading
-              ? 'Przetwarzanie…'
-              : mode === 'login'
-                ? 'Zaloguj się'
-  : mode === 'reset'
-                  ? 'Zapisz nowe hasło'
-                  : mode === 'accept'
-                    ? 'Dołącz do firmy'
-                  : mode === 'setup'
-                    ? 'Utwórz firmę'
-                    : 'Utwórz konto i firmę'}
-          </button>
+          {mode !== 'setup' && (
+            <button type="submit" disabled={loading} style={{ ...submitStyle, opacity: loading ? 0.65 : 1 }}>
+              {loading
+                ? 'Przetwarzanie…'
+                : mode === 'login'
+                  ? 'Zaloguj się'
+                  : mode === 'reset'
+                    ? 'Zapisz nowe hasło'
+                    : mode === 'accept'
+                      ? 'Dołącz do firmy'
+                      : 'Kontynuuj'}
+            </button>
+          )}
         </form>
 
         {mode === 'setup' && (
           <div style={hintStyle}>
-            To konto nie ma jeszcze firmy. Po utworzeniu zostaniesz jej właścicielem.
+            Aby uzyskać dostęp, poproś administratora o zaproszenie na ten adres e-mail.
           </div>
         )}
       </section>

@@ -8969,6 +8969,7 @@ function FinancePage({
     const lastY = data.reportCosts.length ? rowStartY - (data.reportCosts.length - 1) * rowHeight : rowStartY
     const totalY = lastY - 32
     commands.push(
+      textAt(margin, totalY, 9, 'Zysk po kosztach: ' + money(data.profitAfterCosts), 'F2', '0.39 0.45 0.52'),
       textAt(pageWidth - margin - 125, totalY, 9, 'Razem koszty', 'F2', '0.39 0.45 0.52'),
       textAt(pageWidth - margin - 8, totalY, 10, money(data.costsTotal), 'F2'),
       line(margin, totalY - 18, pageWidth - margin, totalY - 18),

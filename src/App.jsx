@@ -8437,6 +8437,11 @@ function FinancePage({
     0
   )
 
+  const costsRemainingAfterDistributionNet = Math.max(
+    0,
+    Math.round((unallocatedCostsNet - costsForCurrentDistributionNet + Number.EPSILON) * 100) / 100
+  )
+
   const partnerOneCostsForCurrentDistribution = costsForCurrentDistribution
     .filter((cost) => cost.paidBy === partnerOne)
     .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
@@ -9163,12 +9168,12 @@ function FinancePage({
     const confirmed = window.confirm(
       `Wpływy netto: ${formatMoney(unallocatedReceivedNet)}
 Koszty uwzględnione w tym podziale: ${formatMoney(costsForCurrentDistributionNet)}
-Zysk po kosztach: ${formatMoney(currentProfit)}
+Koszty pozostające po tym podziale: ${formatMoney(costsRemainingAfterDistributionNet)}
+Zysk po kosztach uwzględnionych w tym podziale: ${formatMoney(currentProfit)}
 
 Podział wypłaty z korektą kosztów opłaconych przez wspólników:
 Bazowo 50/50: ${formatMoney(splitAmount)} na osobę
-Nierozliczone koszty ogółem: ${formatMoney(unallocatedCostsNet)}
-Korekta między wspólnikami: ${formatMoney(Math.abs(unallocatedCostBalance))}
+Korekta za koszty uwzględnione w tym podziale: ${formatMoney(Math.abs(unallocatedCostBalance))}
 
 ${partnerOne}: ${formatMoney(partnerOneSplitAmount)}
 ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`

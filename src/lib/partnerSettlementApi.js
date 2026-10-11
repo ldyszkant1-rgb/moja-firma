@@ -146,9 +146,12 @@ export async function savePartnerSettlement({
   closed,
   note,
 }) {
+  const organizationId = await getOrganizationId()
+
   const { data, error } = await supabase
     .from('partner_settlements')
     .upsert({
+      organization_id: organizationId,
       month,
       profit: Number(profit || 0),
       lukasz_share: Number(lukaszShare || 0),
@@ -158,7 +161,7 @@ export async function savePartnerSettlement({
       closed: Boolean(closed),
       closed_at: closed ? new Date().toISOString() : null,
       note: note?.trim() || null,
-    }, { onConflict: 'month' })
+    }, { onConflict: 'organization_id,month' })
     .select()
     .single()
 

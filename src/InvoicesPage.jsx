@@ -1,4 +1,4 @@
-import React,{useEffect,useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useRef,useState} from 'react'
 import logo from './assets/logo.png'
 import './invoices.css'
 import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
@@ -50,6 +50,7 @@ const polishAmountInWords=value=>{
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={},prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
  const [edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
  const [payments,setPayments]=useState([]),[paymentForm,setPaymentForm]=useState({amount:'',paidAt:today(),note:''}),[paymentSaving,setPaymentSaving]=useState(false)
+ const paymentSavingRef=useRef(false),invoiceSavingRef=useRef(false),paymentDeletingRef=useRef(new Set())
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients])
  const jm=useMemo(()=>new Map(jobs.map(j=>[String(j.id),j])),[jobs])
  const company=settings?.company||{}
@@ -95,29 +96,34 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  },[edit?.id,edit?.jobId])
 
  const addPayment=async()=>{
+  if(paymentSavingRef.current)return
   if(!edit?.id||!edit?.jobId){onAlert?.('Najpierw zapisz fakturę, aby dodać płatność.');return}
   const amount=Number(paymentForm.amount||0)
   const remaining=Math.max(0,Number(edit.grossAmount||0)-Number(edit.paidAmount||0)-Number(edit.vatSettledAmount||0))
   if(!Number.isFinite(amount)||amount<=0){onAlert?.('Podaj prawidłową kwotę płatności.');return}
   if(amount>remaining+0.01){onAlert?.('Kwota płatności jest większa niż pozostała należność.');return}
   try{
+   paymentSavingRef.current=true
    setPaymentSaving(true)
    await createJobPayment({jobId:edit.jobId,invoiceId:edit.id,amount,paidAt:paymentForm.paidAt||today(),note:paymentForm.note})
    setPaymentForm({amount:'',paidAt:today(),note:''})
    await refreshPayments(edit.jobId)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed'))
   }catch(error){console.error('Nie udało się zapisać płatności:',error);onAlert?.('Nie udało się zapisać płatności.')}
-  finally{setPaymentSaving(false)}
+  finally{paymentSavingRef.current=false;setPaymentSaving(false)}
  }
 
  const removePayment=async(payment)=>{
+  if(paymentDeletingRef.current.has(String(payment.id)))return
   const confirmed=await onConfirm?.(`Usunąć płatność ${money(payment.amount)} z dnia ${formatDate(payment.paidAt)}?`)
   if(!confirmed)return
+  paymentDeletingRef.current.add(String(payment.id))
   try{
    await deleteJobPayment(payment.id)
    await refreshPayments(edit.jobId)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed'))
   }catch(error){console.error('Nie udało się usunąć płatności:',error);onAlert?.('Nie udało się usunąć płatności.')}
+  finally{paymentDeletingRef.current.delete(String(payment.id))}
  }
 
  useEffect(()=>{if(!prefillJobId||edit)return;const j=jm.get(String(prefillJobId));if(!j)return;open(j);onPrefillConsumed?.()},[prefillJobId,jm,edit])
@@ -129,6 +135,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  }
 
  const save=async()=>{
+  if(invoiceSavingRef.current)return
   if(!edit.clientId){onAlert?.('Wybierz klienta.');return}
   if(!edit.issueDate){onAlert?.('Podaj datę wystawienia.');return}
   if(!edit.saleDate){onAlert?.('Podaj datę sprzedaży.');return}
@@ -146,6 +153,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
    onAlert?.('Nie można obniżyć wartości faktury poniżej już otrzymanych wpłat i rozliczonego VAT.')
    return
   }
+  invoiceSavingRef.current=true
   setSaving(true)
   try{
    let confirmedPaid=paid
@@ -165,7 +173,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
    setEdit(null)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}))
    onAlert?.('Faktura została zapisana.')
-  }catch(e){console.error(e);onAlert?.('Nie udało się zapisać faktury.')}finally{setSaving(false)}
+  }catch(e){console.error(e);onAlert?.('Nie udało się zapisać faktury.')}finally{invoiceSavingRef.current=false;setSaving(false)}
  }
 
  const remove=async x=>{

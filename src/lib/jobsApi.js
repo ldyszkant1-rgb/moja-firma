@@ -922,3 +922,46 @@ export async function deleteSupabaseJob(
     id
   )
 }
+
+/* =========================================================
+   ZMIANA NAZWY ZDJĘCIA — atomowo w bazie
+========================================================= */
+export async function renameSupabaseJobPhoto(jobId, photoId, newName) {
+  if (!jobId || !photoId || !String(newName || '').trim()) {
+    throw new Error('Brak danych do zmiany nazwy zdjęcia.')
+  }
+
+  const { data, error } = await supabase.rpc('rename_job_photo', {
+    p_job_id: jobId,
+    p_photo_id: String(photoId),
+    p_new_name: String(newName).trim(),
+  })
+
+  if (error) {
+    console.error('Błąd zmiany nazwy zdjęcia:', error)
+    throw error
+  }
+
+  return mapSupabaseJobToAppJob(data)
+}
+
+/* =========================================================
+   USUWANIE ZDJĘCIA — najpierw metadane, potem plik
+========================================================= */
+export async function removeSupabaseJobPhoto(jobId, photoId) {
+  if (!jobId || !photoId) {
+    throw new Error('Brak danych do usunięcia zdjęcia.')
+  }
+
+  const { data, error } = await supabase.rpc('remove_job_photo', {
+    p_job_id: jobId,
+    p_photo_id: String(photoId),
+  })
+
+  if (error) {
+    console.error('Błąd usuwania zdjęcia z realizacji:', error)
+    throw error
+  }
+
+  return mapSupabaseJobToAppJob(data)
+}

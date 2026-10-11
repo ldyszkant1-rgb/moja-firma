@@ -8964,7 +8964,15 @@ function FinancePage({
           const y = startY - index * rowHeight
           commands.push(
             textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
-            textAt(margin + 78, y, 8, cost.description || cost.category || 'Inne', 'F1'),
+            textAt(
+            margin + 78,
+            y,
+            8,
+            String(cost.description || cost.category || 'Inne').length > 42
+              ? String(cost.description || cost.category || 'Inne').slice(0, 39) + '...'
+              : (cost.description || cost.category || 'Inne'),
+            'F1'
+          ),
             textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
             textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
             line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
@@ -9103,7 +9111,15 @@ function FinancePage({
       const y = rowStartY - index * rowHeight
       commands.push(
         textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
-        textAt(margin + 78, y, 8, cost.description || cost.category || 'Inne', 'F1'),
+        textAt(
+            margin + 78,
+            y,
+            8,
+            String(cost.description || cost.category || 'Inne').length > 42
+              ? String(cost.description || cost.category || 'Inne').slice(0, 39) + '...'
+              : (cost.description || cost.category || 'Inne'),
+            'F1'
+          ),
         textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
         textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
         line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)

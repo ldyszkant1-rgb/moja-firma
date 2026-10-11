@@ -335,11 +335,6 @@ export async function createFinance(
       item
     )
 
-  console.log(
-    'Wysyłanie kosztu do Supabase:',
-    payload
-  )
-
   if (!payload.month) {
 
     throw new Error(
@@ -402,12 +397,6 @@ export async function updateFinance(
     mapAppFinanceToSupabase(
       item
     )
-
-  console.log(
-    'Aktualizacja kosztu w Supabase:',
-    item.id,
-    payload
-  )
 
   if (!payload.month) {
 

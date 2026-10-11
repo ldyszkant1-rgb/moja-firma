@@ -185,7 +185,7 @@ export async function createPartnerTransfer({
   note,
 }) {
   const numericAmount = Number(amount || 0)
-  if (!fromPerson || !toPerson || fromPerson === toPerson || numericAmount <= 0) {
+  if (!fromPerson || !toPerson || fromPerson === toPerson || !Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new Error('Nieprawidłowe przekazanie.')
   }
 

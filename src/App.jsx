@@ -9145,12 +9145,16 @@ function FinancePage({
       return
     }
 
+    const currentProfit = Math.round((unallocatedReceivedNet - costsForCurrentDistributionNet + Number.EPSILON) * 100) / 100
     const confirmed = window.confirm(
-      `Podzielić ${formatMoney(splitTotal)}?
+      `Wpływy netto: ${formatMoney(unallocatedReceivedNet)}
+Koszty uwzględnione w tym podziale: ${formatMoney(costsForCurrentDistributionNet)}
+Zysk po kosztach: ${formatMoney(currentProfit)}
 
+Podział wypłaty z korektą kosztów opłaconych przez wspólników:
 Bazowo 50/50: ${formatMoney(splitAmount)} na osobę
-Nierozliczone koszty: ${formatMoney(unallocatedCostsNet)}
-Saldo kosztów: ${formatMoney(Math.abs(unallocatedCostBalance))}
+Nierozliczone koszty ogółem: ${formatMoney(unallocatedCostsNet)}
+Korekta między wspólnikami: ${formatMoney(Math.abs(unallocatedCostBalance))}
 
 ${partnerOne}: ${formatMoney(partnerOneSplitAmount)}
 ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
@@ -9167,12 +9171,13 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
         distributionDate: getTodayString(),
         receivedNet: unallocatedReceivedNet,
         costsNet: costsForCurrentDistributionNet,
-        profit: unallocatedReceivedNet,
+        // Zysk to wpływy netto pomniejszone o koszty przypisane do tego podziału.
+        profit: currentProfit,
         lukaszShare: partnerOneSplitAmount,
         pawelShare: partnerTwoSplitAmount,
         paymentIds: unallocatedPayments.map((payment) => payment.id),
         costIds: costsForCurrentDistribution.map((cost) => cost.id),
-        note: 'Podział 50/50 z korektą kosztów zapłaconych przez wspólników',
+        note: 'Podział wpływów 50/50 z korektą kosztów opłaconych przez wspólników',
       })
 
       setProfitDistributions((current) =>

@@ -12341,6 +12341,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const [monthCursor, setMonthCursor] = useState(() => getMonthStart(new Date()))
   const [selectedDate, setSelectedDate] = useState(today)
   const [plans, setPlans] = useState([])
+  const [loadError, setLoadError] = useState('')
   const [calendarExclusions, setCalendarExclusions] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -12413,9 +12414,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     let directPlans = []
     let directError = null
+    let directLoaded = false
 
-    // Bezpośredni SELECT jest tylko dodatkowym źródłem, gdy mamy identyfikator
-    // organizacji. RPC pozostaje źródłem podstawowym.
+    // Bezpośredni SELECT jest dodatkowym źródłem, gdy mamy identyfikator
+    // organizacji. Pusty wynik jest prawidłowy, ale pominięty SELECT nie jest
+    // dowodem, że terminarz jest pusty.
     if (organizationId) {
       const direct = await supabase
         .from('calendar_plans')
@@ -12427,18 +12430,23 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
       directPlans = direct.data || []
       directError = direct.error || null
+      directLoaded = !direct.error
     }
 
-    if (rpcError && directError) {
+    // Jeśli żadne źródło nie zwróciło wiarygodnego wyniku, zachowujemy ostatni
+    // poprawny stan zamiast wyświetlać pusty terminarz.
+    if (rpcError && !directLoaded) {
       console.error('Nie udało się wczytać terminarza:', rpcError, directError)
+      setLoadError('Nie udało się wczytać terminarza. Zapisane godziny nie zostały usunięte. Sprawdź połączenie i spróbuj ponownie.')
       return
     }
 
     const mergedPlans = new Map()
-    ;[...(rpcPlans || []), ...(directPlans || [])].forEach((plan) => {
+    ;[...(rpcError ? [] : (rpcPlans || [])), ...(directLoaded ? directPlans : [])].forEach((plan) => {
       if (plan?.id) mergedPlans.set(String(plan.id), plan)
     })
     setPlans(Array.from(mergedPlans.values()))
+    setLoadError('')
 
     if (!organizationId) {
       setCalendarExclusions([])
@@ -12891,6 +12899,14 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
       </div>
 
       <div className="calendar-card">
+        {loadError && (
+          <div role="alert" style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e7b8b8', background: '#fff4f4', color: '#8a2525', fontSize: '13px', lineHeight: 1.5 }}>
+            {loadError}
+            <button type="button" onClick={() => void loadPlans()} style={{ marginLeft: '8px', padding: '4px 8px', borderRadius: '6px', border: '1px solid currentColor', background: 'transparent', color: 'inherit', cursor: 'pointer' }}>
+              Spróbuj ponownie
+            </button>
+          </div>
+        )}
         <div className="calendar-month-nav">
           <button type="button" onClick={() => changeMonth(-1)} className="calendar-month-nav-button" aria-label="Poprzedni miesiąc">
             <ChevronLeft size={20} strokeWidth={1.75} />

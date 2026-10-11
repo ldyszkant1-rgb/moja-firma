@@ -8429,6 +8429,9 @@ function FinancePage({
     }
   }
 
+  const costsRemainUnallocated =
+    costsForCurrentDistribution.length < unallocatedCosts.length
+
   const costsForCurrentDistributionNet = costsForCurrentDistribution.reduce(
     (sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0),
     0
@@ -9740,7 +9743,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             )}
           </div>
 
-          {!canSettleAllUnallocatedCosts && unallocatedCostsNet > 0.01 && (
+          {costsRemainUnallocated && unallocatedCostsNet > costsForCurrentDistributionNet + 0.01 && (
             <div className="finance-settlement-warning">
               Koszty są większe niż bieżąca wpłata. Zostaną przeniesione do kolejnej wpłaty.
             </div>

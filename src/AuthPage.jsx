@@ -70,7 +70,7 @@ export default function AuthPage({ session = null, recovery = false }) {
     if (mode === 'login') return 'Zaloguj się'
     if (mode === 'accept') return 'Dołącz do firmy'
     if (mode === 'setup') return 'Utwórz swoją firmę'
-    return 'Utwórz swoje konto'
+    return 'Zaloguj się'
   }, [mode])
 
   const subtitle = useMemo(() => {
@@ -78,7 +78,7 @@ export default function AuthPage({ session = null, recovery = false }) {
     if (mode === 'login') return 'Zaloguj się do swojej przestrzeni firmy.'
     if (mode === 'accept') return 'Otrzymałeś zaproszenie. Po akceptacji uzyskasz dostęp do przestrzeni tej firmy.'
     if (mode === 'setup') return 'Konto jest gotowe. Podaj nazwę firmy, aby utworzyć swoją przestrzeń.'
-    return 'Załóż konto, utwórz firmę i później dodawaj swoich pracowników.'
+    return 'Zaloguj się do istniejącego konta Aeroinstal.'
   }, [mode])
 
   const resetMessages = () => {
@@ -194,11 +194,6 @@ export default function AuthPage({ session = null, recovery = false }) {
       return
     }
 
-    if (mode === 'register' && !cleanCompany) {
-      setError('Podaj nazwę swojej firmy.')
-      return
-    }
-
     setLoading(true)
 
     try {
@@ -212,30 +207,8 @@ export default function AuthPage({ session = null, recovery = false }) {
         return
       }
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
-        options: {
-          data: {
-            display_name: cleanDisplayName || cleanEmail.split('@')[0],
-          },
-        },
-      })
-      if (signUpError) throw signUpError
+      throw new Error('Samodzielna rejestracja jest wyłączona. Poproś administratora o konto lub zaproszenie.')
 
-      if (!data.session) {
-        setMessage('Konto zostało utworzone. Sprawdź skrzynkę e-mail i potwierdź adres. Następnie zaloguj się do aplikacji.')
-        setMode('login')
-        return
-      }
-
-      const { data: organizationData, error: organizationError } = await supabase.functions.invoke('organization-invitations', {
-        body: { action: 'create-company', name: cleanCompany, displayName: cleanDisplayName || cleanEmail.split('@')[0] },
-      })
-      if (organizationError) throw organizationError
-      if (organizationData?.error) throw new Error(organizationData.error)
-
-      window.location.reload()
     } catch (submitError) {
       console.error('Błąd logowania/rejestracji:', submitError)
       const code = submitError?.code || ''
@@ -255,9 +228,9 @@ export default function AuthPage({ session = null, recovery = false }) {
     }
   }
 
-  const showAccountFields = mode === 'login' || mode === 'register'
+  const showAccountFields = mode === 'login'
   const showResetField = mode === 'reset'
-  const showCompanyFields = mode === 'register' || mode === 'setup'
+  const showCompanyFields = mode === 'setup'
 
   return (
     <main style={pageStyle}>
@@ -371,21 +344,6 @@ export default function AuthPage({ session = null, recovery = false }) {
                     : 'Utwórz konto i firmę'}
           </button>
         </form>
-
-        {mode !== 'setup' && mode !== 'accept' && mode !== 'reset' && (
-          <div style={toggleStyle}>
-            <button
-              type="button"
-              onClick={() => {
-                resetMessages()
-                setMode((current) => (current === 'login' ? 'register' : 'login'))
-              }}
-              style={toggleButtonStyle}
-            >
-              {mode === 'login' ? 'Nie masz konta? Utwórz firmę' : 'Masz już konto? Zaloguj się'}
-            </button>
-          </div>
-        )}
 
         {mode === 'setup' && (
           <div style={hintStyle}>

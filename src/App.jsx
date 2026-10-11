@@ -9094,12 +9094,14 @@ function FinancePage({
 
     const rowStartY = 580
     const rowHeight = 25
+    const firstPageCosts = data.reportCosts.slice(0, 5)
+    const remainingCosts = data.reportCosts.slice(5)
     if (data.reportCosts.length === 0 && data.costsTotal > 0.01) {
       commands.push(
         textAt(margin, rowStartY, 8, 'Szczegóły kosztów nie są dostępne w zapisanej historii', 'F1', '0.47 0.53 0.60')
       )
     }
-    data.reportCosts.forEach((cost, index) => {
+    firstPageCosts.forEach((cost, index) => {
       const y = rowStartY - index * rowHeight
       commands.push(
         textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
@@ -9109,8 +9111,14 @@ function FinancePage({
         line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
       )
     })
+    if (remainingCosts.length > 0) {
+      commands.push(
+        textAt(margin, rowStartY - firstPageCosts.length * rowHeight, 8, 'Pozostałe koszty — szczegóły na kolejnych stronach', 'F1', '0.47 0.53 0.60')
+      )
+    }
 
-    const lastY = data.reportCosts.length ? rowStartY - (data.reportCosts.length - 1) * rowHeight : rowStartY
+    const visibleRows = firstPageCosts.length + (remainingCosts.length > 0 ? 1 : 0)
+    const lastY = visibleRows > 0 ? rowStartY - (visibleRows - 1) * rowHeight : rowStartY
     const totalY = lastY - 32
     commands.push(
       textAt(margin, totalY, 9, 'Zysk po kosztach: ' + money(data.profitAfterCosts), 'F2', '0.39 0.45 0.52'),
@@ -9164,15 +9172,53 @@ function FinancePage({
       textAt(margin, 36, 6, 'Wygenerowano w Aeroinstal', 'F1', '0.55 0.60 0.66')
     )
 
-    const content = commands.join('\n')
+    const pageCommands = [commands]
+    const extraCostsPerPage = 22
+    for (let offset = 0; offset < remainingCosts.length; offset += extraCostsPerPage) {
+      const page = [
+        '1 1 1 rg 0 0 ' + pageWidth + ' ' + pageHeight + ' re f',
+        textAt(margin, 792, 11, 'AEROINSTAL', 'F2', '0.03 0.50 0.82'),
+        textAt(margin, 756, 20, 'Szczegóły kosztów rozliczenia', 'F2'),
+        textAt(margin, 735, 8, meta, 'F1', '0.47 0.53 0.60'),
+        line(margin, 716, pageWidth - margin, 716),
+        textAt(margin, 687, 8, 'KOSZTY — CIĄG DALSZY', 'F2', '0.03 0.56 0.89'),
+        textAt(margin, 660, 7, 'Data', 'F1', '0.47 0.53 0.60'),
+        textAt(margin + 78, 660, 7, 'Opis', 'F1', '0.47 0.53 0.60'),
+        textAt(pageWidth - margin - 125, 660, 7, 'Kto zapłacił', 'F1', '0.47 0.53 0.60'),
+        textAt(pageWidth - margin - 8, 660, 7, 'Kwota', 'F1', '0.47 0.53 0.60'),
+      ]
+      remainingCosts.slice(offset, offset + extraCostsPerPage).forEach((cost, index) => {
+        const y = 638 - index * rowHeight
+        page.push(
+          textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
+          textAt(margin + 78, y, 8, cost.description || cost.category || 'Inne', 'F1'),
+          textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
+          textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
+          line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
+        )
+      })
+      page.push(
+        line(margin, 72, pageWidth - margin, 72),
+        textAt(margin, 48, 6, 'Wygenerowano w Aeroinstal', 'F1', '0.55 0.60 0.66')
+      )
+      pageCommands.push(page)
+    }
+
     const objectsText = [
       '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+      '<< /Type /Pages /Kids [' + pageCommands.map((_, index) => (5 + index * 2) + ' 0 R').join(' ') + '] /Count ' + pageCommands.length + ' >>',
       '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
       '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
-      '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream',
     ]
+    pageCommands.forEach((page, index) => {
+      const pageObjectId = 5 + index * 2
+      const contentObjectId = pageObjectId + 1
+      const content = page.join('\n')
+      objectsText.push(
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + contentObjectId + ' 0 R >>',
+        '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream'
+      )
+    })
 
     let pdf = '%PDF-1.4\n%\xFF\xFF\xFF\xFF\n'
     objectsText.forEach((object, index) => {

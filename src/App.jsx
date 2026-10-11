@@ -10158,10 +10158,11 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                     </button>
                     <button
                       type="button"
-                      className="cost-delete-button"
+                      className={`cost-delete-button ${isCostInActiveDistribution(cost.id) ? 'cost-delete-button-locked' : ''}`}
                       onClick={() => removeCost(cost.id)}
-                      aria-label={`Usuń koszt ${cost.category || 'Inne'} ${formatMoney(cost.amount)}`}
-                      title="Usuń"
+                      disabled={isCostInActiveDistribution(cost.id)}
+                      aria-label={isCostInActiveDistribution(cost.id) ? `Koszt ${cost.category || 'Inne'} jest zablokowany w aktywnym rozliczeniu` : `Usuń koszt ${cost.category || 'Inne'} ${formatMoney(cost.amount)}`}
+                      title={isCostInActiveDistribution(cost.id) ? 'Nie można usunąć kosztu z aktywnego rozliczenia' : 'Usuń'}
                     >
                       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M5 7h14M10 11v6M14 11v6M9 7V4h6v3M7 7l1 14h8l1-14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

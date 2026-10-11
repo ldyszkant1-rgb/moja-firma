@@ -600,82 +600,25 @@ export async function appendSupabaseJobPhoto(
   photo
 ) {
   if (!jobId) {
-    throw new Error(
-      'Brak ID roboty.'
-    )
+    throw new Error('Brak ID roboty.')
   }
 
   if (!photo) {
-    throw new Error(
-      'Brak danych zdjęcia.'
-    )
+    throw new Error('Brak danych zdjęcia.')
   }
 
-  const {
-    data: currentJob,
-    error: readError,
-  } =
-    await supabase
-      .from('jobs')
-      .select('photos')
-      .eq(
-        'id',
-        jobId
-      )
-      .single()
-
-  if (readError) {
-    console.error(
-      'appendSupabaseJobPhoto - odczyt:',
-      readError
-    )
-
-    throw readError
-  }
-
-  const currentPhotos =
-    Array.isArray(
-      currentJob?.photos
-    )
-      ? currentJob.photos
-      : []
-
-  const updatedPhotos = [
-    ...currentPhotos,
-    photo,
-  ]
-
-  const {
-    data,
-    error,
-  } =
-    await supabase
-      .from('jobs')
-      .update({
-        photos:
-          updatedPhotos,
-      })
-      .eq(
-        'id',
-        jobId
-      )
-      .select('*')
-      .single()
+  const { data, error } = await supabase.rpc('append_job_photo', {
+    p_job_id: jobId,
+    p_photo: photo,
+  })
 
   if (error) {
-    console.error(
-      'appendSupabaseJobPhoto - zapis:',
-      error
-    )
-
+    console.error('Błąd atomowego dodawania zdjęcia:', error)
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return mapSupabaseJobToAppJob(data)
 }
-
 
 /* =========================================================
    DODAWANIE NOTATKI

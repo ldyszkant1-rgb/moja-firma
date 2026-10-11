@@ -5,6 +5,7 @@ const path = 'supabase/migrations/20261011090000_lock_legacy_device_enrollment.s
 const sql = readFileSync(path, 'utf8');
 const permissionsPath = 'supabase/migrations/20261011110000_harden_legacy_device_claim_permissions.sql';
 const permissionsSql = readFileSync(permissionsPath, 'utf8');
+const authPage = readFileSync('src/AuthPage.jsx', 'utf8');
 
 const checks = [
   ['requires an authenticated session', /auth\.uid\(\)/i],
@@ -26,6 +27,10 @@ for (const [label, pattern] of permissionChecks) {
   assert.equal(pattern.test(permissionsSql), true, label);
   console.log(`PASS: ${label}`);
 }
+
+assert.equal(/supabase\.auth\.signUp\s*\(/i.test(authPage), false, 'does not expose client-side self-registration');
+assert.equal(/Nie masz konta\? Utwórz firmę/i.test(authPage), false, 'does not display a self-registration link');
+console.log('PASS: self-service account registration is disabled in the app');
 
 for (const [label, pattern] of checks) {
   const found = pattern.test(sql);

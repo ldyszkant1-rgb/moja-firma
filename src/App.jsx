@@ -11143,8 +11143,47 @@ function SettingsPage({
         throw new Error('Nieprawidłowy format kopii.')
       }
 
-      const confirmed = await showCustomConfirm(
-        'Przywrócić dane z tej kopii? Istniejące rekordy o tych samych ID zostaną zaktualizowane.'
+      // Validate the entire backup before the first database write. This is
+      // a preflight guard, not a transaction: the import remains an upsert merge.
+      const collectionFields = [
+        ['jobs', backup.jobs],
+        ['finance', backup.finance],
+        ['offers', backup.offers],
+        ['clients', backup.clients],
+        ['invoices', backup.invoices],
+        ['jobPayments', backup.jobPayments],
+        ['partnerSettlements', backup.partnerSettlements],
+        ['partnerTransfers', backup.partnerTransfers],
+        ['profitDistributions', backup.profitDistributions],
+        ['generalReminders', backup.generalReminders],
+      ]
+
+      for (const [field, rows] of collectionFields) {
+        if (rows != null && !Array.isArray(rows)) {
+          throw new Error(`Nieprawidłowa sekcja „${field}” w kopii zapasowej.`)
+        }
+        if (!Array.isArray(rows)) continue
+
+        const ids = new Set()
+        for (const [index, row] of rows.entries()) {
+          if (!row || typeof row !== 'object' || Array.isArray(row) || typeof row.id !== 'string' || !row.id.trim()) {
+            throw new Error(`Nieprawidłowy rekord ${index + 1} w sekcji „${field}”. Kopia nie została zaimportowana.`)
+          }
+          if (ids.has(row.id)) {
+            throw new Error(`Powielone ID „${row.id}” w sekcji „${field}”. Kopia nie została zaimportowana.`)
+          }
+          ids.add(row.id)
+        }
+      }
+
+      for (const [index, item] of backup.finance.entries()) {
+        if (!Number.isFinite(Number(item.amount)) || !item.month || !['income', 'expense'].includes(item.type)) {
+          throw new Error(`Nieprawidłowy wpis finansowy nr ${index + 1}. Kopia nie została zaimportowana.`)
+        }
+      }
+
+      const confirmed = window.confirm(
+        'Przywrócić dane z tej kopii? To scalenie danych: rekordy o tych samych ID mogą zostać zaktualizowane. Operacja nie usuwa rekordów nieobecnych w kopii i nie obejmuje plików ze Storage. Przed kontynuacją upewnij się, że masz aktualną kopię bieżących danych.'
       )
 
       if (!confirmed) {

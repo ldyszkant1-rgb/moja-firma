@@ -8765,7 +8765,11 @@ function FinancePage({
       'Razem wpłata: ' + formatMoney(received),
       '',
       'KOSZTY',
-      ...(costLines.length ? costLines : ['• Brak kosztów']),
+      ...(costLines.length
+        ? costLines
+        : costsTotal > 0.01
+          ? ['• Szczegóły kosztów nie są dostępne w zapisanej historii']
+          : ['• Brak kosztów']),
       'Razem koszty: ' + formatMoney(costsTotal),
       'Zysk po kosztach: ' + formatMoney(profitAfterCosts),
       '',
@@ -8955,6 +8959,11 @@ function FinancePage({
 
     const rowStartY = 580
     const rowHeight = 25
+    if (data.reportCosts.length === 0 && data.costsTotal > 0.01) {
+      commands.push(
+        textAt(margin, rowStartY, 8, 'Szczegóły kosztów nie są dostępne w zapisanej historii', 'F1', '0.47 0.53 0.60')
+      )
+    }
     data.reportCosts.forEach((cost, index) => {
       const y = rowStartY - index * rowHeight
       commands.push(

@@ -376,11 +376,6 @@ export async function createSupabaseJob(
       job
     )
 
-  console.log(
-    'Tworzenie roboty:',
-    payload
-  )
-
   const {
     data,
     error,
@@ -425,12 +420,6 @@ export async function updateSupabaseJob(
     mapAppJobToSupabaseJob(
       job
     )
-
-  console.log(
-    'Aktualizacja roboty:',
-    job.id,
-    payload
-  )
 
   const {
     data,

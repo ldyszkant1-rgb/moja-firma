@@ -12626,21 +12626,16 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     setSaving(true)
     try {
-      const savedRows = []
-      for (const row of rows) {
-        const { data, error } = await supabase.rpc('create_calendar_plan', {
-          p_user_id: row.user_id,
-          p_job_id: row.job_id,
-          p_plan_type: row.plan_type,
-          p_plan_date: row.plan_date,
-          p_title: row.title,
-          p_note: row.note,
-          p_hours_worked: row.hours_worked,
-        })
-        if (error) throw error
-        if (!data) throw new Error('Baza nie zwróciła zapisanego wpisu.')
-        savedRows.push(data)
+      // Jedno wywołanie RPC zapisuje cały zakres w jednej transakcji.
+      // Jeśli dowolny dzień nie przejdzie walidacji, baza wycofa całą operację.
+      const { data, error } = await supabase.rpc('create_calendar_plans_batch', {
+        p_rows: rows,
+      })
+      if (error) throw error
+      if (!Array.isArray(data) || data.length !== rows.length) {
+        throw new Error('Baza nie potwierdziła zapisu wszystkich dni.')
       }
+      const savedRows = data
 
       setPlans((current) => {
         const withoutSaved = current.filter(

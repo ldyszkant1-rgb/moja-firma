@@ -8708,6 +8708,9 @@ function FinancePage({
       distribution?.costsNet ??
       reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     )
+    const profitAfterCosts = Number(
+      distribution?.profit ?? (received - costsTotal)
+    )
 
     const paymentLines = payments
       .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))
@@ -8764,6 +8767,7 @@ function FinancePage({
       'KOSZTY',
       ...(costLines.length ? costLines : ['• Brak kosztów']),
       'Razem koszty: ' + formatMoney(costsTotal),
+      'Zysk po kosztach: ' + formatMoney(profitAfterCosts),
       '',
       'KTO POKRYŁ KOSZTY',
       partnerOne + ': ' + formatMoney(reportPartnerOneCosts),
@@ -8867,6 +8871,7 @@ function FinancePage({
       reportCosts,
       received,
       costsTotal,
+      profitAfterCosts,
       lukaszCosts,
       pawelCosts,
       lukaszShare,

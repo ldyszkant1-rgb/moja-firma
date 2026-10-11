@@ -12298,10 +12298,11 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
 
     const errors = {}
 
-    if (!organizationId) {
-      setSaveMessage('Brak przypisanej firmy. Odśwież aplikację i spróbuj ponownie.')
-      return
-    }
+    // Nie blokujemy zapisu na podstawie lokalnego organizationId:
+    // w trybie urządzenia może on nie zdążyć się ustawić, mimo że sesja
+    // jest prawidłowa. RPC create_calendar_plan ustala firmę po stronie
+    // bazy przez private.current_organization_id() i zwraca właściwy błąd,
+    // jeśli sesja rzeczywiście nie ma przypisanej organizacji.
     if (!startDate) {
       errors.startDate = 'Wybierz datę rozpoczęcia.'
     }

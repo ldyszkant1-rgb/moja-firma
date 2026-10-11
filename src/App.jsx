@@ -12742,8 +12742,8 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeDayPlans = async (date, dayPlans) => {
     if (!dayPlans.length) return
 
-    const confirmed = await showCustomConfirm(
-      `Usunąć wszystkie wpisy z ${formatDate(date)}?\\n\\nZostanie usuniętych ${dayPlans.length} ${dayPlans.length === 1 ? '1 wpis' : dayPlans.length + ' wpisów'} z tego dnia. Tej operacji nie można cofnąć.`
+    const confirmed = window.confirm(
+      `Usunąć wszystkie wpisy z ${formatDate(date)}?\n\nZostanie usuniętych ${dayPlans.length} ${dayPlans.length === 1 ? '1 wpis' : dayPlans.length + ' wpisów'} z tego dnia. Tej operacji nie można cofnąć.`
     )
     if (!confirmed) return
 
@@ -12768,7 +12768,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   }
 
   const removePlan = async (plan) => {
-    const confirmed = await showCustomConfirm(
+    const confirmed = window.confirm(
       `Usunąć wpis „${plan.title || 'bez nazwy'}” z ${formatDate(String(plan.plan_date))}?`
     )
     if (!confirmed) return
@@ -12795,7 +12795,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
   const removeJobDayFromCalendar = async (job, date) => {
     if (!job?.id || !date) return
 
-    const confirmed = await showCustomConfirm(
+    const confirmed = window.confirm(
       `Usunąć ten dzień realizacji „${job.name || 'bez nazwy'}” z kalendarza?\n\nRealizacja pozostanie zapisana, ale ten dzień przestanie być widoczny w terminarzu.`
     )
     if (!confirmed) return

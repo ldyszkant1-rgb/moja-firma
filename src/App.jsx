@@ -4953,6 +4953,7 @@ function JobDetails({
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
   const [profitShareSaving, setProfitShareSaving] = useState(false)
+  const profitShareSavingRef = useRef(false)
   const [expandedEmployeeHistoryId, setExpandedEmployeeHistoryId] = useState(null)
 
   useEffect(() => {
@@ -5213,6 +5214,7 @@ function JobDetails({
   )
 
   const saveProfitShares = async () => {
+    if (profitShareSavingRef.current) return
     if (currentProfitShares.length === 0) {
       showCustomAlert('Dodaj co najmniej jedną osobę do podziału zysku.')
       return
@@ -5221,6 +5223,7 @@ function JobDetails({
       showCustomAlert('Udziały muszą razem dawać dokładnie 100%.')
       return
     }
+    profitShareSavingRef.current = true
     setProfitShareSaving(true)
     try {
       const saved = await saveJobProfitShares(editedJob.id, currentProfitShares)
@@ -5229,6 +5232,7 @@ function JobDetails({
       console.error('Nie udało się zapisać podziału zysku:', error)
       showCustomAlert('Nie udało się zapisać podziału zysku. Spróbuj ponownie.')
     } finally {
+      profitShareSavingRef.current = false
       setProfitShareSaving(false)
     }
   }
@@ -8578,6 +8582,7 @@ function FinancePage({
   }
 
   const recordPartnerTransfer = async (amount) => {
+    if (settlementSavingRef.current) return
     const safeAmount = Number(amount || 0)
 
     if (!safeAmount || safeAmount <= 0 || Math.abs(partnerCostBalance) <= 0.01) {
@@ -8601,6 +8606,7 @@ function FinancePage({
       return
     }
 
+    settlementSavingRef.current = true
     try {
       setSettlementSaving(true)
 
@@ -8626,6 +8632,7 @@ function FinancePage({
       console.error('Nie udało się zapisać rozliczenia salda:', error)
       await showCustomAlert('Nie udało się zapisać rozliczenia salda.')
     } finally {
+      settlementSavingRef.current = false
       setSettlementSaving(false)
     }
   }

@@ -36,22 +36,17 @@ export async function getAllJobPayments() {
 
 export async function createJobPayment({ jobId, invoiceId = null, amount, paidAt, note }) {
   const numericAmount = Number(amount || 0)
-  if (!jobId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+  if (!jobId || !invoiceId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
     throw new Error('Nieprawidłowa wpłata.')
   }
 
-  const { data, error } = await supabase
-    .from('job_payments')
-    .insert({
-      job_id: jobId,
-      invoice_id: invoiceId || null,
-      amount: numericAmount,
-      paid_at: paidAt || new Date().toISOString().slice(0, 10),
-      note: note?.trim() || null,
-    })
-    .select()
-    .single()
-
+  const { data, error } = await supabase.rpc('create_invoice_payment', {
+    p_job_id: jobId,
+    p_invoice_id: invoiceId,
+    p_amount: numericAmount,
+    p_paid_at: paidAt || new Date().toISOString().slice(0, 10),
+    p_note: note?.trim() || null,
+  })
   if (error) throw error
   return mapPayment(data)
 }

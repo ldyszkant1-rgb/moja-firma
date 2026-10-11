@@ -9042,25 +9042,25 @@ function FinancePage({
       pages.forEach((commands, index) => {
         const pageObject = 5 + index * 2
         const contentObject = pageObject + 1
-        const content = commands.join('\\n')
+        const content = commands.join('\n')
         objectsText.push(
           '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + contentObject + ' 0 R >>',
-          '<< /Length ' + content.length + ' >>\\nstream\\n' + content + '\\nendstream'
+          '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream'
         )
       })
-      let pdf = '%PDF-1.4\\n%\\xFF\\xFF\\xFF\\xFF\\n'
+      let pdf = '%PDF-1.4\n%AEROINSTAL\n'
       const offsets = []
       objectsText.forEach((object, index) => {
         offsets[index + 1] = pdf.length
-        pdf += (index + 1) + ' 0 obj\\n' + object + '\\nendobj\\n'
+        pdf += (index + 1) + ' 0 obj\n' + object + '\nendobj\n'
       })
       const xrefOffset = pdf.length
-      pdf += 'xref\\n0 ' + (objectsText.length + 1) + '\\n'
-      pdf += '0000000000 65535 f \\n'
+      pdf += 'xref\n0 ' + (objectsText.length + 1) + '\n'
+      pdf += '0000000000 65535 f \n'
       for (let index = 1; index <= objectsText.length; index++) {
-        pdf += String(offsets[index]).padStart(10, '0') + ' 00000 n \\n'
+        pdf += String(offsets[index]).padStart(10, '0') + ' 00000 n \n'
       }
-      pdf += 'trailer\\n<< /Size ' + (objectsText.length + 1) + ' /Root 1 0 R >>\\nstartxref\\n' + xrefOffset + '\\n%%EOF'
+      pdf += 'trailer\n<< /Size ' + (objectsText.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF'
       const bytes = new Uint8Array(pdf.length)
       for (let index = 0; index < pdf.length; index++) bytes[index] = pdf.charCodeAt(index) & 0xFF
       return new Blob([bytes], { type: 'application/pdf' })

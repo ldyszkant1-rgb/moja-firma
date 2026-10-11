@@ -8512,6 +8512,19 @@ body {
   color: #dc6262;
 }
 
+.finance-page .cost-delete-button-locked,
+.finance-page .cost-delete-button-locked:disabled {
+  color: #94a3b8;
+  background: #f1f5f9;
+  border-color: #dbe3ec;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.finance-page .cost-delete-button-locked svg {
+  opacity: .55;
+}
+
 .finance-page .cost-edit-button:active,
 .finance-page .cost-delete-button:active {
   transform: scale(.96);

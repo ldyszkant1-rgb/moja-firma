@@ -9110,12 +9110,14 @@ function FinancePage({
 
 
   const handleReverseDistribution = async (distribution) => {
+    if (settlementSavingRef.current) return
     if (!distribution?.id || distribution.status === 'reversed') return
 
     const confirmed = await showCustomConfirm(
       'Cofnąć to rozliczenie?\n\nWpłaty i koszty wrócą do nierozliczonych i będą mogły zostać użyte w kolejnym podziale.'
     )
-    if (!confirmed) return
+    if (!confirmed || settlementSavingRef.current) return
+    settlementSavingRef.current = true
 
     try {
       setSettlementSaving(true)
@@ -9131,6 +9133,7 @@ function FinancePage({
       console.error('Nie udało się cofnąć rozliczenia:', error)
       await showCustomAlert('Nie udało się cofnąć rozliczenia.')
     } finally {
+      settlementSavingRef.current = false
       setSettlementSaving(false)
     }
   }

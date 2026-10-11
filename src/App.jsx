@@ -8689,11 +8689,11 @@ function FinancePage({
   }
 
   const buildDistributionReport = (distribution = null) => {
-    const paymentIds = distribution?.paymentIds?.length
-      ? distribution.paymentIds
+    const paymentIds = distribution?.id
+      ? (distribution.paymentIds || [])
       : unallocatedPayments.map((payment) => payment.id)
-    const costIds = distribution?.costIds?.length
-      ? distribution.costIds
+    const costIds = distribution?.id
+      ? (distribution.costIds || [])
       : costsForCurrentDistribution.map((cost) => cost.id)
 
     const paymentIdSet = new Set(paymentIds.map(String))
@@ -8828,11 +8828,11 @@ function FinancePage({
   }
 
   const getDistributionReportData = (distribution = null) => {
-    const paymentIds = distribution?.paymentIds?.length
-      ? distribution.paymentIds
+    const paymentIds = distribution?.id
+      ? (distribution.paymentIds || [])
       : unallocatedPayments.map((payment) => payment.id)
-    const costIds = distribution?.costIds?.length
-      ? distribution.costIds
+    const costIds = distribution?.id
+      ? (distribution.costIds || [])
       : costsForCurrentDistribution.map((cost) => cost.id)
 
     const paymentIdSet = new Set(paymentIds.map(String))

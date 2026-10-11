@@ -8708,9 +8708,9 @@ function FinancePage({
       distribution?.costsNet ??
       reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     )
-    const profitAfterCosts = Number(
-      distribution?.profit ?? (received - costsTotal)
-    )
+    // Wyliczaj zysk z kwot zapisanych w rozliczeniu. W starszych
+    // rekordach pole distribution.profit może zawierać wpływ przed kosztami.
+    const profitAfterCosts = Math.round((received - costsTotal + Number.EPSILON) * 100) / 100
 
     const paymentLines = payments
       .sort((a, b) => String(a.paidAt || '').localeCompare(String(b.paidAt || '')))

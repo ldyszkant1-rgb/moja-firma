@@ -8851,6 +8851,9 @@ function FinancePage({
       distribution?.costsNet ??
       reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     )
+    const profitAfterCosts = Number(
+      distribution?.profit ?? (received - costsTotal)
+    )
     const lukaszCosts = reportCosts
       .filter((cost) => cost.paidBy === partnerOne)
       .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)

@@ -9497,6 +9497,13 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
   }
 
   const startEditCost = (cost) => {
+    if (isCostInActiveDistribution(cost.id)) {
+      showCustomAlert(
+        'Nie można edytować kosztu uwzględnionego w aktywnym rozliczeniu. Najpierw cofnij to rozliczenie w historii.'
+      )
+      return
+    }
+
     setEditingCostId(cost.id)
     setEditCost({
       category: cost.category || 'ZUS',
@@ -10138,10 +10145,11 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                   <div className="cost-actions">
                     <button
                       type="button"
-                      className="cost-edit-button"
+                      className={`cost-edit-button ${isCostInActiveDistribution(cost.id) ? 'cost-edit-button-locked' : ''}`}
                       onClick={() => startEditCost(cost)}
-                      aria-label={`Zmień koszt ${cost.category || 'Inne'} ${formatMoney(cost.amount)}`}
-                      title="Zmień"
+                      disabled={isCostInActiveDistribution(cost.id)}
+                      aria-label={isCostInActiveDistribution(cost.id) ? `Koszt ${cost.category || 'Inne'} jest zablokowany w aktywnym rozliczeniu` : `Zmień koszt ${cost.category || 'Inne'} ${formatMoney(cost.amount)}`}
+                      title={isCostInActiveDistribution(cost.id) ? 'Koszt uwzględniony w aktywnym rozliczeniu' : 'Zmień'}
                     >
                       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16v4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

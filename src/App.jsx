@@ -8855,9 +8855,9 @@ function FinancePage({
       distribution?.costsNet ??
       reportCosts.reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
     )
-    const profitAfterCosts = Number(
-      distribution?.profit ?? (received - costsTotal)
-    )
+    // Raport HTML/drukowany musi liczyć zysk z wpływu i kosztów,
+    // a nie ufać starszemu polu profit zapisanemu w rozliczeniu.
+    const profitAfterCosts = Math.round((received - costsTotal + Number.EPSILON) * 100) / 100
     const lukaszCosts = reportCosts
       .filter((cost) => cost.paidBy === partnerOne)
       .reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)

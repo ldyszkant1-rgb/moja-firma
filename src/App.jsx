@@ -9470,7 +9470,21 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     window.setTimeout(() => setCostToast(false), 2000)
   }
 
+  const isCostInActiveDistribution = (costId) =>
+    profitDistributions.some(
+      (distribution) =>
+        distribution.status !== 'reversed' &&
+        (distribution.costIds || []).some((id) => String(id) === String(costId))
+    )
+
   const removeCost = async (costId) => {
+    if (isCostInActiveDistribution(costId)) {
+      showCustomAlert(
+        'Nie można usunąć kosztu uwzględnionego w aktywnym rozliczeniu. Najpierw cofnij to rozliczenie w historii.'
+      )
+      return
+    }
+
     try {
       await deleteFinance(costId)
       setCosts((currentCosts) =>
@@ -9519,6 +9533,13 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     }
 
     const currentCost = costs.find((cost) => cost.id === editingCostId)
+
+    if (isCostInActiveDistribution(editingCostId)) {
+      showCustomAlert(
+        'Nie można edytować kosztu uwzględnionego w aktywnym rozliczeniu. Najpierw cofnij to rozliczenie w historii.'
+      )
+      return
+    }
 
     if (!currentCost) {
       showCustomAlert('Nie znaleziono kosztu do edycji.')

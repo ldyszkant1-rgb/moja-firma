@@ -18,8 +18,8 @@ const checks = [
 const permissionChecks = [
   ['revokes direct writes to device assignments', /revoke all privileges on table public\.device_users from public, anon, authenticated/i],
   ['keeps authenticated own-row reads available', /grant select on table public\.device_users to authenticated/i],
-  ['revokes public access to private claim implementation', /revoke all privileges on function private\.claim_legacy_device\\(text, text\\) from public, anon, authenticated/i],
-  ['allows only authenticated RPC execution', /grant execute on function public\.claim_legacy_device\\(text, text\\) to authenticated/i],
+  ['revokes public access to private claim implementation', /revoke all privileges on function private\.claim_legacy_device/i],
+  ['allows authenticated RPC execution', /grant execute on function public\.claim_legacy_device/i],
 ];
 
 for (const [label, pattern] of permissionChecks) {

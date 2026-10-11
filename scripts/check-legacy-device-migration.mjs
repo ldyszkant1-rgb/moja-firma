@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 const path = 'supabase/migrations/20261011090000_lock_legacy_device_enrollment.sql';
 const sql = readFileSync(path, 'utf8');
+const permissionsPath = 'supabase/migrations/20261011110000_harden_legacy_device_claim_permissions.sql';
+const permissionsSql = readFileSync(permissionsPath, 'utf8');
 
 const checks = [
   ['requires an authenticated session', /auth\.uid\(\)/i],
@@ -12,6 +14,18 @@ const checks = [
   ['rejects a device bound to another auth user', /auth_user_id is not null and du\.auth_user_id <> current_user_id/i],
   ['does not self-enroll by inserting device_users rows', /insert\s+into\s+public\.device_users/i],
 ];
+
+const permissionChecks = [
+  ['revokes direct writes to device assignments', /revoke all privileges on table public\\.device_users from public, anon, authenticated/i],
+  ['keeps authenticated own-row reads available', /grant select on table public\\.device_users to authenticated/i],
+  ['revokes public access to private claim implementation', /revoke all privileges on function private\\.claim_legacy_device\\(text, text\\) from public, anon, authenticated/i],
+  ['allows only authenticated RPC execution', /grant execute on function public\\.claim_legacy_device\\(text, text\\) to authenticated/i],
+];
+
+for (const [label, pattern] of permissionChecks) {
+  assert.equal(pattern.test(permissionsSql), true, label);
+  console.log(`PASS: ${label}`);
+}
 
 for (const [label, pattern] of checks) {
   const found = pattern.test(sql);

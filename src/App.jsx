@@ -8765,7 +8765,11 @@ function FinancePage({
       'Razem wpłata: ' + formatMoney(received),
       '',
       'KOSZTY',
-      ...(costLines.length ? costLines : ['• Brak kosztów']),
+      ...(costLines.length
+        ? costLines
+        : costsTotal > 0.01
+          ? ['• Szczegóły kosztów nie są dostępne w zapisanej historii']
+          : ['• Brak kosztów']),
       'Razem koszty: ' + formatMoney(costsTotal),
       'Zysk po kosztach: ' + formatMoney(profitAfterCosts),
       '',
@@ -8927,6 +8931,149 @@ function FinancePage({
       color + ' rg ' + x + ' ' + y + ' ' + w + ' ' + h + ' re f'
     const money = (value) => formatMoney(value)
 
+    // Dłuższa lista kosztów wymaga osobnych stron, aby podsumowanie
+    // nie nachodziło na pozycje ani nie wypadało poza stronę A4.
+    if (data.reportCosts.length > 5) {
+      const pages = []
+      const firstPage = [
+        '1 1 1 rg 0 0 ' + pageWidth + ' ' + pageHeight + ' re f',
+        textAt(margin, 792, 11, 'AEROINSTAL', 'F2', '0.03 0.50 0.82'),
+        textAt(margin, 756, 24, 'Rozliczenie wspólników', 'F2'),
+      ]
+      const meta = [
+        data.invoiceNumber ? 'Faktura: ' + data.invoiceNumber : '',
+        data.paymentDateFrom ? 'Wpłata: ' + formatDate(data.paymentDateFrom) + (data.paymentDateTo && data.paymentDateTo !== data.paymentDateFrom ? '–' + formatDate(data.paymentDateTo) : '') : '',
+        data.costDateFrom ? 'Koszty: ' + formatDate(data.costDateFrom) + (data.costDateTo && data.costDateTo !== data.costDateFrom ? '–' + formatDate(data.costDateTo) : '') : '',
+        data.generatedDate ? 'Wygenerowano: ' + formatDate(data.generatedDate) : '',
+      ].filter(Boolean).join('   •   ')
+      firstPage.push(
+        textAt(margin, 735, 8, meta, 'F1', '0.47 0.53 0.60'),
+        line(margin, 716, pageWidth - margin, 716),
+        textAt(margin, 687, 8, 'WPŁATA', 'F2', '0.03 0.56 0.89'),
+        textAt(margin, 660, 24, money(data.received), 'F2'),
+        textAt(pageWidth - margin - 112, 663, 8, 'Faktycznie otrzymane', 'F1', '0.47 0.53 0.60'),
+        line(margin, 640, pageWidth - margin, 640),
+        textAt(margin, 616, 8, 'KOSZTY', 'F2', '0.03 0.56 0.89'),
+        textAt(margin, 598, 7, 'Data', 'F1', '0.47 0.53 0.60'),
+        textAt(margin + 78, 598, 7, 'Opis', 'F1', '0.47 0.53 0.60'),
+        textAt(pageWidth - margin - 125, 598, 7, 'Kto zapłacił', 'F1', '0.47 0.53 0.60'),
+        textAt(pageWidth - margin - 8, 598, 7, 'Kwota', 'F1', '0.47 0.53 0.60')
+      )
+      const addCostRows = (commands, rows, startY, rowHeight) => {
+        rows.forEach((cost, index) => {
+          const y = startY - index * rowHeight
+          commands.push(
+            textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
+            textAt(
+            margin + 78,
+            y,
+            8,
+            String(cost.description || cost.category || 'Inne').length > 42
+              ? String(cost.description || cost.category || 'Inne').slice(0, 39) + '...'
+              : (cost.description || cost.category || 'Inne'),
+            'F1'
+          ),
+            textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
+            textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
+            line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
+          )
+        })
+      }
+      addCostRows(firstPage, data.reportCosts.slice(0, 16), 580, 22)
+      pages.push(firstPage)
+
+      for (let offset = 16; offset < data.reportCosts.length; offset += 24) {
+        const commands = [
+          '1 1 1 rg 0 0 ' + pageWidth + ' ' + pageHeight + ' re f',
+          textAt(margin, 792, 11, 'AEROINSTAL', 'F2', '0.03 0.50 0.82'),
+          textAt(margin, 756, 20, 'Koszty — ciąg dalszy', 'F2'),
+          textAt(margin, 728, 7, 'Data', 'F1', '0.47 0.53 0.60'),
+          textAt(margin + 78, 728, 7, 'Opis', 'F1', '0.47 0.53 0.60'),
+          textAt(pageWidth - margin - 125, 728, 7, 'Kto zapłacił', 'F1', '0.47 0.53 0.60'),
+          textAt(pageWidth - margin - 8, 728, 7, 'Kwota', 'F1', '0.47 0.53 0.60'),
+        ]
+        addCostRows(commands, data.reportCosts.slice(offset, offset + 24), 706, 25)
+        pages.push(commands)
+      }
+
+      const summary = [
+        '1 1 1 rg 0 0 ' + pageWidth + ' ' + pageHeight + ' re f',
+        textAt(margin, 792, 11, 'AEROINSTAL', 'F2', '0.03 0.50 0.82'),
+        textAt(margin, 756, 24, 'Podsumowanie rozliczenia', 'F2'),
+        textAt(margin, 722, 8, 'Data rozliczenia: ' + formatDate(data.reportDate), 'F1', '0.47 0.53 0.60'),
+        line(margin, 704, pageWidth - margin, 704),
+        textAt(margin, 675, 8, 'PODSUMOWANIE', 'F2', '0.03 0.56 0.89'),
+        textAt(margin, 647, 9, 'Otrzymana wpłata', 'F1', '0.39 0.45 0.52'),
+        textAt(pageWidth - margin - 130, 647, 12, money(data.received), 'F2'),
+        textAt(margin, 620, 9, 'Razem koszty', 'F1', '0.39 0.45 0.52'),
+        textAt(pageWidth - margin - 130, 620, 12, money(data.costsTotal), 'F2'),
+        textAt(margin, 593, 9, 'Zysk po kosztach', 'F2', '0.03 0.50 0.82'),
+        textAt(pageWidth - margin - 130, 593, 14, money(data.profitAfterCosts), 'F2', '0.03 0.50 0.82'),
+        line(margin, 575, pageWidth - margin, 575),
+        textAt(margin, 548, 8, 'KTO POKRYŁ KOSZTY', 'F2', '0.03 0.56 0.89'),
+        rect(margin, 470, 245, 54, '0.97 0.98 0.99'),
+        rect(margin + 263, 470, 248, 54, '0.97 0.98 0.99'),
+        textAt(margin + 12, 504, 8, partnerOne, 'F1', '0.39 0.45 0.52'),
+        textAt(margin + 12, 482, 12, money(data.lukaszCosts), 'F2'),
+        textAt(margin + 275, 504, 8, partnerTwo, 'F1', '0.39 0.45 0.52'),
+        textAt(margin + 275, 482, 12, money(data.pawelCosts), 'F2'),
+        textAt(margin, 446, 8, 'Łącznie koszty: ' + money(data.costsTotal), 'F2', '0.47 0.53 0.60'),
+        line(margin, 414, pageWidth - margin, 414),
+        textAt(margin, 390, 8, 'DO WYPŁATY', 'F2', '0.03 0.56 0.89'),
+        rect(margin, 340, contentWidth, 34, '0.92 0.96 0.99'),
+        rect(margin, 292, contentWidth, 34, '0.92 0.96 0.99'),
+        textAt(margin + 12, 353, 10, partnerOne, 'F2'),
+        textAt(pageWidth - margin - 10, 353, 12, money(data.lukaszShare), 'F2'),
+        textAt(margin + 12, 305, 10, partnerTwo, 'F2'),
+        textAt(pageWidth - margin - 10, 305, 12, money(data.pawelShare), 'F2'),
+      ]
+      if (data.balance > 0.01) {
+        summary.push(textAt(margin, 262, 9, data.balanceDirection + ': ' + money(data.balance), 'F2', '0.03 0.56 0.89'))
+      }
+      summary.push(
+        textAt(margin, 218, 7, 'Podział bazowy 50/50 z korektą kosztów pokrytych przez wspólników.', 'F1', '0.47 0.53 0.60'),
+        line(margin, 190, pageWidth - margin, 190),
+        line(margin, 142, margin + 150, 142, '0.68 0.73 0.78', 0.7),
+        line(pageWidth - margin - 150, 142, pageWidth - margin, 142, '0.68 0.73 0.78', 0.7),
+        textAt(margin + 75, 128, 7, partnerOne, 'F1', '0.47 0.53 0.60'),
+        textAt(pageWidth - margin - 75, 128, 7, partnerTwo, 'F1', '0.47 0.53 0.60'),
+        textAt(margin, 36, 6, 'Wygenerowano w Aeroinstal', 'F1', '0.55 0.60 0.66')
+      )
+      pages.push(summary)
+
+      const objectsText = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Kids [' + pages.map((_, index) => (5 + index * 2) + ' 0 R').join(' ') + '] /Count ' + pages.length + ' >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+      ]
+      pages.forEach((commands, index) => {
+        const pageObject = 5 + index * 2
+        const contentObject = pageObject + 1
+        const content = commands.join('\n')
+        objectsText.push(
+          '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + pageWidth + ' ' + pageHeight + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + contentObject + ' 0 R >>',
+          '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream'
+        )
+      })
+      let pdf = '%PDF-1.4\n%AEROINSTAL\n'
+      const offsets = []
+      objectsText.forEach((object, index) => {
+        offsets[index + 1] = pdf.length
+        pdf += (index + 1) + ' 0 obj\n' + object + '\nendobj\n'
+      })
+      const xrefOffset = pdf.length
+      pdf += 'xref\n0 ' + (objectsText.length + 1) + '\n'
+      pdf += '0000000000 65535 f \n'
+      for (let index = 1; index <= objectsText.length; index++) {
+        pdf += String(offsets[index]).padStart(10, '0') + ' 00000 n \n'
+      }
+      pdf += 'trailer\n<< /Size ' + (objectsText.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF'
+      const bytes = new Uint8Array(pdf.length)
+      for (let index = 0; index < pdf.length; index++) bytes[index] = pdf.charCodeAt(index) & 0xFF
+      return new Blob([bytes], { type: 'application/pdf' })
+    }
+
     const meta = [
       data.invoiceNumber ? 'Faktura: ' + data.invoiceNumber : '',
       data.paymentDateFrom ? 'Wpłata: ' + formatDate(data.paymentDateFrom) + (data.paymentDateTo && data.paymentDateTo !== data.paymentDateFrom ? '–' + formatDate(data.paymentDateTo) : '') : '',
@@ -8955,11 +9102,24 @@ function FinancePage({
 
     const rowStartY = 580
     const rowHeight = 25
+    if (data.reportCosts.length === 0 && data.costsTotal > 0.01) {
+      commands.push(
+        textAt(margin, rowStartY, 8, 'Szczegóły kosztów nie są dostępne w zapisanej historii', 'F1', '0.47 0.53 0.60')
+      )
+    }
     data.reportCosts.forEach((cost, index) => {
       const y = rowStartY - index * rowHeight
       commands.push(
         textAt(margin, y, 8, formatDate(cost.month), 'F1', '0.39 0.45 0.52'),
-        textAt(margin + 78, y, 8, cost.description || cost.category || 'Inne', 'F1'),
+        textAt(
+            margin + 78,
+            y,
+            8,
+            String(cost.description || cost.category || 'Inne').length > 42
+              ? String(cost.description || cost.category || 'Inne').slice(0, 39) + '...'
+              : (cost.description || cost.category || 'Inne'),
+            'F1'
+          ),
         textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
         textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
         line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
@@ -8969,6 +9129,7 @@ function FinancePage({
     const lastY = data.reportCosts.length ? rowStartY - (data.reportCosts.length - 1) * rowHeight : rowStartY
     const totalY = lastY - 32
     commands.push(
+      textAt(margin, totalY, 9, 'Zysk po kosztach: ' + money(data.profitAfterCosts), 'F2', '0.39 0.45 0.52'),
       textAt(pageWidth - margin - 125, totalY, 9, 'Razem koszty', 'F2', '0.39 0.45 0.52'),
       textAt(pageWidth - margin - 8, totalY, 10, money(data.costsTotal), 'F2'),
       line(margin, totalY - 18, pageWidth - margin, totalY - 18),

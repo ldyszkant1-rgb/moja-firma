@@ -1,6 +1,8 @@
--- Protect costs referenced by an active profit distribution from edits/deletion.
+-- Protect costs referenced by an active profit distribution from direct edits/deletion.
 -- This is a database-level guard; the UI guard remains useful for a clearer message.
 -- Reversed distributions intentionally do not block changes.
+-- Nested deletes caused by FK ON DELETE CASCADE (for example, deleting an organization)
+-- must be allowed to complete; direct user-initiated changes are checked at trigger depth 1.
 
 CREATE OR REPLACE FUNCTION public.prevent_mutation_of_distributed_cost()
 RETURNS trigger
@@ -9,19 +11,21 @@ SECURITY DEFINER
 SET search_path = ''
 AS $function$
 BEGIN
-  IF OLD.type = 'cost' AND EXISTS (
-    SELECT 1
-    FROM public.profit_distributions AS d
-    WHERE d.organization_id = OLD.organization_id
-      AND d.status = 'active'
-      AND EXISTS (
-        SELECT 1
-        FROM pg_catalog.jsonb_array_elements_text(
-          COALESCE(d.cost_ids, '[]'::jsonb)
-        ) AS cost_id(value)
-        WHERE cost_id.value = OLD.id::text
-      )
-  ) THEN
+  IF pg_catalog.pg_trigger_depth() = 1
+     AND OLD.type = 'cost'
+     AND EXISTS (
+       SELECT 1
+       FROM public.profit_distributions AS d
+       WHERE d.organization_id = OLD.organization_id
+         AND d.status = 'active'
+         AND EXISTS (
+           SELECT 1
+           FROM pg_catalog.jsonb_array_elements_text(
+             COALESCE(d.cost_ids, '[]'::jsonb)
+           ) AS cost_id(value)
+           WHERE cost_id.value = OLD.id::text
+         )
+     ) THEN
     RAISE EXCEPTION
       'Nie można edytować ani usunąć kosztu uwzględnionego w aktywnym rozliczeniu. Najpierw cofnij to rozliczenie w historii.'
       USING ERRCODE = '23514';

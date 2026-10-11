@@ -4917,6 +4917,7 @@ function JobDetails({
   const [jobCosts, setJobCosts] = useState([])
   const [showCostForm, setShowCostForm] = useState(false)
   const [editingCostId, setEditingCostId] = useState(null)
+  const jobCostSavingRef = useRef(false)
   const [costForm, setCostForm] = useState({
     costType: 'material',
     description: '',
@@ -5261,6 +5262,7 @@ function JobDetails({
   }
 
   const saveJobCost = async () => {
+    if (jobCostSavingRef.current) return
     const description = String(costForm.description || '').trim()
     const quantity = parseDecimal(costForm.quantity)
     const unitCost = parseDecimal(costForm.unitCost)
@@ -5279,6 +5281,7 @@ function JobDetails({
       return
     }
 
+    jobCostSavingRef.current = true
     try {
       const payload = {
         id: editingCostId || undefined,
@@ -5306,6 +5309,8 @@ function JobDetails({
     } catch (error) {
       console.error('Nie udało się zapisać kosztu realizacji:', error)
       showCustomAlert('Nie udało się zapisać kosztu. Spróbuj ponownie.')
+    } finally {
+      jobCostSavingRef.current = false
     }
   }
 
@@ -7618,6 +7623,7 @@ function FinancePage({
     note: '',
   })
   const [settlementSaving, setSettlementSaving] = useState(false)
+  const settlementSavingRef = useRef(false)
   const [reportBusy, setReportBusy] = useState(false)
   const reportSharePdfRef = useRef(new Map())
   const [reportSharePdfReady, setReportSharePdfReady] = useState(false)
@@ -7768,6 +7774,7 @@ function FinancePage({
 
   const [showForm, setShowForm] = useState(false)
   const [costSaving, setCostSaving] = useState(false)
+  const costSavingRef = useRef(false)
   const [costFormError, setCostFormError] = useState('')
   const [costFieldErrors, setCostFieldErrors] = useState({})
   const [costToast, setCostToast] = useState(false)
@@ -9122,6 +9129,7 @@ function FinancePage({
   }
 
   const distributeAvailableProfit = async () => {
+    if (settlementSavingRef.current) return
     if (unallocatedPayments.length === 0 || splitTotal <= 0.01) {
       await showCustomAlert('Brak nierozliczonych pieniędzy do podziału.')
       return
@@ -9139,6 +9147,8 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     )
 
     if (!confirmed) return
+    if (settlementSavingRef.current) return
+    settlementSavingRef.current = true
 
     try {
       setSettlementSaving(true)
@@ -9169,6 +9179,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
       console.error('Nie udało się zapisać podziału pieniędzy:', error)
       await showCustomAlert('Nie udało się zapisać podziału pieniędzy.')
     } finally {
+      settlementSavingRef.current = false
       setSettlementSaving(false)
     }
   }
@@ -9217,6 +9228,8 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
       paidBy: newCost.paidBy,
     }
 
+    if (costSavingRef.current) return
+    costSavingRef.current = true
     setCostSaving(true)
     setCostFormError('')
 
@@ -9230,6 +9243,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     } catch (error) {
       console.error('Nie udało się zapisać kosztu w Supabase:', error)
       setCostFormError('Nie udało się zapisać kosztu. Spróbuj ponownie.')
+      costSavingRef.current = false
       setCostSaving(false)
       return
     }
@@ -9246,6 +9260,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
     setCostFieldErrors({})
     setCostFormError('')
     setShowForm(false)
+    costSavingRef.current = false
     setCostSaving(false)
     setCostToast(true)
     window.setTimeout(() => setCostToast(false), 2000)

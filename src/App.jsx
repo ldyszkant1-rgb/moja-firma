@@ -8,6 +8,7 @@ import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
+import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
@@ -9579,22 +9580,15 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
       return
     }
 
-    const vatRate = Number(currentCost.vatRate ?? 0)
-    const roundMoney = (value) =>
-      Math.round((Number(value) + Number.EPSILON) * 100) / 100
-    const netAmount = roundMoney(amount)
-    const grossAmount = roundMoney(netAmount * (1 + vatRate / 100))
-    const vatAmount = roundMoney(grossAmount - netAmount)
+    const amounts = calculateEditedCostAmounts(
+      amount,
+      currentCost.vatRate ?? 0
+    )
 
     const updatedCost = {
       ...currentCost,
       type: 'cost',
-      amount: netAmount,
-      amountBasis: 'netto',
-      vatRate,
-      netAmount,
-      vatAmount,
-      grossAmount,
+      ...amounts,
       category: editCost.category,
       month: editCost.date,
       description: editCost.description.trim(),

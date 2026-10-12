@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sanitizeStorageFile, sanitizeJobStorageMetadata } from './storageSecurity'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -87,62 +88,6 @@ function parseDecimal(value) {
 
 const SIGNED_URL_TTL_SECONDS = 600
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-
-function isSafeStoragePath(path, jobId) {
-  if (typeof path !== 'string' || !path || path.includes('\\') || path.split('/').some((part) => part === '.' || part === '..')) {
-    return false
-  }
-
-  const parts = path.split('/')
-  return parts.length >= 4 &&
-    parts[0] === 'jobs' &&
-    parts[1] === String(jobId) &&
-    parts.every(Boolean)
-}
-
-function pathFromLegacyPublicUrl(url, jobId) {
-  if (typeof url !== 'string' || !SUPABASE_URL) return null
-
-  try {
-    const candidate = new URL(url)
-    const expected = new URL(SUPABASE_URL)
-    const prefix = '/storage/v1/object/public/' + STORAGE_BUCKET + '/'
-
-    if (candidate.origin !== expected.origin || !candidate.pathname.startsWith(prefix)) return null
-
-    const path = candidate.pathname.slice(prefix.length).split('/').map((part) => decodeURIComponent(part)).join('/')
-    return isSafeStoragePath(path, jobId) ? path : null
-  } catch {
-    return null
-  }
-}
-
-function sanitizeStorageFile(file, jobId) {
-  if (!file || typeof file !== 'object' || Array.isArray(file)) return file
-
-  const path = isSafeStoragePath(file.path, jobId)
-    ? file.path
-    : pathFromLegacyPublicUrl(file.url, jobId)
-
-  const metadata = { ...file }
-  delete metadata.url
-  delete metadata.path
-
-  // Nie zapisujemy niezweryfikowanych ścieżek ani adresów plików.
-  return path ? { ...metadata, path } : metadata
-}
-
-function sanitizeJobStorageMetadata(job) {
-  const documents = job.documents && typeof job.documents === 'object' && !Array.isArray(job.documents)
-    ? Object.fromEntries(Object.entries(job.documents).map(([key, value]) => [key, sanitizeStorageFile(value, job.id)]))
-    : { material: null, assembly: null }
-
-  return {
-    documents,
-    photos: Array.isArray(job.photos) ? job.photos.map((photo) => sanitizeStorageFile(photo, job.id)) : [],
-    main_photo: sanitizeStorageFile(job.mainPhoto, job.id) || null,
-  }
-}
 
 export async function refreshSupabaseFileUrl(path) {
   if (typeof path !== 'string' || !/^jobs\/[^/]+\/.+/.test(path) || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) {
@@ -264,7 +209,7 @@ function mapSupabaseJobToAppJob(job) {
       job.completed_at || null,
 
     documents:
-      sanitizeJobStorageMetadata(job).documents,
+      sanitizeJobStorageMetadata(job, SUPABASE_URL, STORAGE_BUCKET).documents,
 
     notes:
       Array.isArray(job.notes)
@@ -293,7 +238,7 @@ function mapSupabaseJobToAppJob(job) {
 ========================================================= */
 
 function mapAppJobToSupabaseJob(job) {
-  const storageMetadata = sanitizeJobStorageMetadata(job)
+  const storageMetadata = sanitizeJobStorageMetadata(job, SUPABASE_URL, STORAGE_BUCKET)
 
   return {
     name:
@@ -701,7 +646,7 @@ export async function appendSupabaseJobPhoto(
 
   const { data, error } = await supabase.rpc('append_job_photo', {
     p_job_id: jobId,
-    p_photo: sanitizeStorageFile(photo, jobId),
+    p_photo: sanitizeStorageFile(photo, jobId, SUPABASE_URL, STORAGE_BUCKET),
   })
 
   if (error) {

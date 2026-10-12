@@ -27,7 +27,8 @@ test('defines organization-scoped upload, update and delete policies', () => {
     )
   }
 
-  const policies = sql.split(/CREATE POLICY "Aeroinstal files - /i).slice(1)
+  const policies = [...sql.matchAll(/CREATE POLICY "Aeroinstal files - (?:upload|update|delete)"[\\s\\S]*?;/gi)]
+    .map(([policy]) => policy)
   assert.equal(policies.length, 3, 'expected exactly three mutation policies')
 
   for (const policy of policies) {

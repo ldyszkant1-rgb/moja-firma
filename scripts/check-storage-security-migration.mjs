@@ -17,7 +17,7 @@ assert.equal(isSafeStoragePath(validPath, 123), true, 'A valid path for the matc
 assert.equal(isSafeStoragePath(validPath, 456), false, 'A path belonging to another job must fail')
 assert.equal(isSafeStoragePath('../123/main-photo/a.jpg', 123), false, 'Traversal must fail')
 assert.equal(isSafeStoragePath('jobs/123/../secret/a.jpg', 123), false, 'Traversal in the middle must fail')
-assert.equal(isSafeStoragePath('jobs/123/main-photo\\\\a.jpg', 123), false, 'Backslash paths must fail')
+assert.equal(isSafeStoragePath('jobs/123/main-photo\\a.jpg', 123), false, 'Backslash paths must fail')
 assert.equal(isSafeStoragePath('jobs/123//a.jpg', 123), false, 'Empty path segments must fail')
 assert.equal(isSafeStoragePath('jobs/123/a.jpg', 123), false, 'Paths must contain a folder and filename')
 

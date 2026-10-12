@@ -57,7 +57,8 @@ const api = readFileSync('src/lib/jobsApi.js', 'utf8')
 const app = readFileSync('src/App.jsx', 'utf8')
 const migration = readFileSync('supabase/migrations/20261012190000_harden_storage_access_by_organization.sql', 'utf8')
 
-assert.match(api, /\.createSignedUrl\(path, SIGNED_URL_TTL_SECONDS\)/, 'Storage URLs must be signed')
+assert.match(api, /\.createSignedUrl\(path, SIGNED_URL_TTL_SECONDS, options\)/, 'Storage URLs must be signed and support download disposition')
+assert.match(api, /download: String\(downloadName\)/, 'Download filenames must be passed through signed URL options')
 assert.doesNotMatch(api, /getPublicUrl\s*\(/, 'Client code must not generate public URLs')
 assert.match(api, /sanitizeJobStorageMetadata\(job, SUPABASE_URL, STORAGE_BUCKET\)/, 'Job writes must sanitize Storage metadata')
 assert.match(api, /export async function refreshSupabaseFileUrl\(/, 'Expired URLs must be refreshable')
@@ -105,6 +106,11 @@ assertBefore(addMainPhotoSection, 'if (saveResult === false) {', 'await deleteSu
 const removeMainPhotoSection = sourceSection(app, 'const removeMainPhoto = async () => {', 'const addPhoto = async (')
 assertBefore(removeMainPhotoSection, 'await onUpdate(', 'await deleteSupabaseFile(', 'Main-photo metadata must be saved before deleting its Storage object')
 assertBefore(removeMainPhotoSection, 'if (saveResult === false) {', 'await deleteSupabaseFile(', 'Main-photo object must be retained when metadata save fails')
+
+const documentRowSection = sourceSection(app, 'function DocumentRow({', '/* =====================================================\\n   FINANSE')
+assert.match(documentRowSection, /openSignedStorageFile\(document\.path\)/, 'Document preview must request a fresh signed URL')
+assert.match(documentRowSection, /openSignedStorageFile\(document\.path, document\.name/, 'Document download must request a fresh signed URL with download disposition')
+assert.match(app, /document\?\.path \|\| document\?\.url/, 'Formal document UI must support path-backed files even when a URL is expired')
 
 const addPhotoSection = sourceSection(app, 'const addPhoto = async (', 'const renamePhoto = async (')
 assert.match(app, /async function cleanupUploadedStorageFile\(path\)/, 'Failed metadata writes must clean up orphaned uploads')

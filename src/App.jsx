@@ -5446,19 +5446,18 @@ function JobDetails({
   const changeStage = async (nextStage) => {
     const today = getTodayString()
     const isCompleted = nextStage === 'Zakończone'
+    const progress = isCompleted
+      ? 100
+      : nextStage === 'Odbiór'
+        ? 95
+        : Math.min(90, Math.max(0, Number(editedJob.progress || 0)))
 
     const updatedJob = {
       ...editedJob,
       status: nextStage,
       completed: isCompleted,
-      completedAt: isCompleted
-        ? (editedJob.completedAt || today)
-        : null,
-      // Zamknięta realizacja musi mieć pełny postęp.
-      // Dzięki temu etap i procent postępu nie mogą się wzajemnie wykluczać.
-      progress: isCompleted
-        ? 100
-        : Math.min(100, Math.max(0, Number(editedJob.progress || 0))),
+      completedAt: isCompleted ? (editedJob.completedAt || today) : null,
+      progress,
     }
 
     onUpdate(updatedJob)
@@ -5474,7 +5473,15 @@ function JobDetails({
   const updateProgressBy = (delta) => {
     const current = Math.max(0, Math.min(100, Number(editedJob.progress) || 0))
     const progress = Math.max(0, Math.min(100, current + delta))
-    const updatedJob = { ...editedJob, progress }
+    const stage = progress >= 100 ? 'Zakończone' : progress >= 95 ? 'Odbiór' : 'W toku'
+    const isCompleted = stage === 'Zakończone'
+    const updatedJob = {
+      ...editedJob,
+      progress,
+      status: stage,
+      completed: isCompleted,
+      completedAt: isCompleted ? (editedJob.completedAt || getTodayString()) : null,
+    }
     setEditedJob(updatedJob)
     onUpdate(updatedJob)
   }
@@ -13214,10 +13221,17 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                     <label>Kto</label>
                     <div className="calendar-select-wrap">
                       <select value={userId} onChange={(e) => { setUserId(e.target.value); setFormErrors((current) => ({ ...current, userId: '' })) }}>
-                        <option value="">{type === 'job' ? 'Cała ekipa' : 'Wybierz pracownika'}</option>
-                        {organizationMembers.map((member) => (
-                          <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
-                        ))}
+                        <option value="">Cała ekipa</option>
+                        {organizationMembers
+                          .filter((member, index, members) => {
+                            const label = String(member.display_name || member.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL')
+                            return members.findIndex((candidate) =>
+                              String(candidate.display_name || candidate.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL') === label
+                            ) === index
+                          })
+                          .map((member) => (
+                            <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
+                          ))}
                       </select>
                       <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
                     </div>
@@ -13367,9 +13381,16 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                         <div className="calendar-select-wrap">
                           <select autoComplete="off" value={editUserId} onChange={(e) => setEditUserId(e.target.value)}>
                             <option value="">Cała ekipa</option>
-                            {organizationMembers.map((member) => (
-                              <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
-                            ))}
+                            {organizationMembers
+                              .filter((member, index, members) => {
+                                const label = String(member.display_name || member.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL')
+                                return members.findIndex((candidate) =>
+                                  String(candidate.display_name || candidate.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL') === label
+                                ) === index
+                              })
+                              .map((member) => (
+                                <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
+                              ))}
                           </select>
                           <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
                         </div>

@@ -55,42 +55,67 @@ export function isAnonymousSession(session) {
   return Boolean(session?.user?.is_anonymous)
 }
 
-export async function ensureLegacyAnonymousSession() {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-  if (sessionError) throw sessionError
+// Współdzielimy tworzenie sesji między wszystkimi wywołaniami. Na iOS kilka
+// efektów/ponowień mogło jednocześnie zobaczyć brak sesji i utworzyć różne konta.
+let anonymousSessionPromise = null
+const deviceClaimPromises = new Map()
 
-  if (sessionData?.session) {
-    if (!isAnonymousSession(sessionData.session)) {
-      throw new Error('Na tym urządzeniu jest aktywne konto firmowe. Wyloguj je przed użyciem trybu Aeroinstal.')
+export function ensureLegacyAnonymousSession() {
+  if (anonymousSessionPromise) return anonymousSessionPromise
+
+  anonymousSessionPromise = (async () => {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw sessionError
+
+    if (sessionData?.session) {
+      if (!isAnonymousSession(sessionData.session)) {
+        throw new Error('Na tym urządzeniu jest aktywne konto firmowe. Wyloguj je przed użyciem trybu Aeroinstal.')
+      }
+      return sessionData.session
     }
-    return sessionData.session
-  }
 
-  const { data, error } = await supabase.auth.signInAnonymously()
-  if (error) throw error
-  if (!data?.session) {
-    throw new Error('Supabase nie zwrócił sesji urządzenia.')
-  }
+    const { data, error } = await supabase.auth.signInAnonymously()
+    if (error) throw error
+    if (!data?.session) {
+      throw new Error('Supabase nie zwrócił sesji urządzenia.')
+    }
 
-  return data.session
+    return data.session
+  })()
+
+  return anonymousSessionPromise.finally(() => {
+    anonymousSessionPromise = null
+  })
 }
 
 export async function claimDeviceInSupabase(deviceId, user) {
   if (!deviceId) throw new Error('Brak identyfikatora urządzenia.')
   if (!DEVICE_USERS.includes(user)) throw new Error('Nieprawidłowy użytkownik urządzenia.')
 
-  await ensureLegacyAnonymousSession()
+  const claimKey = `${deviceId}:${user}`
+  if (deviceClaimPromises.has(claimKey)) return deviceClaimPromises.get(claimKey)
 
-  const { data, error } = await supabase.rpc('claim_legacy_device', {
-    p_device_id: deviceId,
-    p_user_name: user,
-  })
+  const claimPromise = (async () => {
+    await ensureLegacyAnonymousSession()
 
-  if (error) throw error
+    const { data, error } = await supabase.rpc('claim_legacy_device', {
+      p_device_id: deviceId,
+      p_user_name: user,
+    })
 
-  if (!DEVICE_USERS.includes(data)) {
-    throw new Error('Nieprawidłowe przypisanie użytkownika urządzenia.')
+    if (error) throw error
+    if (!DEVICE_USERS.includes(data)) {
+      throw new Error('Nieprawidłowe przypisanie użytkownika urządzenia.')
+    }
+    return data
+  })()
+
+  deviceClaimPromises.set(claimKey, claimPromise)
+  try {
+    return await claimPromise
+  } finally {
+    if (deviceClaimPromises.get(claimKey) === claimPromise) {
+      deviceClaimPromises.delete(claimKey)
+    }
   }
-
-  return data
 }

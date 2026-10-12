@@ -293,6 +293,8 @@ function mapSupabaseJobToAppJob(job) {
 ========================================================= */
 
 function mapAppJobToSupabaseJob(job) {
+  const storageMetadata = sanitizeJobStorageMetadata(job)
+
   return {
     name:
       job.name || '',
@@ -369,10 +371,7 @@ function mapAppJobToSupabaseJob(job) {
       ),
 
     documents:
-      job.documents || {
-        material: null,
-        assembly: null,
-      },
+      storageMetadata.documents,
 
     notes:
       Array.isArray(job.notes)
@@ -380,10 +379,10 @@ function mapAppJobToSupabaseJob(job) {
         : [],
 
     photos:
-      sanitizeJobStorageMetadata(job).photos,
+      storageMetadata.photos,
 
     main_photo:
-      sanitizeJobStorageMetadata(job).main_photo,
+      storageMetadata.main_photo,
   }
 }
 

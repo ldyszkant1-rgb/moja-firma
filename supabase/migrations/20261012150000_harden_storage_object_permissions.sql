@@ -14,11 +14,11 @@ FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'aeroinstal-files'
-  AND (storage.foldername(name))[1] = 'jobs'
+  AND (storage.foldername(storage.objects.name))[1] = 'jobs'
   AND EXISTS (
     SELECT 1
     FROM public.jobs AS j
-    WHERE j.id::text = (storage.foldername(name))[2]
+    WHERE j.id::text = (storage.foldername(storage.objects.name))[2]
       AND j.organization_id = private.current_organization_id()
   )
 );
@@ -30,21 +30,21 @@ FOR UPDATE
 TO authenticated
 USING (
   bucket_id = 'aeroinstal-files'
-  AND (storage.foldername(name))[1] = 'jobs'
+  AND (storage.foldername(storage.objects.name))[1] = 'jobs'
   AND EXISTS (
     SELECT 1
     FROM public.jobs AS j
-    WHERE j.id::text = (storage.foldername(name))[2]
+    WHERE j.id::text = (storage.foldername(storage.objects.name))[2]
       AND j.organization_id = private.current_organization_id()
   )
 )
 WITH CHECK (
   bucket_id = 'aeroinstal-files'
-  AND (storage.foldername(name))[1] = 'jobs'
+  AND (storage.foldername(storage.objects.name))[1] = 'jobs'
   AND EXISTS (
     SELECT 1
     FROM public.jobs AS j
-    WHERE j.id::text = (storage.foldername(name))[2]
+    WHERE j.id::text = (storage.foldername(storage.objects.name))[2]
       AND j.organization_id = private.current_organization_id()
   )
 );
@@ -56,11 +56,11 @@ FOR DELETE
 TO authenticated
 USING (
   bucket_id = 'aeroinstal-files'
-  AND (storage.foldername(name))[1] = 'jobs'
+  AND (storage.foldername(storage.objects.name))[1] = 'jobs'
   AND EXISTS (
     SELECT 1
     FROM public.jobs AS j
-    WHERE j.id::text = (storage.foldername(name))[2]
+    WHERE j.id::text = (storage.foldername(storage.objects.name))[2]
       AND j.organization_id = private.current_organization_id()
   )
 );

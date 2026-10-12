@@ -124,11 +124,12 @@ function sanitizeStorageFile(file, jobId) {
     ? file.path
     : pathFromLegacyPublicUrl(file.url, jobId)
 
-  const { url, path: originalPath, ...metadata } = file
-  if (path) return { ...metadata, path }
+  const metadata = { ...file }
+  delete metadata.url
+  delete metadata.path
 
   // Nie zapisujemy niezweryfikowanych ścieżek ani adresów plików.
-  return metadata
+  return path ? { ...metadata, path } : metadata
 }
 
 function sanitizeJobStorageMetadata(job) {

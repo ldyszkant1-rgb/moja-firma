@@ -4,7 +4,7 @@ export function isSafeStoragePath(path, jobId) {
   if (
     typeof path !== 'string' ||
     !path ||
-    path.includes('\\\\') ||
+    path.includes('\\') ||
     path.split('/').some((part) => part === '.' || part === '..')
   ) {
     return false

@@ -6549,7 +6549,14 @@ function JobDetails({
 
                 {organizationMembers.length > 0 && (
                   <div className="job-detail-edit-members">
-                    {organizationMembers.map((member) => {
+                    {organizationMembers
+                      .filter((member, index, members) => {
+                        const displayName = String(member.display_name || member.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL')
+                        return members.findIndex((candidate) =>
+                          String(candidate.display_name || candidate.email || 'Pracownik').trim().toLocaleLowerCase('pl-PL') === displayName
+                        ) === index
+                      })
+                      .map((member) => {
                       const checked = (editedJob.assignedEmployeeIds || []).map(String).includes(String(member.user_id))
                       return (
                         <label key={member.user_id} className={checked ? 'is-checked' : ''}>

@@ -38,8 +38,18 @@ test('defines organization-scoped upload, update and delete policies', () => {
 
   for (const policy of policies) {
     assert.match(policy, /bucket_id\s*=\s*'aeroinstal-files'/i)
+    assert.match(policy, /\(storage\.foldername\(name\)\)\[1\]\s*=\s*'jobs'/i)
     assert.match(policy, /\(storage\.foldername\(name\)\)\[2\]/i)
     assert.match(policy, /j\.organization_id\s*=\s*private\.current_organization_id\(\)/i)
+  }
+
+  const updatePolicy = policies.find((policy) => /CREATE POLICY "Aeroinstal files - update"/i.test(policy))
+  assert.ok(updatePolicy, 'missing update policy')
+  const updateClauses = updatePolicy.split(/WITH CHECK/i)
+  assert.equal(updateClauses.length, 2, 'update policy must have USING and WITH CHECK clauses')
+  for (const clause of updateClauses) {
+    assert.match(clause, /j\.organization_id\s*=\s*private\.current_organization_id\(\)/i)
+    assert.match(clause, /\(storage\.foldername\(name\)\)\[2\]/i)
   }
 })
 

@@ -12647,7 +12647,9 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
     if (type === 'job' && !jobId) {
       errors.jobId = 'Wybierz robotę.'
     }
-    if (type !== 'job' && !userId) {
+    // Dzień wolny może dotyczyć całej ekipy (user_id = null).
+    // Pozostałe nieobecności nadal wymagają wskazania konkretnej osoby.
+    if (type !== 'job' && type !== 'day_off' && !userId) {
       errors.userId = 'Wybierz pracownika.'
     }
 

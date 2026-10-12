@@ -7655,7 +7655,6 @@ function FinancePage({
   const [settlementSaving, setSettlementSaving] = useState(false)
   const settlementSavingRef = useRef(false)
   const [reportBusy, setReportBusy] = useState(false)
-  const reportSharePdfRef = useRef(new Map())
   const [reportDistribution, setReportDistribution] = useState(null)
   const [historyOpenId, setHistoryOpenId] = useState(null)
 

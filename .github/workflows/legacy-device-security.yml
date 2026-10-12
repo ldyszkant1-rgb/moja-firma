@@ -32,5 +32,7 @@ jobs:
         run: npm ci
       - name: Check legacy device migration contract
         run: node scripts/check-legacy-device-migration.mjs
+      - name: Check Storage security contract
+        run: node scripts/check-storage-security-migration.mjs
       - name: Build app
         run: npm run build

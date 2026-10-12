@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sanitizeStorageFile, sanitizeJobStorageMetadata } from './storageSecurity'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -80,6 +81,64 @@ function parseDecimal(value) {
 }
 
 
+
+/* =========================================================
+   PRYWATNE PLIKI — podpisane adresy i bezpieczne metadane
+========================================================= */
+
+const SIGNED_URL_TTL_SECONDS = 600
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
+export async function refreshSupabaseFileUrl(path, downloadName = null) {
+  if (typeof path !== 'string' || !/^jobs\/[^/]+\/.+/.test(path) || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) {
+    throw new Error('Nieprawidłowa ścieżka pliku.')
+  }
+
+  const options = downloadName
+    ? { download: String(downloadName).replace(/[\\r\\n]/g, '').slice(0, 240) || true }
+    : undefined
+
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS, options)
+
+  if (error) throw error
+  if (!data?.signedUrl) throw new Error('Nie udało się utworzyć podpisanego adresu pliku.')
+  return data.signedUrl
+}
+
+async function hydrateStorageFile(file, jobId) {
+  if (!file || typeof file !== 'object' || Array.isArray(file)) return file
+
+  const safe = sanitizeStorageFile(file, jobId, SUPABASE_URL, STORAGE_BUCKET)
+  if (!safe?.path) return { ...safe, url: null }
+
+  try {
+    return { ...safe, url: await refreshSupabaseFileUrl(safe.path) }
+  } catch {
+    // Brak dostępu do pliku nie powinien blokować pobrania pozostałych realizacji.
+    return { ...safe, url: null }
+  }
+}
+
+async function hydrateJobFileUrls(job) {
+  if (!job) return job
+
+  const [mainPhoto, photos, documentEntries] = await Promise.all([
+    hydrateStorageFile(job.mainPhoto, job.id),
+    Promise.all((Array.isArray(job.photos) ? job.photos : []).map((photo) => hydrateStorageFile(photo, job.id))),
+    Promise.all(Object.entries(job.documents && typeof job.documents === 'object' ? job.documents : {}).map(async ([key, value]) => [key, await hydrateStorageFile(value, job.id)])),
+  ])
+
+  return {
+    ...job,
+    mainPhoto: mainPhoto || null,
+    photos,
+    documents: Object.fromEntries(documentEntries),
+  }
+}
+
+
 /* =========================================================
    SUPABASE → APLIKACJA
 ========================================================= */
@@ -154,10 +213,7 @@ function mapSupabaseJobToAppJob(job) {
       job.completed_at || null,
 
     documents:
-      job.documents || {
-        material: null,
-        assembly: null,
-      },
+      sanitizeJobStorageMetadata(job, SUPABASE_URL, STORAGE_BUCKET).documents,
 
     notes:
       Array.isArray(job.notes)
@@ -186,6 +242,8 @@ function mapSupabaseJobToAppJob(job) {
 ========================================================= */
 
 function mapAppJobToSupabaseJob(job) {
+  const storageMetadata = sanitizeJobStorageMetadata(job, SUPABASE_URL, STORAGE_BUCKET)
+
   return {
     name:
       job.name || '',
@@ -262,10 +320,7 @@ function mapAppJobToSupabaseJob(job) {
       ),
 
     documents:
-      job.documents || {
-        material: null,
-        assembly: null,
-      },
+      storageMetadata.documents,
 
     notes:
       Array.isArray(job.notes)
@@ -273,12 +328,10 @@ function mapAppJobToSupabaseJob(job) {
         : [],
 
     photos:
-      Array.isArray(job.photos)
-        ? job.photos
-        : [],
+      storageMetadata.photos,
 
     main_photo:
-      job.mainPhoto || null,
+      storageMetadata.main_photo,
   }
 }
 
@@ -315,10 +368,8 @@ export async function getJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) => hydrateJobFileUrls(mapSupabaseJobToAppJob(row)))
   )
 }
 
@@ -356,10 +407,8 @@ export async function getDeletedJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) => hydrateJobFileUrls(mapSupabaseJobToAppJob(row)))
   )
 }
 
@@ -397,9 +446,7 @@ export async function createSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -450,9 +497,7 @@ export async function updateSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -499,9 +544,7 @@ export async function softDeleteSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -548,9 +591,7 @@ export async function restoreSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -609,7 +650,7 @@ export async function appendSupabaseJobPhoto(
 
   const { data, error } = await supabase.rpc('append_job_photo', {
     p_job_id: jobId,
-    p_photo: photo,
+    p_photo: sanitizeStorageFile(photo, jobId, SUPABASE_URL, STORAGE_BUCKET),
   })
 
   if (error) {
@@ -617,7 +658,7 @@ export async function appendSupabaseJobPhoto(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 /* =========================================================
@@ -664,9 +705,7 @@ export async function appendSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -718,9 +757,7 @@ export async function updateSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -774,7 +811,7 @@ export async function deleteSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -860,20 +897,9 @@ export async function uploadSupabaseFile(
     throw uploadError
   }
 
-  const { data } =
-    supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .getPublicUrl(
-        path
-      )
-
   return {
     path,
-
-    url:
-      data.publicUrl,
+    url: await refreshSupabaseFileUrl(path),
   }
 }
 
@@ -942,7 +968,7 @@ export async function renameSupabaseJobPhoto(jobId, photoId, newName) {
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 /* =========================================================
@@ -963,5 +989,5 @@ export async function removeSupabaseJobPhoto(jobId, photoId) {
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }

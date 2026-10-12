@@ -26,6 +26,7 @@ import {
   softDeleteSupabaseJob,
   restoreSupabaseJob,
   hardDeleteSupabaseJob,
+  refreshSupabaseFileUrl,
 } from './lib/jobsApi'
 import {
   getJobCosts,
@@ -621,6 +622,27 @@ class JobsErrorBoundary extends React.Component {
       )
     }
     return this.props.children
+  }
+}
+
+async function openSignedStorageFile(path, downloadName = null) {
+  const popup = window.open('about:blank', '_blank')
+  if (!popup) return
+
+  try {
+    popup.location.href = await refreshSupabaseFileUrl(path, downloadName)
+  } catch (error) {
+    popup.close()
+    console.error('Nie udało się otworzyć pliku ze Storage:', error)
+  }
+}
+
+async function cleanupUploadedStorageFile(path) {
+  if (!path) return
+  try {
+    await deleteSupabaseFile(path)
+  } catch (error) {
+    console.error('Nie udało się posprzątać nieużywanego pliku ze Storage:', error)
   }
 }
 
@@ -3835,9 +3857,21 @@ function JobCard({
                 src={job.mainPhoto.url}
                 alt={job.mainPhoto.name || job.name}
                 title="Zdjęcie główne"
+                onError={async (event) => {
+                  const image = event.currentTarget
+                  const attempts = Number(image.dataset.storageRetryCount || 0)
+                  if (!job.mainPhoto?.path || attempts >= 2) return
+                  image.dataset.storageRetryCount = String(attempts + 1)
+                  try {
+                    image.src = await refreshSupabaseFileUrl(job.mainPhoto.path)
+                  } catch {
+                    image.alt = 'Zdjęcie niedostępne'
+                  }
+                }}
+                onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
                 onClick={(e) => {
                   e.stopPropagation()
-                  window.open(job.mainPhoto.url, '_blank')
+                  if (job.mainPhoto?.path) openSignedStorageFile(job.mainPhoto.path)
                 }}
               />
             ) : (
@@ -5561,17 +5595,6 @@ function JobDetails({
         path: uploadedDocument.path,
       }
 
-      if (oldDocument?.path) {
-        try {
-          await deleteSupabaseFile(oldDocument.path)
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
         ...editedJob,
 
@@ -5589,9 +5612,28 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Przywróć stan i usuń nowy plik, jeśli zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        await cleanupUploadedStorageFile(uploadedDocument.path)
+        return
+      }
+
+      if (oldDocument?.path) {
+        try {
+          await deleteSupabaseFile(oldDocument.path)
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5621,12 +5663,6 @@ function JobDetails({
 
     try {
 
-      if (document.path) {
-        await deleteSupabaseFile(
-          document.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5646,9 +5682,22 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Przywróć stan lokalny; zachowaj plik, gdy zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
+
+      if (document.path) {
+        await deleteSupabaseFile(
+          document.path
+        )
+      }
 
     } catch (error) {
 
@@ -5758,19 +5807,6 @@ function JobDetails({
 
       }
 
-      if (oldMainPhoto?.path) {
-        try {
-          await deleteSupabaseFile(
-            oldMainPhoto.path
-          )
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5783,9 +5819,30 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Przywróć stan i usuń nowy plik, jeśli zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        await cleanupUploadedStorageFile(uploadedPhoto.path)
+        return
+      }
+
+      if (oldMainPhoto?.path) {
+        try {
+          await deleteSupabaseFile(
+            oldMainPhoto.path
+          )
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5838,12 +5895,6 @@ function JobDetails({
 
     try {
 
-      if (mainPhoto.path) {
-        await deleteSupabaseFile(
-          mainPhoto.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5856,9 +5907,22 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Przywróć stan lokalny; zachowaj plik, gdy zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
+
+      if (mainPhoto.path) {
+        await deleteSupabaseFile(
+          mainPhoto.path
+        )
+      }
 
     } catch (error) {
 
@@ -5883,6 +5947,8 @@ function JobDetails({
     if (!file)
       return
 
+    let uploadedPhotoPath = null
+
     try {
 
       const uploadedPhoto =
@@ -5891,6 +5957,8 @@ function JobDetails({
           'photos',
           file
         )
+
+      uploadedPhotoPath = uploadedPhoto.path
 
       const photo = {
 
@@ -5932,6 +6000,9 @@ function JobDetails({
           photo
         )
 
+      // Metadane zapisane atomowo — plik nie jest już osierocony.
+      uploadedPhotoPath = null
+
       /*
        * Supabase zwraca pełną, aktualną wersję
        * realizacje wraz ze wszystkimi zdjęciami.
@@ -5954,6 +6025,8 @@ function JobDetails({
       )
 
     } catch (error) {
+
+      await cleanupUploadedStorageFile(uploadedPhotoPath)
 
       console.error(
         'Nie udało się wysłać zdjęcia do Supabase Storage:',
@@ -6888,10 +6961,21 @@ function JobDetails({
                 <div className="job-detail-document-row" key={type}>
                   <FileText size={19} strokeWidth={1.75} />
                   <span>{document?.name || label}</span>
-                  {document?.url ? (
-                    <a href={document.url} target="_blank" rel="noreferrer" aria-label={'Otwórz ' + label}>
+                  {document?.path || document?.url ? (
+                    <button
+                      type="button"
+                      className="document-open"
+                      aria-label={'Otwórz ' + label}
+                      onClick={() => {
+                        if (document.path) {
+                          openSignedStorageFile(document.path)
+                        } else if (document.url) {
+                          window.open(document.url, '_blank')
+                        }
+                      }}
+                    >
                       <ChevronRight size={18} strokeWidth={1.75} />
-                    </a>
+                    </button>
                   ) : (
                     <button type="button" onClick={() => {
                       const input = type === 'material' ? materialInputRef.current : assemblyInputRef.current
@@ -6950,7 +7034,23 @@ function JobDetails({
           <div className="job-detail-subtitle">Zdjęcie główne</div>
           {editedJob.mainPhoto?.url ? (
             <div className="job-detail-main-photo-wrap">
-              <img src={editedJob.mainPhoto.url} alt={editedJob.mainPhoto.name || editedJob.name} onClick={() => window.open(editedJob.mainPhoto.url, '_blank')} />
+              <img
+                src={editedJob.mainPhoto.url}
+                alt={editedJob.mainPhoto.name || editedJob.name}
+                onError={async (event) => {
+                  const image = event.currentTarget
+                  const attempts = Number(image.dataset.storageRetryCount || 0)
+                  if (!editedJob.mainPhoto?.path || attempts >= 2) return
+                  image.dataset.storageRetryCount = String(attempts + 1)
+                  try {
+                    image.src = await refreshSupabaseFileUrl(editedJob.mainPhoto.path)
+                  } catch {
+                    image.alt = 'Zdjęcie niedostępne'
+                  }
+                }}
+                onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
+                onClick={() => editedJob.mainPhoto?.path && openSignedStorageFile(editedJob.mainPhoto.path)}
+              />
               <button type="button" className="job-detail-inline-delete" onClick={removeMainPhoto} aria-label="Usuń zdjęcie główne">
                 <Trash2 size={17} strokeWidth={1.75} />
               </button>
@@ -6969,7 +7069,23 @@ function JobDetails({
           <div className="job-detail-photo-grid">
             {(editedJob.photos || []).map((photo) => (
               <div className="job-detail-photo-item" key={photo.id}>
-                <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => window.open(photo.url, '_blank')} />
+                <img
+                  src={photo.url}
+                  alt={photo.name || editedJob.name}
+                  onError={async (event) => {
+                    const image = event.currentTarget
+                    const attempts = Number(image.dataset.storageRetryCount || 0)
+                    if (!photo.path || attempts >= 2) return
+                    image.dataset.storageRetryCount = String(attempts + 1)
+                    try {
+                      image.src = await refreshSupabaseFileUrl(photo.path)
+                    } catch {
+                      image.alt = 'Zdjęcie niedostępne'
+                    }
+                  }}
+                  onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
+                  onClick={() => photo.path && openSignedStorageFile(photo.path)}
+                />
                 <button type="button" onClick={() => renamePhoto(photo.id)} aria-label="Zmień nazwę zdjęcia" title="Zmień nazwę">
                   <Pencil size={15} strokeWidth={1.75} />
                 </button>
@@ -7421,40 +7537,26 @@ function DocumentRow({
             >
 
               <button
-
+                type="button"
                 className="document-open"
-
-                onClick={() =>
-                  window.open(
-                    document.url,
-                    '_blank'
-                  )
+                onClick={() => document.path
+                  ? openSignedStorageFile(document.path)
+                  : document.url && window.open(document.url, '_blank')
                 }
-
               >
                 Podgląd
               </button>
 
-
-              <a
-
-                href={
-                  document.url
-                }
-
-                download={
-                  document.name || 'dokument'
-                }
-
+              <button
+                type="button"
                 className="document-open"
-
-                style={{
-                  textDecoration: 'none',
-                }}
-
+                onClick={() => document.path
+                  ? openSignedStorageFile(document.path, document.name || 'dokument')
+                  : document.url && window.open(document.url, '_blank')
+                }
               >
                 ↓ Pobierz
-              </a>
+              </button>
 
             </div>
 

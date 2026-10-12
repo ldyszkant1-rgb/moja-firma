@@ -71,4 +71,30 @@ assert.match(migration, /\(storage\.foldername\(name\)\)\[2\]/, 'Policies must u
 assert.match(migration, /j\.organization_id = private\.current_organization_id\(\)/, 'Policies must scope access to the active organization')
 assert.doesNotMatch(migration, /UPDATE\s+storage\.buckets/i, 'Bucket visibility must be a separate post-deploy step')
 
+
+// File objects must not be deleted before their metadata update is persisted.
+function sourceSection(source, start, end) {
+  const startIndex = source.indexOf(start)
+  const endIndex = source.indexOf(end, startIndex + start.length)
+  assert.notEqual(startIndex, -1, 'Missing source section start: ' + start)
+  assert.notEqual(endIndex, -1, 'Missing source section end: ' + end)
+  return source.slice(startIndex, endIndex)
+}
+
+const addDocumentSection = sourceSection(app, 'const addDocument = async (', 'const removeDocument = async (')
+assert.ok(addDocumentSection.indexOf('await onUpdate(') < addDocumentSection.indexOf('await deleteSupabaseFile(oldDocument.path)'), 'Old document must be deleted only after metadata save')
+assert.ok(addDocumentSection.indexOf('if (saveResult === false) return') < addDocumentSection.indexOf('await deleteSupabaseFile(oldDocument.path)'), 'Old document must be retained when metadata save fails')
+
+const removeDocumentSection = sourceSection(app, 'const removeDocument = async (', 'const renameDocument = async (')
+assert.ok(removeDocumentSection.indexOf('await onUpdate(') < removeDocumentSection.indexOf('await deleteSupabaseFile('), 'Document metadata must be saved before deleting its Storage object')
+assert.ok(removeDocumentSection.indexOf('if (saveResult === false) return') < removeDocumentSection.indexOf('await deleteSupabaseFile('), 'Document object must be retained when metadata save fails')
+
+const addMainPhotoSection = sourceSection(app, 'const addMainPhoto = async (', 'const handleMainPhotoPaste = async (')
+assert.ok(addMainPhotoSection.indexOf('await onUpdate(') < addMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Old main photo must be deleted only after metadata save')
+assert.ok(addMainPhotoSection.indexOf('if (saveResult === false) return') < addMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Old main photo must be retained when metadata save fails')
+
+const removeMainPhotoSection = sourceSection(app, 'const removeMainPhoto = async () => {', 'const addPhoto = async (')
+assert.ok(removeMainPhotoSection.indexOf('await onUpdate(') < removeMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Main-photo metadata must be saved before deleting its Storage object')
+assert.ok(removeMainPhotoSection.indexOf('if (saveResult === false) return') < removeMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Main-photo object must be retained when metadata save fails')
+
 console.log('Storage security unit and contract checks passed.')

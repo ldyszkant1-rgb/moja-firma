@@ -38,8 +38,8 @@ test('defines organization-scoped upload, update and delete policies', () => {
 
   for (const policy of policies) {
     assert.match(policy, /bucket_id\s*=\s*'aeroinstal-files'/i)
-    assert.match(policy, /\(storage\.foldername\(name\)\)\[1\]\s*=\s*'jobs'/i)
-    assert.match(policy, /\(storage\.foldername\(name\)\)\[2\]/i)
+    assert.match(policy, /\(storage\.foldername\(storage\.objects\.name\)\)\[1\]\s*=\s*'jobs'/i)
+    assert.match(policy, /\(storage\.foldername\(storage\.objects\.name\)\)\[2\]/i)
     assert.match(policy, /j\.organization_id\s*=\s*private\.current_organization_id\(\)/i)
   }
 
@@ -49,7 +49,7 @@ test('defines organization-scoped upload, update and delete policies', () => {
   assert.equal(updateClauses.length, 2, 'update policy must have USING and WITH CHECK clauses')
   for (const clause of updateClauses) {
     assert.match(clause, /j\.organization_id\s*=\s*private\.current_organization_id\(\)/i)
-    assert.match(clause, /\(storage\.foldername\(name\)\)\[2\]/i)
+    assert.match(clause, /\(storage\.foldername\(storage\.objects\.name\)\)\[2\]/i)
   }
 })
 
@@ -59,5 +59,5 @@ test('does not drop or redefine the existing Storage read policy', () => {
 })
 
 test('limits the mutation policies to the intended bucket and job paths', () => {
-  assert.equal((sql.match(/\(storage\.foldername\(name\)\)\[1\]\s*=\s*'jobs'/gi) || []).length, 4)
+  assert.equal((sql.match(/\(storage\.foldername\(storage\.objects\.name\)\)\[1\]\s*=\s*'jobs'/gi) || []).length, 4)
 })

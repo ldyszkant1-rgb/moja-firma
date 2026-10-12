@@ -80,6 +80,116 @@ function parseDecimal(value) {
 }
 
 
+
+/* =========================================================
+   PRYWATNE PLIKI — podpisane adresy i bezpieczne metadane
+========================================================= */
+
+const SIGNED_URL_TTL_SECONDS = 600
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+
+function isSafeStoragePath(path, jobId) {
+  if (typeof path !== 'string' || !path || path.includes('\\') || path.split('/').some((part) => part === '.' || part === '..')) {
+    return false
+  }
+
+  const parts = path.split('/')
+  return parts.length >= 4 &&
+    parts[0] === 'jobs' &&
+    parts[1] === String(jobId) &&
+    parts.every(Boolean)
+}
+
+function pathFromLegacyPublicUrl(url, jobId) {
+  if (typeof url !== 'string' || !SUPABASE_URL) return null
+
+  try {
+    const candidate = new URL(url)
+    const expected = new URL(SUPABASE_URL)
+    const prefix = '/storage/v1/object/public/' + STORAGE_BUCKET + '/'
+
+    if (candidate.origin !== expected.origin || !candidate.pathname.startsWith(prefix)) return null
+
+    const path = candidate.pathname.slice(prefix.length).split('/').map((part) => decodeURIComponent(part)).join('/')
+    return isSafeStoragePath(path, jobId) ? path : null
+  } catch {
+    return null
+  }
+}
+
+function sanitizeStorageFile(file, jobId) {
+  if (!file || typeof file !== 'object' || Array.isArray(file)) return file
+
+  const path = isSafeStoragePath(file.path, jobId)
+    ? file.path
+    : pathFromLegacyPublicUrl(file.url, jobId)
+
+  const { url, ...metadata } = file
+  if (path) return { ...metadata, path }
+
+  // Nie zapisujemy ani nie używamy niezweryfikowanych adresów plików.
+  if (typeof url === 'string') return metadata
+  return metadata
+}
+
+function sanitizeJobStorageMetadata(job) {
+  const documents = job.documents && typeof job.documents === 'object' && !Array.isArray(job.documents)
+    ? Object.fromEntries(Object.entries(job.documents).map(([key, value]) => [key, sanitizeStorageFile(value, job.id)]))
+    : { material: null, assembly: null }
+
+  return {
+    documents,
+    photos: Array.isArray(job.photos) ? job.photos.map((photo) => sanitizeStorageFile(photo, job.id)) : [],
+    main_photo: sanitizeStorageFile(job.mainPhoto, job.id) || null,
+  }
+}
+
+export async function refreshSupabaseFileUrl(path) {
+  if (typeof path !== 'string' || !/^jobs\/[^/]+\/.+/.test(path) || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) {
+    throw new Error('Nieprawidłowa ścieżka pliku.')
+  }
+
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS)
+
+  if (error) throw error
+  if (!data?.signedUrl) throw new Error('Nie udało się utworzyć podpisanego adresu pliku.')
+  return data.signedUrl
+}
+
+async function hydrateStorageFile(file, jobId) {
+  if (!file || typeof file !== 'object' || Array.isArray(file)) return file
+
+  const safe = sanitizeStorageFile(file, jobId)
+  if (!safe?.path) return { ...safe, url: null }
+
+  try {
+    return { ...safe, url: await refreshSupabaseFileUrl(safe.path) }
+  } catch {
+    // Brak dostępu do pliku nie powinien blokować pobrania pozostałych realizacji.
+    return { ...safe, url: null }
+  }
+}
+
+async function hydrateJobFileUrls(job) {
+  if (!job) return job
+
+  const [mainPhoto, photos, documentEntries] = await Promise.all([
+    hydrateStorageFile(job.mainPhoto, job.id),
+    Promise.all((Array.isArray(job.photos) ? job.photos : []).map((photo) => hydrateStorageFile(photo, job.id))),
+    Promise.all(Object.entries(job.documents && typeof job.documents === 'object' ? job.documents : {}).map(async ([key, value]) => [key, await hydrateStorageFile(value, job.id)])),
+  ])
+
+  return {
+    ...job,
+    mainPhoto: mainPhoto || null,
+    photos,
+    documents: Object.fromEntries(documentEntries),
+  }
+}
+
+
 /* =========================================================
    SUPABASE → APLIKACJA
 ========================================================= */
@@ -154,10 +264,7 @@ function mapSupabaseJobToAppJob(job) {
       job.completed_at || null,
 
     documents:
-      job.documents || {
-        material: null,
-        assembly: null,
-      },
+      sanitizeJobStorageMetadata(job).documents,
 
     notes:
       Array.isArray(job.notes)
@@ -273,12 +380,10 @@ function mapAppJobToSupabaseJob(job) {
         : [],
 
     photos:
-      Array.isArray(job.photos)
-        ? job.photos
-        : [],
+      sanitizeJobStorageMetadata(job).photos,
 
     main_photo:
-      job.mainPhoto || null,
+      sanitizeJobStorageMetadata(job).main_photo,
   }
 }
 
@@ -315,10 +420,8 @@ export async function getJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) => hydrateJobFileUrls(mapSupabaseJobToAppJob(row)))
   )
 }
 
@@ -397,9 +500,7 @@ export async function createSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -609,7 +710,7 @@ export async function appendSupabaseJobPhoto(
 
   const { data, error } = await supabase.rpc('append_job_photo', {
     p_job_id: jobId,
-    p_photo: photo,
+    p_photo: sanitizeStorageFile(photo, jobId),
   })
 
   if (error) {
@@ -617,7 +718,7 @@ export async function appendSupabaseJobPhoto(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 /* =========================================================
@@ -860,20 +961,9 @@ export async function uploadSupabaseFile(
     throw uploadError
   }
 
-  const { data } =
-    supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .getPublicUrl(
-        path
-      )
-
   return {
     path,
-
-    url:
-      data.publicUrl,
+    url: await refreshSupabaseFileUrl(path),
   }
 }
 

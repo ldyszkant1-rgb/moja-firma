@@ -5576,17 +5576,6 @@ function JobDetails({
         path: uploadedDocument.path,
       }
 
-      if (oldDocument?.path) {
-        try {
-          await deleteSupabaseFile(oldDocument.path)
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
         ...editedJob,
 
@@ -5604,9 +5593,23 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Zachowaj poprzedni plik, jeśli zapis metadanych w bazie się nie udał.
+      if (saveResult === false) return
+
+      if (oldDocument?.path) {
+        try {
+          await deleteSupabaseFile(oldDocument.path)
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5636,12 +5639,6 @@ function JobDetails({
 
     try {
 
-      if (document.path) {
-        await deleteSupabaseFile(
-          document.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5661,9 +5658,18 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Nie usuwaj obiektu, dopóki baza nie potwierdzi usunięcia metadanych.
+      if (saveResult === false) return
+
+      if (document.path) {
+        await deleteSupabaseFile(
+          document.path
+        )
+      }
 
     } catch (error) {
 
@@ -5773,19 +5779,6 @@ function JobDetails({
 
       }
 
-      if (oldMainPhoto?.path) {
-        try {
-          await deleteSupabaseFile(
-            oldMainPhoto.path
-          )
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5798,9 +5791,25 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Zachowaj poprzednie zdjęcie, jeśli zapis metadanych w bazie się nie udał.
+      if (saveResult === false) return
+
+      if (oldMainPhoto?.path) {
+        try {
+          await deleteSupabaseFile(
+            oldMainPhoto.path
+          )
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5853,12 +5862,6 @@ function JobDetails({
 
     try {
 
-      if (mainPhoto.path) {
-        await deleteSupabaseFile(
-          mainPhoto.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5871,9 +5874,18 @@ function JobDetails({
         updatedJob
       )
 
-      onUpdate(
+      const saveResult = await onUpdate(
         updatedJob
       )
+
+      // Nie usuwaj obiektu, dopóki baza nie potwierdzi usunięcia metadanych.
+      if (saveResult === false) return
+
+      if (mainPhoto.path) {
+        await deleteSupabaseFile(
+          mainPhoto.path
+        )
+      }
 
     } catch (error) {
 

@@ -9281,9 +9281,8 @@ function FinancePage({
       link.href = url
       link.download = 'rozliczenie-wspolnikow.pdf'
       link.click()
-      window.open('https://www.messenger.com/', '_blank', 'noopener,noreferrer')
       setTimeout(() => URL.revokeObjectURL(url), 60000)
-      await showCustomAlert('Przygotowano PDF. Jeśli Messenger nie otworzy się automatycznie, otwórz go ręcznie i dołącz plik rozliczenie-wspolnikow.pdf z aplikacji Pliki.')
+      await showCustomAlert('PDF został pobrany. Otwórz Messengera, wejdź w rozmowę i dołącz plik rozliczenie-wspolnikow.pdf. Na iPhonie przeglądarka nie może automatycznie załączyć pliku do rozmowy.')
     } catch (error) {
       console.error('Nie udało się przygotować PDF do Messengera:', error)
       await showCustomAlert('Nie udało się przygotować PDF. Spróbuj ponownie.')
@@ -10042,6 +10041,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                           </div>
                           <div className="aero-report-history-actions">
                             <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Udostępnij</button>
+                            <button type="button" className="aero-report-action" onClick={() => sendDistributionPdfToMessenger(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Przygotuj PDF do Messengera</button>
                             <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(distribution)} disabled={reportBusy}><Copy size={15} strokeWidth={1.8} aria-hidden="true" /> Kopiuj podsumowanie</button>
                             <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(distribution)}><Download size={15} strokeWidth={1.8} aria-hidden="true" /> Pobierz PDF</button>
                             {distribution.status !== 'reversed' && (

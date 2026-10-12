@@ -106,7 +106,7 @@ export async function refreshSupabaseFileUrl(path) {
 async function hydrateStorageFile(file, jobId) {
   if (!file || typeof file !== 'object' || Array.isArray(file)) return file
 
-  const safe = sanitizeStorageFile(file, jobId)
+  const safe = sanitizeStorageFile(file, jobId, SUPABASE_URL, STORAGE_BUCKET)
   if (!safe?.path) return { ...safe, url: null }
 
   try {

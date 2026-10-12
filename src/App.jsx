@@ -879,15 +879,9 @@ function App() {
         console.error('Nie udało się uwierzytelnić urządzenia Aeroinstal:', error)
         if (!cancelled) setDeviceAuthError(error?.message || 'Nie udało się zweryfikować tego urządzenia.')
 
-        try {
-          const { data } = await supabase.auth.getSession()
-          if (isAnonymousSession(data?.session)) {
-            await supabase.auth.signOut()
-          }
-        } catch (signOutError) {
-          console.error('Nie udało się wyczyścić sesji urządzenia:', signOutError)
-        }
-
+        // Nie wylogowujemy sesji anonimowej po błędzie claim_legacy_device.
+        // Wylogowanie niszczy jedyny identyfikator sesji urządzenia; ponowienie
+        // tworzy wtedy nowe konto i pogłębia konflikt z przypisaniem w bazie.
         if (!cancelled) {
           setDeviceUser(null)
         }

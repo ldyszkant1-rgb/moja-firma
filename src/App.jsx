@@ -636,6 +636,15 @@ async function openSignedStorageFile(path) {
   }
 }
 
+async function cleanupUploadedStorageFile(path) {
+  if (!path) return
+  try {
+    await deleteSupabaseFile(path)
+  } catch (error) {
+    console.error('Nie udało się posprzątać nieużywanego pliku ze Storage:', error)
+  }
+}
+
 function App() {
 
   const [deviceId] = useState(() => getOrCreateDeviceId())
@@ -5597,8 +5606,13 @@ function JobDetails({
         updatedJob
       )
 
-      // Zachowaj poprzedni plik, jeśli zapis metadanych w bazie się nie udał.
-      if (saveResult === false) return
+      // Przywróć stan i usuń nowy plik, jeśli zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        await cleanupUploadedStorageFile(uploadedDocument.path)
+        return
+      }
 
       if (oldDocument?.path) {
         try {
@@ -5662,8 +5676,12 @@ function JobDetails({
         updatedJob
       )
 
-      // Nie usuwaj obiektu, dopóki baza nie potwierdzi usunięcia metadanych.
-      if (saveResult === false) return
+      // Przywróć stan lokalny; zachowaj plik, gdy zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
 
       if (document.path) {
         await deleteSupabaseFile(
@@ -5795,8 +5813,13 @@ function JobDetails({
         updatedJob
       )
 
-      // Zachowaj poprzednie zdjęcie, jeśli zapis metadanych w bazie się nie udał.
-      if (saveResult === false) return
+      // Przywróć stan i usuń nowy plik, jeśli zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        await cleanupUploadedStorageFile(uploadedPhoto.path)
+        return
+      }
 
       if (oldMainPhoto?.path) {
         try {
@@ -5878,8 +5901,12 @@ function JobDetails({
         updatedJob
       )
 
-      // Nie usuwaj obiektu, dopóki baza nie potwierdzi usunięcia metadanych.
-      if (saveResult === false) return
+      // Przywróć stan lokalny; zachowaj plik, gdy zapis metadanych się nie udał.
+      if (saveResult === false) {
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
 
       if (mainPhoto.path) {
         await deleteSupabaseFile(
@@ -5910,6 +5937,8 @@ function JobDetails({
     if (!file)
       return
 
+    let uploadedPhotoPath = null
+
     try {
 
       const uploadedPhoto =
@@ -5918,6 +5947,8 @@ function JobDetails({
           'photos',
           file
         )
+
+      uploadedPhotoPath = uploadedPhoto.path
 
       const photo = {
 
@@ -5959,6 +5990,9 @@ function JobDetails({
           photo
         )
 
+      // Metadane zapisane atomowo — plik nie jest już osierocony.
+      uploadedPhotoPath = null
+
       /*
        * Supabase zwraca pełną, aktualną wersję
        * realizacje wraz ze wszystkimi zdjęciami.
@@ -5981,6 +6015,8 @@ function JobDetails({
       )
 
     } catch (error) {
+
+      await cleanupUploadedStorageFile(uploadedPhotoPath)
 
       console.error(
         'Nie udało się wysłać zdjęcia do Supabase Storage:',

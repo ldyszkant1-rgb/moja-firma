@@ -98,4 +98,15 @@ const removeMainPhotoSection = sourceSection(app, 'const removeMainPhoto = async
 assert.ok(removeMainPhotoSection.indexOf('await onUpdate(') < removeMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Main-photo metadata must be saved before deleting its Storage object')
 assert.ok(removeMainPhotoSection.indexOf('if (saveResult === false) return') < removeMainPhotoSection.indexOf('await deleteSupabaseFile('), 'Main-photo object must be retained when metadata save fails')
 
+const addPhotoSection = sourceSection(app, 'const addPhoto = async (', 'const renamePhoto = async (')
+assert.match(app, /async function cleanupUploadedStorageFile\\(path\\)/, 'Failed metadata writes must clean up orphaned uploads')
+assert.match(addDocumentSection, /setEditedJob\\(editedJob\\)/, 'Failed document metadata writes must roll back local state')
+assert.match(addDocumentSection, /cleanupUploadedStorageFile\\(uploadedDocument\\.path\\)/, 'Failed document metadata writes must clean up the uploaded file')
+assert.match(addMainPhotoSection, /setEditedJob\\(editedJob\\)/, 'Failed main-photo metadata writes must roll back local state')
+assert.match(addMainPhotoSection, /cleanupUploadedStorageFile\\(uploadedPhoto\\.path\\)/, 'Failed main-photo metadata writes must clean up the uploaded file')
+assert.match(addPhotoSection, /uploadedPhotoPath = uploadedPhoto\\.path/, 'Gallery upload path must be tracked until metadata is saved')
+assert.match(addPhotoSection, /cleanupUploadedStorageFile\\(uploadedPhotoPath\\)/, 'Failed gallery metadata writes must clean up the uploaded file')
+assert.match(removeDocumentSection, /setEditedJob\\(editedJob\\)/, 'Failed document removals must roll back local state')
+assert.match(removeMainPhotoSection, /setEditedJob\\(editedJob\\)/, 'Failed main-photo removals must roll back local state')
+
 console.log('Storage security unit and contract checks passed.')

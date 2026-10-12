@@ -13,11 +13,11 @@ for insert
 to authenticated
 with check (
   bucket_id = 'aeroinstal-files'
-  and (storage.foldername(name))[1] = 'jobs'
+  and (storage.foldername(storage.objects.name))[1] = 'jobs'
   and exists (
     select 1
     from public.jobs j
-    where j.id::text = (storage.foldername(name))[2]
+    where j.id::text = (storage.foldername(storage.objects.name))[2]
       and j.organization_id = private.current_organization_id()
   )
 );
@@ -28,21 +28,21 @@ for update
 to authenticated
 using (
   bucket_id = 'aeroinstal-files'
-  and (storage.foldername(name))[1] = 'jobs'
+  and (storage.foldername(storage.objects.name))[1] = 'jobs'
   and exists (
     select 1
     from public.jobs j
-    where j.id::text = (storage.foldername(name))[2]
+    where j.id::text = (storage.foldername(storage.objects.name))[2]
       and j.organization_id = private.current_organization_id()
   )
 )
 with check (
   bucket_id = 'aeroinstal-files'
-  and (storage.foldername(name))[1] = 'jobs'
+  and (storage.foldername(storage.objects.name))[1] = 'jobs'
   and exists (
     select 1
     from public.jobs j
-    where j.id::text = (storage.foldername(name))[2]
+    where j.id::text = (storage.foldername(storage.objects.name))[2]
       and j.organization_id = private.current_organization_id()
   )
 );
@@ -53,11 +53,11 @@ for delete
 to authenticated
 using (
   bucket_id = 'aeroinstal-files'
-  and (storage.foldername(name))[1] = 'jobs'
+  and (storage.foldername(storage.objects.name))[1] = 'jobs'
   and exists (
     select 1
     from public.jobs j
-    where j.id::text = (storage.foldername(name))[2]
+    where j.id::text = (storage.foldername(storage.objects.name))[2]
       and j.organization_id = private.current_organization_id()
   )
 );
@@ -68,11 +68,11 @@ for select
 to authenticated
 using (
   bucket_id = 'aeroinstal-files'
-  and (storage.foldername(name))[1] = 'jobs'
+  and (storage.foldername(storage.objects.name))[1] = 'jobs'
   and exists (
     select 1
     from public.jobs j
-    where j.id::text = (storage.foldername(name))[2]
+    where j.id::text = (storage.foldername(storage.objects.name))[2]
       and j.organization_id = private.current_organization_id()
   )
 );

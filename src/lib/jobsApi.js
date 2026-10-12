@@ -89,14 +89,18 @@ function parseDecimal(value) {
 const SIGNED_URL_TTL_SECONDS = 600
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 
-export async function refreshSupabaseFileUrl(path) {
+export async function refreshSupabaseFileUrl(path, downloadName = null) {
   if (typeof path !== 'string' || !/^jobs\/[^/]+\/.+/.test(path) || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) {
     throw new Error('Nieprawidłowa ścieżka pliku.')
   }
 
+  const options = downloadName
+    ? { download: String(downloadName).replace(/[\\r\\n]/g, '').slice(0, 240) || true }
+    : undefined
+
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS)
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS, options)
 
   if (error) throw error
   if (!data?.signedUrl) throw new Error('Nie udało się utworzyć podpisanego adresu pliku.')

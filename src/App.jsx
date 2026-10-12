@@ -5471,6 +5471,14 @@ function JobDetails({
         ? 'Zakończone'
         : null
 
+  const updateProgressBy = (delta) => {
+    const current = Math.max(0, Math.min(100, Number(editedJob.progress) || 0))
+    const progress = Math.max(0, Math.min(100, current + delta))
+    const updatedJob = { ...editedJob, progress }
+    setEditedJob(updatedJob)
+    onUpdate(updatedJob)
+  }
+
   const updateQuantity = (
     field,
     value
@@ -6634,7 +6642,39 @@ function JobDetails({
           <div className="job-detail-progress-bar">
             <div className="job-detail-progress-fill" style={{ width: Math.max(0, Math.min(100, Number(editedJob.progress) || 0)) + '%' }} />
           </div>
+          {!editing && normalizeJobStage(editedJob) !== 'Zakończone' && (
+            <div className="job-detail-quick-progress">
+              <button
+                type="button"
+                className="jobs-page-form-cancel"
+                onClick={() => updateProgressBy(-5)}
+                disabled={Number(editedJob.progress || 0) <= 0}
+              >
+                −5%
+              </button>
+              <button
+                type="button"
+                className="jobs-page-form-save"
+                onClick={() => updateProgressBy(5)}
+                disabled={Number(editedJob.progress || 0) >= 100}
+              >
+                +5%
+              </button>
+            </div>
+          )}
         </div>
+
+        {!editing && (
+          <label className="job-detail-stage-edit">
+            <span>Aktualny etap</span>
+            <select
+              value={normalizeJobStage(editedJob)}
+              onChange={(e) => { void changeStage(e.target.value) }}
+            >
+              {JOB_STAGES.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
+            </select>
+          </label>
+        )}
 
         {editing && (
           <label className="job-detail-stage-edit">

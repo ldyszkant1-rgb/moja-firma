@@ -624,6 +624,18 @@ class JobsErrorBoundary extends React.Component {
   }
 }
 
+async function openSignedStorageFile(path) {
+  const popup = window.open('about:blank', '_blank')
+  if (!popup) return
+
+  try {
+    popup.location.href = await refreshSupabaseFileUrl(path)
+  } catch (error) {
+    popup.close()
+    console.error('Nie udało się otworzyć pliku ze Storage:', error)
+  }
+}
+
 function App() {
 
   const [deviceId] = useState(() => getOrCreateDeviceId())
@@ -3855,7 +3867,7 @@ function JobCard({
                 onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
                 onClick={(e) => {
                   e.stopPropagation()
-                  window.open(job.mainPhoto.url, '_blank')
+                  if (job.mainPhoto?.path) openSignedStorageFile(job.mainPhoto.path)
                 }}
               />
             ) : (
@@ -6947,7 +6959,7 @@ function JobDetails({
                   }
                 }}
                 onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
-                onClick={() => window.open(editedJob.mainPhoto.url, '_blank')}
+                onClick={() => editedJob.mainPhoto?.path && openSignedStorageFile(editedJob.mainPhoto.path)}
               />
               <button type="button" className="job-detail-inline-delete" onClick={removeMainPhoto} aria-label="Usuń zdjęcie główne">
                 <Trash2 size={17} strokeWidth={1.75} />
@@ -6982,7 +6994,7 @@ function JobDetails({
                     }
                   }}
                   onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
-                  onClick={() => window.open(photo.url, '_blank')}
+                  onClick={() => photo.path && openSignedStorageFile(photo.path)}
                 />
                 <button type="button" onClick={() => renamePhoto(photo.id)} aria-label="Zmień nazwę zdjęcia" title="Zmień nazwę">
                   <Pencil size={15} strokeWidth={1.75} />

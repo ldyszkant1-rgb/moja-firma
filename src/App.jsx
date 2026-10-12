@@ -9579,10 +9579,22 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
       return
     }
 
+    const vatRate = Number(currentCost.vatRate ?? 0)
+    const roundMoney = (value) =>
+      Math.round((Number(value) + Number.EPSILON) * 100) / 100
+    const netAmount = roundMoney(amount)
+    const grossAmount = roundMoney(netAmount * (1 + vatRate / 100))
+    const vatAmount = roundMoney(grossAmount - netAmount)
+
     const updatedCost = {
       ...currentCost,
       type: 'cost',
-      amount,
+      amount: netAmount,
+      amountBasis: 'netto',
+      vatRate,
+      netAmount,
+      vatAmount,
+      grossAmount,
       category: editCost.category,
       month: editCost.date,
       description: editCost.description.trim(),

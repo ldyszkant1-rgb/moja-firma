@@ -27,7 +27,7 @@ BEGIN
   v_path := p_photo ->> 'path';
   IF v_path IS NULL
      OR v_path !~ ('^jobs/' || p_job_id::text || '/photos/[^/]+$')
-     OR pg_catalog.position(pg_catalog.chr(92) IN v_path) > 0
+     OR pg_catalog.strpos(v_path, pg_catalog.chr(92)) > 0
      OR pg_catalog.split_part(v_path, '/', 4) IN ('.', '..') THEN
     RAISE EXCEPTION 'Photo path must point to the photo folder for this job';
   END IF;

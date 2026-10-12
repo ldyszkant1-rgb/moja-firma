@@ -71,6 +71,17 @@ for (const command of ['insert', 'update', 'delete', 'select']) {
 assert.match(migration, /\(storage\.foldername\(storage\.objects\.name\)\)\[2\]/, 'Policies must qualify the Storage object name to avoid ambiguity with public.jobs.name')
 assert.doesNotMatch(migration, /storage\.foldername\(name\)/, 'Policies must not use an ambiguous unqualified name')
 assert.match(migration, /j\.organization_id = private\.current_organization_id\(\)/, 'Policies must scope access to the active organization')
+const policies = [...migration.matchAll(/create policy "([^"]+)"([\s\S]*?);/gi)]
+assert.equal(policies.length, 4, 'Migration must define exactly four scoped Storage policies')
+for (const [, name, body] of policies) {
+  assert.match(body, /to authenticated/i, name + ' must be restricted to authenticated users')
+  assert.match(body, /bucket_id = 'aeroinstal-files'/i, name + ' must be limited to the Aeroinstal bucket')
+  assert.match(body, /j\.organization_id = private\.current_organization_id\(\)/, name + ' must enforce organization isolation')
+  assert.match(body, /j\.id::text = \(storage\.foldername\(storage\.objects\.name\)\)\[2\]/, name + ' must bind access to the job ID in the object path')
+}
+const updatePolicy = policies.find(([, name]) => name.toLowerCase().includes('update'))
+assert.ok(updatePolicy, 'Update policy must exist')
+assert.match(updatePolicy[2], /with check/i, 'Update policy must validate the destination object path')
 assert.doesNotMatch(migration, /UPDATE\s+storage\.buckets/i, 'Bucket visibility must be a separate post-deploy step')
 
 

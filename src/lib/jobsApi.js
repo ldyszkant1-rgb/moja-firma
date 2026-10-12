@@ -458,10 +458,8 @@ export async function getDeletedJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) => hydrateJobFileUrls(mapSupabaseJobToAppJob(row)))
   )
 }
 

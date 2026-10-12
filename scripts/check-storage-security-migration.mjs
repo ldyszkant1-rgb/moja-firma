@@ -56,6 +56,7 @@ assert.deepEqual(sanitizeJobStorageMetadata({ id: 123 }, SUPABASE_URL, BUCKET), 
 const api = readFileSync('src/lib/jobsApi.js', 'utf8')
 const app = readFileSync('src/App.jsx', 'utf8')
 const migration = readFileSync('supabase/migrations/20261012190000_harden_storage_access_by_organization.sql', 'utf8')
+const photoRpcMigration = readFileSync('supabase/migrations/20261012195000_validate_appended_photo_metadata.sql', 'utf8')
 
 assert.match(api, /\.createSignedUrl\(path, SIGNED_URL_TTL_SECONDS, options\)/, 'Storage URLs must be signed and support download disposition')
 assert.match(api, /download: String\(downloadName\)/, 'Download filenames must be passed through signed URL options')
@@ -83,6 +84,12 @@ const updatePolicy = policies.find(([, name]) => name.toLowerCase().includes('up
 assert.ok(updatePolicy, 'Update policy must exist')
 assert.match(updatePolicy[2], /with check/i, 'Update policy must validate the destination object path')
 assert.doesNotMatch(migration, /UPDATE\s+storage\.buckets/i, 'Bucket visibility must be a separate post-deploy step')
+assert.match(photoRpcMigration, /CREATE OR REPLACE FUNCTION public\.append_job_photo/i, 'Photo metadata must be validated inside the database RPC')
+assert.match(photoRpcMigration, /v_path !~[\s\S]*photos/i, 'Photo paths must be bound to a job photo folder')
+assert.match(photoRpcMigration, /v_photo := p_photo - 'url'/, 'Public or stale URLs must not be persisted in photo metadata')
+assert.match(photoRpcMigration, /om\.organization_id = j\.organization_id[\s\S]*om\.user_id = v_user_id/, 'Photo RPC must verify organization membership')
+assert.match(photoRpcMigration, /REVOKE ALL PRIVILEGES ON FUNCTION public\.append_job_photo\(uuid, jsonb\) FROM PUBLIC, anon/i, 'Photo RPC must not be executable by anon')
+assert.match(photoRpcMigration, /GRANT EXECUTE ON FUNCTION public\.append_job_photo\(uuid, jsonb\) TO authenticated/i, 'Photo RPC must remain available to authenticated sessions')
 
 
 // File operations must be ordered correctly, and assertions must fail if an operation is missing.

@@ -25,6 +25,7 @@ import {
   softDeleteSupabaseJob,
   restoreSupabaseJob,
   hardDeleteSupabaseJob,
+  refreshSupabaseFileUrl,
 } from './lib/jobsApi'
 import {
   getJobCosts,
@@ -3840,6 +3841,18 @@ function JobCard({
                 src={job.mainPhoto.url}
                 alt={job.mainPhoto.name || job.name}
                 title="Zdjęcie główne"
+                onError={async (event) => {
+                  const image = event.currentTarget
+                  const attempts = Number(image.dataset.storageRetryCount || 0)
+                  if (!job.mainPhoto?.path || attempts >= 2) return
+                  image.dataset.storageRetryCount = String(attempts + 1)
+                  try {
+                    image.src = await refreshSupabaseFileUrl(job.mainPhoto.path)
+                  } catch {
+                    image.alt = 'Zdjęcie niedostępne'
+                  }
+                }}
+                onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
                 onClick={(e) => {
                   e.stopPropagation()
                   window.open(job.mainPhoto.url, '_blank')
@@ -6840,7 +6853,25 @@ function JobDetails({
                   <FileText size={19} strokeWidth={1.75} />
                   <span>{document?.name || label}</span>
                   {document?.url ? (
-                    <a href={document.url} target="_blank" rel="noreferrer" aria-label={'Otwórz ' + label}>
+                    <a
+                      href={document.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={'Otwórz ' + label}
+                      onClick={async (event) => {
+                        if (!document.path) return
+                        event.preventDefault()
+                        const popup = window.open('about:blank', '_blank')
+                        if (!popup) return
+                        try {
+                          popup.location.href = await refreshSupabaseFileUrl(document.path)
+                        } catch (error) {
+                          popup.close()
+                          console.error('Nie udało się otworzyć dokumentu:', error)
+                          showCustomAlert('Nie udało się otworzyć dokumentu. Spróbuj ponownie.')
+                        }
+                      }}
+                    >
                       <ChevronRight size={18} strokeWidth={1.75} />
                     </a>
                   ) : (
@@ -6901,7 +6932,23 @@ function JobDetails({
           <div className="job-detail-subtitle">Zdjęcie główne</div>
           {editedJob.mainPhoto?.url ? (
             <div className="job-detail-main-photo-wrap">
-              <img src={editedJob.mainPhoto.url} alt={editedJob.mainPhoto.name || editedJob.name} onClick={() => window.open(editedJob.mainPhoto.url, '_blank')} />
+              <img
+                src={editedJob.mainPhoto.url}
+                alt={editedJob.mainPhoto.name || editedJob.name}
+                onError={async (event) => {
+                  const image = event.currentTarget
+                  const attempts = Number(image.dataset.storageRetryCount || 0)
+                  if (!editedJob.mainPhoto?.path || attempts >= 2) return
+                  image.dataset.storageRetryCount = String(attempts + 1)
+                  try {
+                    image.src = await refreshSupabaseFileUrl(editedJob.mainPhoto.path)
+                  } catch {
+                    image.alt = 'Zdjęcie niedostępne'
+                  }
+                }}
+                onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
+                onClick={() => window.open(editedJob.mainPhoto.url, '_blank')}
+              />
               <button type="button" className="job-detail-inline-delete" onClick={removeMainPhoto} aria-label="Usuń zdjęcie główne">
                 <Trash2 size={17} strokeWidth={1.75} />
               </button>
@@ -6920,7 +6967,23 @@ function JobDetails({
           <div className="job-detail-photo-grid">
             {(editedJob.photos || []).map((photo) => (
               <div className="job-detail-photo-item" key={photo.id}>
-                <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => window.open(photo.url, '_blank')} />
+                <img
+                  src={photo.url}
+                  alt={photo.name || editedJob.name}
+                  onError={async (event) => {
+                    const image = event.currentTarget
+                    const attempts = Number(image.dataset.storageRetryCount || 0)
+                    if (!photo.path || attempts >= 2) return
+                    image.dataset.storageRetryCount = String(attempts + 1)
+                    try {
+                      image.src = await refreshSupabaseFileUrl(photo.path)
+                    } catch {
+                      image.alt = 'Zdjęcie niedostępne'
+                    }
+                  }}
+                  onLoad={(event) => { event.currentTarget.dataset.storageRetryCount = '0' }}
+                  onClick={() => window.open(photo.url, '_blank')}
+                />
                 <button type="button" onClick={() => renamePhoto(photo.id)} aria-label="Zmień nazwę zdjęcia" title="Zmień nazwę">
                   <Pencil size={15} strokeWidth={1.75} />
                 </button>

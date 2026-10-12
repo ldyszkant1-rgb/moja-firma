@@ -16,18 +16,23 @@ test('revokes dangerous table-level Storage privileges', () => {
 })
 
 test('defines organization-scoped upload, update and delete policies', () => {
-  for (const operation of ['upload', 'update', 'delete']) {
+  const operations = [
+    ['upload', 'INSERT'],
+    ['update', 'UPDATE'],
+    ['delete', 'DELETE'],
+  ]
+  for (const [policyName, sqlOperation] of operations) {
     assert.match(
       sql,
       new RegExp(
-        `CREATE POLICY "Aeroinstal files - ${operation}"[\\s\\S]*?FOR ${operation.toUpperCase()}[\\s\\S]*?TO authenticated`,
+        'CREATE POLICY "Aeroinstal files - ' + policyName + '"[\\s\\S]*?FOR ' + sqlOperation + '[\\s\\S]*?TO authenticated',
         'i',
       ),
-      `missing authenticated ${operation} policy`,
+      'missing authenticated ' + policyName + ' policy',
     )
   }
 
-  const policies = [...sql.matchAll(/CREATE POLICY "Aeroinstal files - (?:upload|update|delete)"[\\s\\S]*?;/gi)]
+  const policies = [...sql.matchAll(/CREATE POLICY "Aeroinstal files - (?:upload|update|delete)"[\s\S]*?;/gi)]
     .map(([policy]) => policy)
   assert.equal(policies.length, 3, 'expected exactly three mutation policies')
 

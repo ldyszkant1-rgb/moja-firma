@@ -13390,7 +13390,7 @@ function CalendarPage({ jobs = [], organizationId, organizationMembers = [], onO
                               })
                               .map((member) => (
                                 <option key={member.user_id} value={member.user_id}>{member.display_name || member.email || 'Pracownik'}</option>
-                              ))
+                              ))}
                           </select>
                           <ChevronDown size={18} strokeWidth={1.75} aria-hidden="true" />
                         </div>

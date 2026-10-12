@@ -9272,6 +9272,26 @@ function FinancePage({
     }
   }
 
+  const sendDistributionPdfToMessenger = async (distribution = null) => {
+    try {
+      setReportBusy(true)
+      const pdfBlob = createDistributionPdf(distribution)
+      const url = URL.createObjectURL(pdfBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'rozliczenie-wspolnikow.pdf'
+      link.click()
+      window.open('https://www.messenger.com/', '_blank', 'noopener,noreferrer')
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+      await showCustomAlert('Przygotowano PDF. Jeśli Messenger nie otworzy się automatycznie, otwórz go ręcznie i dołącz plik rozliczenie-wspolnikow.pdf z aplikacji Pliki.')
+    } catch (error) {
+      console.error('Nie udało się przygotować PDF do Messengera:', error)
+      await showCustomAlert('Nie udało się przygotować PDF. Spróbuj ponownie.')
+    } finally {
+      setReportBusy(false)
+    }
+  }
+
   const openDistributionPdf = (distribution = null) => {
     const data = getDistributionReportData(distribution)
     const esc = (value) => String(value ?? '')
@@ -9940,6 +9960,10 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
                 Udostępnij PDF
+              </button>
+              <button type="button" className="aero-report-action" onClick={() => sendDistributionPdfToMessenger(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
+                <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
+                Przygotuj PDF do Messengera
               </button>
               <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
                 <Copy size={16} strokeWidth={1.8} aria-hidden="true" />

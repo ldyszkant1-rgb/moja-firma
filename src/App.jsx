@@ -624,12 +624,12 @@ class JobsErrorBoundary extends React.Component {
   }
 }
 
-async function openSignedStorageFile(path) {
+async function openSignedStorageFile(path, downloadName = null) {
   const popup = window.open('about:blank', '_blank')
   if (!popup) return
 
   try {
-    popup.location.href = await refreshSupabaseFileUrl(path)
+    popup.location.href = await refreshSupabaseFileUrl(path, downloadName)
   } catch (error) {
     popup.close()
     console.error('Nie udało się otworzyć pliku ze Storage:', error)
@@ -6912,28 +6912,21 @@ function JobDetails({
                 <div className="job-detail-document-row" key={type}>
                   <FileText size={19} strokeWidth={1.75} />
                   <span>{document?.name || label}</span>
-                  {document?.url ? (
-                    <a
-                      href={document.url}
-                      target="_blank"
-                      rel="noreferrer"
+                  {document?.path || document?.url ? (
+                    <button
+                      type="button"
+                      className="document-open"
                       aria-label={'Otwórz ' + label}
-                      onClick={async (event) => {
-                        if (!document.path) return
-                        event.preventDefault()
-                        const popup = window.open('about:blank', '_blank')
-                        if (!popup) return
-                        try {
-                          popup.location.href = await refreshSupabaseFileUrl(document.path)
-                        } catch (error) {
-                          popup.close()
-                          console.error('Nie udało się otworzyć dokumentu:', error)
-                          showCustomAlert('Nie udało się otworzyć dokumentu. Spróbuj ponownie.')
+                      onClick={() => {
+                        if (document.path) {
+                          openSignedStorageFile(document.path)
+                        } else if (document.url) {
+                          window.open(document.url, '_blank')
                         }
                       }}
                     >
                       <ChevronRight size={18} strokeWidth={1.75} />
-                    </a>
+                    </button>
                   ) : (
                     <button type="button" onClick={() => {
                       const input = type === 'material' ? materialInputRef.current : assemblyInputRef.current
@@ -7495,40 +7488,26 @@ function DocumentRow({
             >
 
               <button
-
+                type="button"
                 className="document-open"
-
-                onClick={() =>
-                  window.open(
-                    document.url,
-                    '_blank'
-                  )
+                onClick={() => document.path
+                  ? openSignedStorageFile(document.path)
+                  : document.url && window.open(document.url, '_blank')
                 }
-
               >
                 Podgląd
               </button>
 
-
-              <a
-
-                href={
-                  document.url
-                }
-
-                download={
-                  document.name || 'dokument'
-                }
-
+              <button
+                type="button"
                 className="document-open"
-
-                style={{
-                  textDecoration: 'none',
-                }}
-
+                onClick={() => document.path
+                  ? openSignedStorageFile(document.path, document.name || 'dokument')
+                  : document.url && window.open(document.url, '_blank')
+                }
               >
                 ↓ Pobierz
-              </a>
+              </button>
 
             </div>
 

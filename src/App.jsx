@@ -7655,8 +7655,6 @@ function FinancePage({
   const [settlementSaving, setSettlementSaving] = useState(false)
   const settlementSavingRef = useRef(false)
   const [reportBusy, setReportBusy] = useState(false)
-  const reportSharePdfRef = useRef(new Map())
-  const [reportSharePdfReady, setReportSharePdfReady] = useState(false)
   const [reportDistribution, setReportDistribution] = useState(null)
   const [historyOpenId, setHistoryOpenId] = useState(null)
 
@@ -9939,9 +9937,9 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
 
           <div className="aero-report-shell">
             <div className="aero-report-actions">
-              <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || !reportSharePdfReady || (!activeReportDistribution && splitTotal <= 0.01)}>
+              <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(activeReportDistribution)} disabled={reportBusy || (!activeReportDistribution && splitTotal <= 0.01)}>
                 <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
-                {!reportSharePdfReady ? 'Przygotowuję PDF…' : 'Udostępnij PDF'}
+                Udostępnij PDF
               </button>
               <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(activeReportDistribution)} disabled={!activeReportDistribution && splitTotal <= 0.01}>
                 <Copy size={16} strokeWidth={1.8} aria-hidden="true" />

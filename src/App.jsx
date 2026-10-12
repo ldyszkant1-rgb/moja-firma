@@ -8929,26 +8929,34 @@ function FinancePage({
     const contentWidth = pageWidth - margin * 2
     const objects = []
     const offsets = []
-    const winAnsiMap = {
-      '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85, '†': 0x86, '‡': 0x87,
-      'ˆ': 0x88, '‰': 0x89, 'Š': 0x8A, '‹': 0x8B, 'Œ': 0x8C, 'Ž': 0x8E, '‘': 0x91,
-      '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97, '˜': 0x98,
-      '™': 0x99, 'š': 0x9A, '›': 0x9B, 'œ': 0x9C, 'ž': 0x9E, 'Ÿ': 0x9F,
-      'Ą': 0xA5, 'ą': 0xB9, 'Ć': 0xC6, 'ć': 0xE6, 'Ę': 0xCA, 'ę': 0xEA,
-      'Ł': 0xA3, 'ł': 0xB3, 'Ń': 0xD1, 'ń': 0xF1, 'Ó': 0xD3, 'ó': 0xF3,
-      'Ś': 0xA6, 'ś': 0xB6, 'Ź': 0x8F, 'ź': 0x9F, 'Ż': 0xAF, 'ż': 0xBF
-    }
-
-    const toWinAnsiHex = (value) => Array.from(String(value ?? ''))
+    // Standardowe fonty PDF WinAnsi nie obsługują polskich liter.
+    // Transliterator zachowuje czytelny tekst zamiast wysyłać błędne bajty CP1250,
+    // które w PDF-ie dawały m.in. „z³”. Walutę zapisujemy jednoznacznie jako PLN.
+    const normalizePdfText = (value) => String(value ?? '')
+      .replace(/zł/gi, 'PLN')
+      .replace(/[ĄąĆćĘęŁłŃńÓóŚśŹźŻż]/g, (char) => ({
+        'Ą': 'A', 'ą': 'a', 'Ć': 'C', 'ć': 'c', 'Ę': 'E', 'ę': 'e',
+        'Ł': 'L', 'ł': 'l', 'Ń': 'N', 'ń': 'n', 'Ó': 'O', 'ó': 'o',
+        'Ś': 'S', 'ś': 's', 'Ź': 'Z', 'ź': 'z', 'Ż': 'Z', 'ż': 'z'
+      })[char])
+      .replace(/[–—]/g, '-')
+      .replace(/•/g, '|')
+      .replace(/…/g, '...')
+    const toWinAnsiHex = (value) => Array.from(normalizePdfText(value))
       .map((char) => {
         const code = char.charCodeAt(0)
-        const byte = code <= 0x7F ? code : (winAnsiMap[char] ?? 0x3F)
-        return byte.toString(16).padStart(2, '0')
+        return (code <= 0xFF ? code : 0x3F).toString(16).padStart(2, '0')
       })
       .join('')
 
     const textAt = (x, y, size, value, font = 'F1', color = '0.07 0.10 0.20') =>
       'BT ' + x + ' ' + y + ' Td /' + font + ' ' + size + ' Tf ' + color + ' rg <' + toWinAnsiHex(value) + '> Tj ET'
+    const textRight = (rightX, y, size, value, font = 'F1', color = '0.07 0.10 0.20') => {
+      const printable = normalizePdfText(value)
+      const estimatedWidth = Array.from(printable).reduce((width, char) =>
+        width + size * (/[ il.,:|]/.test(char) ? 0.28 : /[MW@%]/.test(char) ? 0.82 : 0.54), 0)
+      return textAt(Math.max(42, rightX - estimatedWidth), y, size, value, font, color)
+    }
     const line = (x1, y1, x2, y2, color = '0.87 0.91 0.95', width = 0.7) =>
       color + ' RG ' + width + ' w ' + x1 + ' ' + y1 + ' m ' + x2 + ' ' + y2 + ' l S'
     const rect = (x, y, w, h, color = '0.92 0.96 0.99') =>
@@ -8981,7 +8989,7 @@ function FinancePage({
         textAt(margin, 598, 7, 'Data', 'F1', '0.47 0.53 0.60'),
         textAt(margin + 78, 598, 7, 'Opis', 'F1', '0.47 0.53 0.60'),
         textAt(pageWidth - margin - 125, 598, 7, 'Kto zapłacił', 'F1', '0.47 0.53 0.60'),
-        textAt(pageWidth - margin - 8, 598, 7, 'Kwota', 'F1', '0.47 0.53 0.60')
+        textRight(pageWidth - margin, 598, 7, 'Kwota', 'F1', '0.47 0.53 0.60')
       )
       const addCostRows = (commands, rows, startY, rowHeight) => {
         rows.forEach((cost, index) => {
@@ -8998,7 +9006,7 @@ function FinancePage({
             'F1'
           ),
             textAt(pageWidth - margin - 125, y, 8, cost.paidBy || '—', 'F1', '0.39 0.45 0.52'),
-            textAt(pageWidth - margin - 8, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
+            textRight(pageWidth - margin, y, 8, money(cost.netAmount ?? cost.amount), 'F2'),
             line(margin, y - 7, pageWidth - margin, y - 7, '0.91 0.93 0.95', 0.5)
           )
         })
@@ -9047,9 +9055,9 @@ function FinancePage({
         rect(margin, 340, contentWidth, 34, '0.92 0.96 0.99'),
         rect(margin, 292, contentWidth, 34, '0.92 0.96 0.99'),
         textAt(margin + 12, 353, 10, partnerOne, 'F2'),
-        textAt(pageWidth - margin - 10, 353, 12, money(data.lukaszShare), 'F2'),
+        textRight(pageWidth - margin, 353, 12, money(data.lukaszShare), 'F2'),
         textAt(margin + 12, 305, 10, partnerTwo, 'F2'),
-        textAt(pageWidth - margin - 10, 305, 12, money(data.pawelShare), 'F2'),
+        textRight(pageWidth - margin, 305, 12, money(data.pawelShare), 'F2'),
       ]
       if (data.balance > 0.01) {
         summary.push(textAt(margin, 262, 9, data.balanceDirection + ': ' + money(data.balance), 'F2', '0.03 0.56 0.89'))
@@ -9155,7 +9163,7 @@ function FinancePage({
     commands.push(
       textAt(margin, totalY, 9, 'Zysk po kosztach: ' + money(data.profitAfterCosts), 'F2', '0.39 0.45 0.52'),
       textAt(pageWidth - margin - 125, totalY, 9, 'Razem koszty', 'F2', '0.39 0.45 0.52'),
-      textAt(pageWidth - margin - 8, totalY, 10, money(data.costsTotal), 'F2'),
+      textRight(pageWidth - margin, totalY, 10, money(data.costsTotal), 'F2'),
       line(margin, totalY - 18, pageWidth - margin, totalY - 18),
     )
 
@@ -9181,9 +9189,9 @@ function FinancePage({
       rect(margin, payoutOneY - 14, contentWidth, 32, '0.92 0.96 0.99'),
       rect(margin, payoutTwoY - 14, contentWidth, 32, '0.92 0.96 0.99'),
       textAt(margin + 12, payoutOneY - 3, 10, partnerOne, 'F2'),
-      textAt(pageWidth - margin - 10, payoutOneY - 3, 12, money(data.lukaszShare), 'F2'),
+      textRight(pageWidth - margin, payoutOneY - 3, 12, money(data.lukaszShare), 'F2'),
       textAt(margin + 12, payoutTwoY - 3, 10, partnerTwo, 'F2'),
-      textAt(pageWidth - margin - 10, payoutTwoY - 3, 12, money(data.pawelShare), 'F2'),
+      textRight(pageWidth - margin, payoutTwoY - 3, 12, money(data.pawelShare), 'F2'),
     )
 
     if (data.balance > 0.01) {

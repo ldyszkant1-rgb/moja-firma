@@ -67,7 +67,8 @@ assert.match(app, /onError=\{async \(event\)/, 'Images must retry after signed U
 for (const command of ['insert', 'update', 'delete', 'select']) {
   assert.match(migration, new RegExp('for ' + command, 'i'), 'Missing Storage ' + command.toUpperCase() + ' policy')
 }
-assert.match(migration, /\(storage\.foldername\(name\)\)\[2\]/, 'Policies must use the requested object name')
+assert.match(migration, /\(storage\.foldername\(storage\.objects\.name\)\)\[2\]/, 'Policies must qualify the Storage object name to avoid ambiguity with public.jobs.name')
+assert.doesNotMatch(migration, /storage\.foldername\(name\)/, 'Policies must not use an ambiguous unqualified name')
 assert.match(migration, /j\.organization_id = private\.current_organization_id\(\)/, 'Policies must scope access to the active organization')
 assert.doesNotMatch(migration, /UPDATE\s+storage\.buckets/i, 'Bucket visibility must be a separate post-deploy step')
 

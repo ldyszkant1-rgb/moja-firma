@@ -107,7 +107,7 @@ const removeMainPhotoSection = sourceSection(app, 'const removeMainPhoto = async
 assertBefore(removeMainPhotoSection, 'await onUpdate(', 'await deleteSupabaseFile(', 'Main-photo metadata must be saved before deleting its Storage object')
 assertBefore(removeMainPhotoSection, 'if (saveResult === false) {', 'await deleteSupabaseFile(', 'Main-photo object must be retained when metadata save fails')
 
-const documentRowSection = sourceSection(app, 'function DocumentRow({', '/* =====================================================\\n   FINANSE')
+const documentRowSection = sourceSection(app, 'function DocumentRow({', '/* =====================================================\n   FINANSE')
 assert.match(documentRowSection, /openSignedStorageFile\(document\.path\)/, 'Document preview must request a fresh signed URL')
 assert.match(documentRowSection, /openSignedStorageFile\(document\.path, document\.name/, 'Document download must request a fresh signed URL with download disposition')
 assert.match(app, /document\?\.path \|\| document\?\.url/, 'Formal document UI must support path-backed files even when a URL is expired')

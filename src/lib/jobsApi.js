@@ -551,9 +551,7 @@ export async function updateSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -600,9 +598,7 @@ export async function softDeleteSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -649,9 +645,7 @@ export async function restoreSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -765,9 +759,7 @@ export async function appendSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -819,9 +811,7 @@ export async function updateSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
-  )
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -875,7 +865,7 @@ export async function deleteSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -1032,7 +1022,7 @@ export async function renameSupabaseJobPhoto(jobId, photoId, newName) {
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }
 
 /* =========================================================
@@ -1053,5 +1043,5 @@ export async function removeSupabaseJobPhoto(jobId, photoId) {
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return hydrateJobFileUrls(mapSupabaseJobToAppJob(data))
 }

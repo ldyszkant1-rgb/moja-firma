@@ -40,14 +40,28 @@ jobs:
           grep -Eiq "reversed_at timestamptz" "$migration"
           grep -Eiq "reversal_reason text" "$migration"
           grep -Eiq "reversed_from_id uuid" "$migration"
-      - name: Create isolated synthetic schema
+      - name: Create isolated base application schema
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/setup.sql
-      - name: Apply financial guard migration
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-base-setup.sql
+      - name: Replay profit-distribution migrations in timestamp order
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261011190000_protect_distributed_finance_costs.sql
+        run: |
+          for migration in \
+            supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
+            supabase/migrations/20261011144700_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261011190000_protect_distributed_finance_costs.sql \
+            supabase/migrations/20261012000000_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261012100000_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql; do
+            psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Seed regression-test data after migrations
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-seed.sql
       - name: Test direct and nested mutations
         env:
           PGPASSWORD: postgres
@@ -75,18 +89,28 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
-      - name: Create isolated synthetic schema
+      - name: Create isolated base application schema
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/setup.sql
-      - name: Apply financial guard migration
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-base-setup.sql
+      - name: Replay profit-distribution migrations in timestamp order
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261011190000_protect_distributed_finance_costs.sql
-      - name: Apply organization deletion guard
+        run: |
+          for migration in \
+            supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
+            supabase/migrations/20261011144700_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261011190000_protect_distributed_finance_costs.sql \
+            supabase/migrations/20261012000000_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261012100000_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql; do
+            psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Seed regression-test data after migrations
         env:
           PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-seed.sql
       - name: Test organization deletion and reversed cascade
         env:
           PGPASSWORD: postgres

@@ -64,11 +64,11 @@ create policy tenant_delete_authenticated
 create index if not exists profit_distributions_organization_date_idx
   on public.profit_distributions (organization_id, distribution_date, created_at);
 
-do $
+do $publication$
 begin
   if not exists (
     select 1
-    from pg_publication_tables
+    from pg_catalog.pg_publication_tables
     where pubname = 'supabase_realtime'
       and schemaname = 'public'
       and tablename = 'profit_distributions'
@@ -76,7 +76,7 @@ begin
     alter publication supabase_realtime add table public.profit_distributions;
   end if;
 end
-$;
+$publication$;
 
 insert into public.profit_distributions
   (organization_id, distribution_date, received_net, costs_net, profit, lukasz_share, pawel_share, payment_ids, cost_ids, note)

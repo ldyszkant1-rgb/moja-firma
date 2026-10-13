@@ -20,8 +20,8 @@ create table if not exists public.profit_distributions (
   status text not null default 'active' check (status in ('active', 'reversed')),
   reversed_at timestamptz,
   reversal_reason text,
-  -- Kept without a foreign key to preserve compatibility with historical/orphan references.
-  reversed_from_id uuid,
+  -- Match the production self-reference; default NO ACTION preserves referenced history.
+  reversed_from_id uuid references public.profit_distributions(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

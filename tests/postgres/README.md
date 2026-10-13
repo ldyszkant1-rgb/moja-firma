@@ -19,6 +19,8 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
 - A cost belonging to another organization remains editable.
 - An organization with active **or reversed** distribution history cannot be deleted, so FK cascades cannot erase the audit trail.
 - Separately tests the additive lifecycle migration against a legacy table without the four lifecycle columns.
+- Verifies the reversal self-FK uses `ON DELETE NO ACTION` and blocks deletion of a referenced distribution, preserving reversal history.
+- The additive migration refuses to add the FK if orphan reversal references are found; it fails clearly rather than silently discarding or legitimizing broken history.
 - Applies the additive migration repeatedly to verify idempotency; legacy rows are initialized as active, and explicit reversed states are preserved.
 
 ## Important limitations

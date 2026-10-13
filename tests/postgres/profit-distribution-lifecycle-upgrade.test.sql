@@ -33,6 +33,45 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'TEST FAILED: status constraint is missing';
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_constraint
+    WHERE conrelid = 'public.profit_distributions'::regclass
+      AND conname = 'profit_distributions_reversed_from_id_fkey'
+      AND contype = 'f'
+      AND confrelid = 'public.profit_distributions'::regclass
+      AND confdeltype = 'a'
+  ) THEN
+    RAISE EXCEPTION 'TEST FAILED: reversal self-FK with ON DELETE NO ACTION is missing';
+  END IF;
+END;
+$test$;
+
+-- A referenced distribution must not be deleted (and history must not cascade away).
+INSERT INTO public.profit_distributions (id, organization_id, reversed_from_id)
+VALUES (
+  '10000000-0000-0000-0000-000000000003',
+  '10000000-0000-0000-0000-000000000002',
+  '10000000-0000-0000-0000-000000000001'
+);
+
+DO $test$
+BEGIN
+  BEGIN
+    DELETE FROM public.profit_distributions
+    WHERE id = '10000000-0000-0000-0000-000000000001';
+    RAISE EXCEPTION 'TEST FAILED: deleting a referenced distribution unexpectedly succeeded';
+  EXCEPTION
+    WHEN foreign_key_violation THEN
+      NULL; -- Expected: NO ACTION preserves the referenced history.
+  END;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profit_distributions
+    WHERE id = '10000000-0000-0000-0000-000000000001'
+  ) THEN
+    RAISE EXCEPTION 'TEST FAILED: referenced distribution history was deleted';
+  END IF;
 END;
 $test$;
 

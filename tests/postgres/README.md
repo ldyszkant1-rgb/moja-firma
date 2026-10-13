@@ -4,19 +4,26 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
 
 ## Coverage
 
+- Replays the profit-distribution migrations in timestamp order against a minimal base application schema:
+  1. `20261007170000_add_profit_distribution_tracking.sql`
+  2. `20261011144700_prevent_mutation_of_allocated_financial_rows.sql`
+  3. `20261011190000_protect_distributed_finance_costs.sql`
+  4. `20261012000000_prevent_duplicate_profit_distribution_allocations.sql`
+  5. `20261012100000_validate_profit_distribution_relations.sql`
+  6. `20261013180000_prevent_org_delete_with_active_distributions.sql`
+  7. `20261014120000_add_profit_distribution_lifecycle_columns.sql`
 - Direct UPDATE of a cost referenced by an active distribution is blocked.
 - DELETE of an allocated payment is blocked.
 - A nested trigger cannot bypass the allocation guard.
 - Editing an allocation becomes possible after reversal.
 - A cost belonging to another organization remains editable.
 - An organization with active **or reversed** distribution history cannot be deleted, so FK cascades cannot erase the audit trail.
-- The additive lifecycle migration upgrades a legacy table that lacks `status`, `reversed_at`, `reversal_reason`, and `reversed_from_id`.
-- The additive migration is applied twice to verify idempotency; legacy rows are initialized as active, and explicit reversed states are preserved.
+- Separately tests the additive lifecycle migration against a legacy table without the four lifecycle columns.
+- Applies the additive migration repeatedly to verify idempotency; legacy rows are initialized as active, and explicit reversed states are preserved.
 
 ## Important limitations
 
-- The financial guard tests use a minimal synthetic schema, not the full production schema.
-- The lifecycle-upgrade workflow tests the legacy-table-to-upgraded-table path, not a replay of every migration in the repository.
+- The migration replay uses a minimal test-only base schema, not the full production schema or all repository migrations.
 - This does not establish which columns or trigger definitions currently exist in the production Supabase database.
-- Before any production rollout, inspect the migration history and actual schema in a separately approved, read-only verification step, then review a rollout plan. Do not run these test SQL files against production.
+- Before any production rollout, inspect migration history and the actual schema in a separately approved, read-only verification step, then review a rollout plan. Do not run these test SQL files against production.
 - No production migration, storage change, or deployment is performed by these tests.

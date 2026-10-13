@@ -33,6 +33,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
+      - name: Check canonical profit distribution schema contract
+        run: |
+          migration=supabase/migrations/20261007170000_add_profit_distribution_tracking.sql
+          grep -Eiq "status text not null default 'active' check" "$migration"
+          grep -Eiq "reversed_at timestamptz" "$migration"
+          grep -Eiq "reversal_reason text" "$migration"
+          grep -Eiq "reversed_from_id uuid" "$migration"
       - name: Create isolated synthetic schema
         env:
           PGPASSWORD: postgres

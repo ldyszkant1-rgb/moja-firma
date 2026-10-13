@@ -16,6 +16,12 @@ create table if not exists public.profit_distributions (
   payment_ids jsonb not null default '[]'::jsonb,
   cost_ids jsonb not null default '[]'::jsonb,
   note text,
+  -- Lifecycle fields used by the application and later tenant-validation migrations.
+  status text not null default 'active' check (status in ('active', 'reversed')),
+  reversed_at timestamptz,
+  reversal_reason text,
+  -- Kept without a foreign key to preserve compatibility with historical/orphan references.
+  reversed_from_id uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

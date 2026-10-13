@@ -19,22 +19,31 @@ BEGIN
 END;
 $test$;
 
--- Once the distribution is reversed, the organization and its dependent rows may cascade.
-UPDATE public.profit_distributions SET status = 'reversed'
+-- Reversing a distribution must not erase the audit history or permit a cascade delete.
+UPDATE public.profit_distributions
+SET status = 'reversed', reversed_at = now(), reversal_reason = 'test reversal'
 WHERE id = '00000000-0000-0000-0000-000000000031';
 
-DELETE FROM public.organizations
-WHERE id = '00000000-0000-0000-0000-000000000001';
-
 DO $test$
-DECLARE v_count integer;
+DECLARE v_org_count integer;
+DECLARE v_distribution_count integer;
 BEGIN
-  SELECT count(*) INTO v_count FROM public.organizations
+  BEGIN
+    DELETE FROM public.organizations
+    WHERE id = '00000000-0000-0000-0000-000000000001';
+    RAISE EXCEPTION 'TEST FAILED: organization with reversed history was deleted';
+  EXCEPTION WHEN SQLSTATE '23514' THEN NULL;
+  END;
+
+  SELECT count(*) INTO v_org_count FROM public.organizations
   WHERE id = '00000000-0000-0000-0000-000000000001';
-  IF v_count <> 0 THEN
-    RAISE EXCEPTION 'TEST FAILED: organization deletion after reversal did not proceed';
+  SELECT count(*) INTO v_distribution_count FROM public.profit_distributions
+  WHERE id = '00000000-0000-0000-0000-000000000031';
+
+  IF v_org_count <> 1 OR v_distribution_count <> 1 THEN
+    RAISE EXCEPTION 'TEST FAILED: organization or distribution history was deleted';
   END IF;
 END;
 $test$;
 
-\echo 'Synthetic organization deletion guard tests passed.'
+\echo 'Synthetic organization deletion history guard tests passed.'

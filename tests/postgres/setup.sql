@@ -27,7 +27,10 @@ CREATE TABLE public.job_payments (
 CREATE TABLE public.profit_distributions (
   id uuid PRIMARY KEY,
   organization_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
-  status text NOT NULL CHECK (status IN ('active', 'reversed')),
+  status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'reversed')),
+  reversed_at timestamptz,
+  reversal_reason text,
+  reversed_from_id uuid,
   cost_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
   payment_ids jsonb NOT NULL DEFAULT '[]'::jsonb
 );

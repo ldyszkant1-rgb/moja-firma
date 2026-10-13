@@ -1,20 +1,8 @@
 \set ON_ERROR_STOP on
 
--- Simulate a database where the original tracking table exists but lifecycle columns do not.
-CREATE TABLE public.profit_distributions (
-  id uuid PRIMARY KEY,
-  organization_id uuid NOT NULL,
-  cost_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
-  payment_ids jsonb NOT NULL DEFAULT '[]'::jsonb
-);
+-- The workflow creates the legacy schema, applies the additive migration twice,
+-- then runs these assertions to prove the upgrade is idempotent.
 
-INSERT INTO public.profit_distributions (id, organization_id)
-VALUES ('10000000-0000-0000-0000-000000000001',
-        '10000000-0000-0000-0000-000000000002');
-
-\echo 'Legacy schema created; apply the additive migration twice from the workflow.'
-
--- The workflow invokes the additive migration twice before this file.
 DO $test$
 DECLARE
   v_status text;

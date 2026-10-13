@@ -128,3 +128,9 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/profit-distribution-lifecycle-upgrade.test.sql
+      - name: Re-run migration after reversal and verify preserved state
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/profit-distribution-lifecycle-preservation.test.sql

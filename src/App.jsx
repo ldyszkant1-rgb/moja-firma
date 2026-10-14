@@ -1515,6 +1515,69 @@ function App() {
    * niepotrzebnego przeładowania listy i powinna działać
    * płynniej na telefonie.
    */
+  // Signed Storage URLs expire. Refresh them when the PWA returns to
+  // the foreground so files continue to open without polling in the background.
+  useEffect(() => {
+    if (!dataAccessReady) {
+      return undefined
+    }
+
+    let cancelled = false
+    let refreshing = false
+
+    const refreshSignedStorageUrls = async () => {
+      if (refreshing) {
+        return
+      }
+
+      refreshing = true
+
+      try {
+        const [remoteJobs, remoteDeletedJobs] = await Promise.all([
+          getJobs(),
+          getDeletedJobs(),
+        ])
+
+        if (cancelled) {
+          return
+        }
+
+        setJobs(remoteJobs)
+        setDeletedJobs(remoteDeletedJobs)
+        setSelectedJob((currentSelectedJob) => {
+          if (!currentSelectedJob) {
+            return currentSelectedJob
+          }
+
+          return (
+            remoteJobs.find((job) => String(job.id) === String(currentSelectedJob.id)) ||
+            remoteDeletedJobs.find((job) => String(job.id) === String(currentSelectedJob.id)) ||
+            currentSelectedJob
+          )
+        })
+      } catch (error) {
+        console.warn('Nie udało się odświeżyć adresów plików po powrocie do aplikacji:', error)
+      } finally {
+        refreshing = false
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSignedStorageUrls()
+      }
+    }
+
+    window.addEventListener('focus', refreshSignedStorageUrls)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', refreshSignedStorageUrls)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [dataAccessReady])
+
   useEffect(() => {
 
     const normalizeRealtimeJob = (row, existingJob = null) => {

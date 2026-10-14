@@ -46,4 +46,23 @@ BEGIN
 END;
 $test$;
 
-\echo 'Synthetic organization deletion history guard tests passed.'
+-- Direct deletion of a reversed distribution must not erase the audit trail.
+DO $test$
+DECLARE v_count integer;
+BEGIN
+  BEGIN
+    DELETE FROM public.profit_distributions
+    WHERE id = '00000000-0000-0000-0000-000000000031';
+    RAISE EXCEPTION 'TEST FAILED: reversed distribution history was deleted';
+  EXCEPTION WHEN SQLSTATE '23514' THEN NULL;
+  END;
+
+  SELECT count(*) INTO v_count FROM public.profit_distributions
+  WHERE id = '00000000-0000-0000-0000-000000000031';
+  IF v_count <> 1 THEN
+    RAISE EXCEPTION 'TEST FAILED: reversed distribution history did not survive DELETE';
+  END IF;
+END;
+$test$;
+
+\echo 'Synthetic organization and distribution deletion history guard tests passed.'

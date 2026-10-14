@@ -146,3 +146,83 @@ test('restores attachment metadata when Storage deletion fails, allowing a retry
   assert.deepEqual(saves[0].documents.attachments, [])
   assert.deepEqual(saves[1].documents.attachments, [attachment])
 })
+
+
+test('a retry after a failed save leaves only one attachment in persisted metadata', async () => {
+  const { saveDocumentationAttachment } = await import('../src/lib/documentationAttachments.js')
+  const job = { id: 'job-retry', documents: { attachments: [] } }
+  const deletedPaths = []
+  let attempt = 0
+  let finalJob = null
+
+  const saveAttempt = async (nextJob) => {
+    attempt += 1
+    if (attempt === 1) throw new Error('temporary database failure')
+    finalJob = nextJob
+    return nextJob
+  }
+
+  await assert.rejects(
+    saveDocumentationAttachment({
+      job,
+      file: { name: 'retry.pdf', type: 'application/pdf', size: 8 },
+      uploadFile: async (_jobId, file) => ({
+        path: 'jobs/job-retry/documents/general/' + attempt + '-' + file.name,
+        url: 'signed-url',
+      }),
+      saveJob: saveAttempt,
+      deleteFile: async (path) => { deletedPaths.push(path) },
+      createAttachment: (file, uploaded) => ({
+        id: uploaded.path,
+        name: file.name,
+        path: uploaded.path,
+        url: uploaded.url,
+      }),
+    }),
+    /temporary database failure/
+  )
+
+  const saved = await saveDocumentationAttachment({
+    job,
+    file: { name: 'retry.pdf', type: 'application/pdf', size: 8 },
+    uploadFile: async (_jobId, file) => ({
+      path: 'jobs/job-retry/documents/general/retry-' + file.name,
+      url: 'signed-url',
+    }),
+    saveJob: saveAttempt,
+    deleteFile: async (path) => { deletedPaths.push(path) },
+    createAttachment: (file, uploaded) => ({
+      id: uploaded.path,
+      name: file.name,
+      path: uploaded.path,
+      url: uploaded.url,
+    }),
+  })
+
+  assert.equal(deletedPaths.length, 1)
+  assert.equal(saved.documents.attachments.length, 1)
+  assert.equal(finalJob.documents.attachments.length, 1)
+})
+
+test('reports when attachment metadata cannot be restored after Storage deletion fails', async () => {
+  const { deleteDocumentationAttachment } = await import('../src/lib/documentationAttachments.js')
+  const attachment = { id: 'a', name: 'one.pdf', path: 'jobs/job-5/documents/general/one.pdf' }
+  const job = { id: 'job-5', documents: { attachments: [attachment] } }
+  let saveCount = 0
+  const storageFailure = new Error('storage unavailable')
+  const restoreFailure = new Error('database restore unavailable')
+
+  await assert.rejects(
+    deleteDocumentationAttachment({
+      job,
+      attachmentId: 'a',
+      saveJob: async () => {
+        saveCount += 1
+        if (saveCount === 2) throw restoreFailure
+        return job
+      },
+      deleteFile: async () => { throw storageFailure },
+    }),
+    (error) => error === storageFailure && error.restoreError === restoreFailure
+  )
+})

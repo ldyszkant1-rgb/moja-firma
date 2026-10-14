@@ -5760,10 +5760,7 @@ function JobDetails({
 
       const updatedJob = {
         ...editedJob,
-        documents: {
-          ...(editedJob.documents || {}),
-          ...appendDocumentationAttachment(editedJob.documents, attachment),
-        },
+        documents: appendDocumentationAttachment(editedJob.documents, attachment),
       }
 
       setEditedJob(updatedJob)
@@ -5788,10 +5785,7 @@ function JobDetails({
 
       const updatedJob = {
         ...editedJob,
-        documents: {
-          ...(editedJob.documents || {}),
-          ...removeDocumentationAttachment(editedJob.documents, attachmentId),
-        },
+        documents: removeDocumentationAttachment(editedJob.documents, attachmentId),
       }
 
       setEditedJob(updatedJob)

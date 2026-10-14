@@ -6,7 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
-import { appendDocumentationAttachment, getDocumentationAttachments, removeDocumentationAttachment } from './lib/documentationAttachments'
+import { appendDocumentationAttachment, getDocumentationAttachments, removeDocumentationAttachment as removeDocumentationAttachmentFromList } from './lib/documentationAttachments'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
@@ -5785,7 +5785,7 @@ function JobDetails({
 
       const updatedJob = {
         ...editedJob,
-        documents: removeDocumentationAttachment(editedJob.documents, attachmentId),
+        documents: removeDocumentationAttachmentFromList(editedJob.documents, attachmentId),
       }
 
       setEditedJob(updatedJob)

@@ -56,7 +56,7 @@ jobs:
             supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
             supabase/migrations/20261011210100_protect_distributed_finance_costs.sql \
             supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
-            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \\
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
             supabase/migrations/20261014133000_protect_profit_distribution_history.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -107,7 +107,7 @@ jobs:
             supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
             supabase/migrations/20261011210100_protect_distributed_finance_costs.sql \
             supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
-            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \\
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
             supabase/migrations/20261014133000_protect_profit_distribution_history.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
           done

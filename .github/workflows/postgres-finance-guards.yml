@@ -50,10 +50,11 @@ jobs:
         run: |
           for migration in \
             supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
-            supabase/migrations/20261011144700_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261007191607_add_profit_distribution_history_status.sql \
+            supabase/migrations/20261011131054_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261011144623_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
             supabase/migrations/20261011210000_protect_distributed_finance_costs.sql \
-            supabase/migrations/20261012000000_prevent_duplicate_profit_distribution_allocations.sql \
-            supabase/migrations/20261012100000_validate_profit_distribution_relations.sql \
             supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
             supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
@@ -99,10 +100,11 @@ jobs:
         run: |
           for migration in \
             supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
-            supabase/migrations/20261011144700_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261007191607_add_profit_distribution_history_status.sql \
+            supabase/migrations/20261011131054_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261011144623_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
             supabase/migrations/20261011210000_protect_distributed_finance_costs.sql \
-            supabase/migrations/20261012000000_prevent_duplicate_profit_distribution_allocations.sql \
-            supabase/migrations/20261012100000_validate_profit_distribution_relations.sql \
             supabase/migrations/20261013180000_prevent_org_delete_with_active_distributions.sql \
             supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"

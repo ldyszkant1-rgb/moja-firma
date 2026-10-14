@@ -23,6 +23,7 @@ import {
   softDeleteSupabaseJob,
   restoreSupabaseJob,
   hardDeleteSupabaseJob,
+  resolveJobStorageUrls,
 } from './lib/jobsApi'
 import {
   getJobCosts,
@@ -1695,7 +1696,7 @@ function App() {
             schema: 'public',
             table: 'jobs',
           },
-          (payload) => {
+          async (payload) => {
 
             console.log(
               'Supabase Realtime jobs event:',
@@ -1744,9 +1745,8 @@ function App() {
 
 
             if (payload.new?.deleted_at) {
-              const realtimeDeletedJob = normalizeRealtimeJob(
-                payload.new,
-                null
+              const realtimeDeletedJob = await resolveJobStorageUrls(
+                normalizeRealtimeJob(payload.new, null)
               )
 
               setJobs((currentJobs) =>
@@ -1781,6 +1781,14 @@ function App() {
               return
             }
 
+            const realtimeJob = await resolveJobStorageUrls(
+              normalizeRealtimeJob(payload.new, null)
+            )
+
+            if (!realtimeJob) {
+              return
+            }
+
             setDeletedJobs((currentTrash) =>
               currentTrash.filter(
                 (job) => String(job.id) !== String(payload.new?.id)
@@ -1796,16 +1804,6 @@ function App() {
                       String(job.id) ===
                       String(payload.new.id)
                   ) || null
-
-                const realtimeJob =
-                  normalizeRealtimeJob(
-                    payload.new,
-                    existingJob
-                  )
-
-                if (!realtimeJob) {
-                  return currentJobs
-                }
 
                 const exists =
                   Boolean(existingJob)
@@ -1840,10 +1838,7 @@ function App() {
                   return currentSelectedJob
                 }
 
-                return normalizeRealtimeJob(
-                  payload.new,
-                  currentSelectedJob
-                )
+                return realtimeJob
 
               }
             )

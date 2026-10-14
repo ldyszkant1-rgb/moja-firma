@@ -29,7 +29,8 @@ create table if not exists public.profit_distributions (
 alter table public.profit_distributions enable row level security;
 
 revoke all on table public.profit_distributions from anon, authenticated;
-grant select, insert, update, delete on table public.profit_distributions to authenticated;
+-- Deletion is intentionally not granted: profit-distribution rows are audit history.
+grant select, insert, update on table public.profit_distributions to authenticated;
 
 -- Preserve evolved policies on an existing installation. In particular, production
 -- has tenant checks on reversal references that must not be weakened by this
@@ -76,18 +77,7 @@ begin
       with check (organization_id = (select private.current_organization_id()))';
   end if;
 
-  if not exists (
-    select 1 from pg_catalog.pg_policies
-    where schemaname = 'public'
-      and tablename = 'profit_distributions'
-      and policyname = 'tenant_delete_authenticated'
-  ) then
-    execute 'create policy tenant_delete_authenticated
-      on public.profit_distributions
-      for delete
-      to authenticated
-      using (organization_id = (select private.current_organization_id()))';
-  end if;
+  -- No DELETE policy is created for new installations; history is immutable.
 end
 $policies$;
 

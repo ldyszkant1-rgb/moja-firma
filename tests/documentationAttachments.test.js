@@ -51,6 +51,7 @@ test('cleans up an uploaded object when metadata persistence fails', async () =>
   const job = { id: 'job-1', documents: { material: { name: 'material.pdf' } } }
   const events = []
   const failure = new Error('database unavailable')
+  let saveCount = 0
 
   await assert.rejects(
     saveDocumentationAttachment({
@@ -60,9 +61,11 @@ test('cleans up an uploaded object when metadata persistence fails', async () =>
         events.push('upload')
         return { path: 'jobs/job-1/documents/general/new.pdf', url: 'signed-url' }
       },
-      saveJob: async () => {
-        events.push('save')
-        throw failure
+      saveJob: async (nextJob) => {
+        saveCount += 1
+        events.push(saveCount === 1 ? 'save-new-metadata' : 'restore-original-metadata')
+        if (saveCount === 1) throw failure
+        assert.deepEqual(nextJob, job)
       },
       deleteFile: async (path) => {
         events.push('delete:' + path)
@@ -74,7 +77,8 @@ test('cleans up an uploaded object when metadata persistence fails', async () =>
 
   assert.deepEqual(events, [
     'upload',
-    'save',
+    'save-new-metadata',
+    'restore-original-metadata',
     'delete:jobs/job-1/documents/general/new.pdf',
   ])
 })
@@ -225,4 +229,32 @@ test('reports when attachment metadata cannot be restored after Storage deletion
     }),
     (error) => error === storageFailure && error.restoreError === restoreFailure
   )
+})
+
+
+test('keeps uploaded object when rollback cannot be confirmed', async () => {
+  const { saveDocumentationAttachment } = await import('../src/lib/documentationAttachments.js')
+  const job = { id: 'job-rollback', documents: { attachments: [] } }
+  const writeFailure = new Error('write timeout')
+  const rollbackFailure = new Error('rollback timeout')
+  let saveCount = 0
+  let deleteCount = 0
+
+  await assert.rejects(
+    saveDocumentationAttachment({
+      job,
+      file: { name: 'uncertain.pdf', type: 'application/pdf', size: 3 },
+      uploadFile: async () => ({ path: 'jobs/job-rollback/documents/general/uncertain.pdf', url: 'signed-url' }),
+      saveJob: async () => {
+        saveCount += 1
+        throw saveCount === 1 ? writeFailure : rollbackFailure
+      },
+      deleteFile: async () => { deleteCount += 1 },
+      createAttachment: (file, uploaded) => ({ id: 'x', name: file.name, ...uploaded }),
+    }),
+    (error) => error === writeFailure && error.restoreError === rollbackFailure
+  )
+
+  assert.equal(saveCount, 2)
+  assert.equal(deleteCount, 0)
 })

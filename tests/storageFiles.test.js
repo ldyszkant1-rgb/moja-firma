@@ -88,7 +88,7 @@ test('rejects files larger than 25 MB before calling Storage', async () => {
 
   await assert.rejects(
     api.uploadSupabaseFile('job-1', 'documents/general', { name: 'large.pdf', type: 'application/pdf', size: MAX_STORAGE_FILE_SIZE_BYTES + 1 }),
-    /maksymalny rozmiar/
+    /Maksymalny rozmiar/
   )
   assert.equal(calls.length, 0)
 })

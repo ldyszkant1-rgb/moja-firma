@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getDocumentationAttachments } from './documentationAttachments'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -228,7 +229,7 @@ export async function resolveJobStorageUrls(job) {
     signStorageItem(job.documents?.material),
     signStorageItem(job.documents?.assembly),
     Promise.all((Array.isArray(job.photos) ? job.photos : []).map(signStorageItem)),
-    Promise.all((Array.isArray(job.documents?.attachments) ? job.documents.attachments : []).map(signStorageItem)),
+    Promise.all(getDocumentationAttachments(job.documents).map(signStorageItem)),
   ])
 
   return {

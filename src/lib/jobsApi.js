@@ -850,9 +850,19 @@ const jobDocumentsApi = createJobDocumentsApi(supabase)
 
 // Updates only the JSONB documents field with optimistic concurrency control.
 export async function updateSupabaseJobDocuments(jobId, transformDocuments) {
-  const documents = await jobDocumentsApi.updateJobDocuments(jobId, transformDocuments)
-  const resolved = await resolveJobStorageUrls({ id: jobId, documents })
-  return resolved.documents
+  await jobDocumentsApi.updateJobDocuments(jobId, transformDocuments)
+
+  // Return a fresh full job snapshot for local UI state, but only documents was
+  // mutated. This avoids replacing the current view with a stale job object.
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', jobId)
+    .is('deleted_at', null)
+    .single()
+
+  if (error) throw error
+  return resolveJobStorageUrls(mapSupabaseJobToAppJob(data))
 }
 
 export async function uploadSupabaseFile(jobId, folder, file) {

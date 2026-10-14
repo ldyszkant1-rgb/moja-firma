@@ -185,6 +185,61 @@ function mapSupabaseJobToAppJob(job) {
    APLIKACJA → SUPABASE
 ========================================================= */
 
+const SIGNED_STORAGE_URL_TTL_SECONDS = 60 * 60 * 24
+
+async function signStorageItem(item) {
+  if (!item || !item.path) {
+    return item
+  }
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(item.path, SIGNED_STORAGE_URL_TTL_SECONDS)
+
+    if (error) {
+      throw error
+    }
+
+    return {
+      ...item,
+      url: data.signedUrl,
+    }
+  } catch (error) {
+    console.error('Nie udało się utworzyć podpisanego adresu pliku:', item.path, error)
+
+    // Nie zwracamy starego publicznego URL jako obejścia błędu.
+    return {
+      ...item,
+      url: null,
+    }
+  }
+}
+
+export async function resolveJobStorageUrls(job) {
+  if (!job) {
+    return job
+  }
+
+  const [mainPhoto, material, assembly, photos] = await Promise.all([
+    signStorageItem(job.mainPhoto),
+    signStorageItem(job.documents?.material),
+    signStorageItem(job.documents?.assembly),
+    Promise.all((Array.isArray(job.photos) ? job.photos : []).map(signStorageItem)),
+  ])
+
+  return {
+    ...job,
+    mainPhoto,
+    documents: {
+      ...(job.documents || {}),
+      material,
+      assembly,
+    },
+    photos,
+  }
+}
+
 function mapAppJobToSupabaseJob(job) {
   return {
     name:
@@ -315,10 +370,10 @@ export async function getJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) =>
+      resolveJobStorageUrls(mapSupabaseJobToAppJob(row))
+    )
   )
 }
 
@@ -397,8 +452,8 @@ export async function createSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -450,8 +505,8 @@ export async function updateSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -499,8 +554,8 @@ export async function softDeleteSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -548,8 +603,8 @@ export async function restoreSupabaseJob(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -617,7 +672,7 @@ export async function appendSupabaseJobPhoto(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return resolveJobStorageUrls(mapSupabaseJobToAppJob(data))
 }
 
 /* =========================================================
@@ -664,8 +719,8 @@ export async function appendSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -718,8 +773,8 @@ export async function updateSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(
-    data
+  return resolveJobStorageUrls(
+    mapSupabaseJobToAppJob(data)
   )
 }
 
@@ -774,7 +829,7 @@ export async function deleteSupabaseJobNote(
     throw error
   }
 
-  return mapSupabaseJobToAppJob(data)
+  return resolveJobStorageUrls(mapSupabaseJobToAppJob(data))
 }
 
 
@@ -860,20 +915,20 @@ export async function uploadSupabaseFile(
     throw uploadError
   }
 
-  const { data } =
-    supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .getPublicUrl(
-        path
-      )
+  const {
+    data: signedUrlData,
+    error: signedUrlError,
+  } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, SIGNED_STORAGE_URL_TTL_SECONDS)
+
+  if (signedUrlError) {
+    throw signedUrlError
+  }
 
   return {
     path,
-
-    url:
-      data.publicUrl,
+    url: signedUrlData.signedUrl,
   }
 }
 

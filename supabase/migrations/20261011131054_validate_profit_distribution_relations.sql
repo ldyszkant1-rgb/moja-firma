@@ -1,6 +1,6 @@
 -- Enforce tenant consistency for profit-share jobs and distribution reversals.
--- Historical orphan references are tolerated, but references resolving to another
--- organization's row are rejected.
+-- The reversal self-FK requires referenced rows to exist; these policies additionally
+-- reject reversal references that resolve to another organization's row.
 
 drop policy if exists "job profit shares insert current organization" on public.job_profit_shares;
 create policy "job profit shares insert current organization" on public.job_profit_shares

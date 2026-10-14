@@ -1,0 +1,200 @@
+name: PostgreSQL financial guard tests
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'tests/postgres/**'
+      - '.github/workflows/postgres-finance-guards.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  financial-guard:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aeroinstal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aeroinstal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Check canonical profit distribution schema contract
+        run: |
+          migration=supabase/migrations/20261007170000_add_profit_distribution_tracking.sql
+          grep -Eiq "status text not null default 'active' check" "$migration"
+          grep -Eiq "reversed_at timestamptz" "$migration"
+          grep -Eiq "reversal_reason text" "$migration"
+          grep -Eiq "reversed_from_id uuid" "$migration"
+      - name: Create isolated base application schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-base-setup.sql
+      - name: Replay profit-distribution migrations in timestamp order
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for migration in \
+            supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
+            supabase/migrations/20261007191607_add_profit_distribution_history_status.sql \
+            supabase/migrations/20261011131054_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261011144623_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261011210100_protect_distributed_finance_costs.sql \
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
+            supabase/migrations/20261014133251_prevent_org_delete_with_distribution_history.sql \
+            supabase/migrations/20261014133255_protect_profit_distribution_history.sql; do
+            psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+            if [ "$migration" = "supabase/migrations/20261007170000_add_profit_distribution_tracking.sql" ]; then
+              delete_grant=$(psql -h localhost -U postgres -d aeroinstal_test -Atc "select has_table_privilege('authenticated', 'public.profit_distributions', 'DELETE')")
+              if [ "$delete_grant" != "f" ]; then
+                echo "ERROR: bootstrap migration must not grant DELETE on profit_distributions"
+                exit 1
+              fi
+            fi
+          done
+      - name: Seed regression-test data after migrations
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-seed.sql
+      - name: Test direct and nested mutations
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/allocated-financial-rows.test.sql
+
+  organization-delete-guard:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aeroinstal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aeroinstal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Create isolated base application schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-base-setup.sql
+      - name: Replay profit-distribution migrations in timestamp order
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for migration in \
+            supabase/migrations/20261007170000_add_profit_distribution_tracking.sql \
+            supabase/migrations/20261007191607_add_profit_distribution_history_status.sql \
+            supabase/migrations/20261011131054_validate_profit_distribution_relations.sql \
+            supabase/migrations/20261011144623_prevent_duplicate_profit_distribution_allocations.sql \
+            supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
+            supabase/migrations/20261011210100_protect_distributed_finance_costs.sql \
+            supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
+            supabase/migrations/20261014133251_prevent_org_delete_with_distribution_history.sql \
+            supabase/migrations/20261014133255_protect_profit_distribution_history.sql; do
+            psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+            if [ "$migration" = "supabase/migrations/20261007170000_add_profit_distribution_tracking.sql" ]; then
+              delete_grant=$(psql -h localhost -U postgres -d aeroinstal_test -Atc "select has_table_privilege('authenticated', 'public.profit_distributions', 'DELETE')")
+              if [ "$delete_grant" != "f" ]; then
+                echo "ERROR: bootstrap migration must not grant DELETE on profit_distributions"
+                exit 1
+              fi
+            fi
+          done
+      - name: Seed regression-test data after migrations
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/migration-replay-seed.sql
+      - name: Test organization deletion and reversed cascade
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/organization-delete-guard.test.sql
+
+  lifecycle-migration-upgrade:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aeroinstal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aeroinstal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Create legacy tracking schema
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/lifecycle-upgrade-setup.sql
+      - name: Apply additive lifecycle migration
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql
+      - name: Verify upgrade and idempotency
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/profit-distribution-lifecycle-upgrade.test.sql
+      - name: Re-run migration after reversal and verify preserved state
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql
+          psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/profit-distribution-lifecycle-preservation.test.sql
+
+  private-storage-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check private Storage access and signed URL contract
+        shell: bash
+        run: |
+          migration=supabase/migrations/20261014150000_prepare_aeroinstal_storage_policies.sql
+          private_migration=supabase/migrations/20261014151000_make_aeroinstal_storage_private.sql
+          grep -Fq "set public = false" "$private_migration"
+          grep -Fq 'create policy "Aeroinstal files - select"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - upload"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - update"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - delete"' "$migration"
+          grep -Fq "j.id::text = (storage.foldername(name))[2]" "$migration"
+          if grep -Fq "getPublicUrl" src/lib/jobsApi.js; then
+            echo "ERROR: public Storage URLs must not be used for job files"
+            exit 1
+          fi
+          grep -Fq "createSignedUrl" src/lib/jobsApi.js
+          grep -Fq "resolveJobStorageUrls" src/App.jsx

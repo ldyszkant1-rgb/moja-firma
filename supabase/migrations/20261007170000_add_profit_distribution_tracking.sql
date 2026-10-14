@@ -16,6 +16,12 @@ create table if not exists public.profit_distributions (
   payment_ids jsonb not null default '[]'::jsonb,
   cost_ids jsonb not null default '[]'::jsonb,
   note text,
+  -- Lifecycle fields used by the application and later tenant-validation migrations.
+  status text not null default 'active' check (status in ('active', 'reversed')),
+  reversed_at timestamptz,
+  reversal_reason text,
+  -- Match the production self-reference; default NO ACTION preserves referenced history.
+  reversed_from_id uuid references public.profit_distributions(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -23,46 +29,66 @@ create table if not exists public.profit_distributions (
 alter table public.profit_distributions enable row level security;
 
 revoke all on table public.profit_distributions from anon, authenticated;
-grant select, insert, update, delete on table public.profit_distributions to authenticated;
+-- Deletion is intentionally not granted: profit-distribution rows are audit history.
+grant select, insert, update on table public.profit_distributions to authenticated;
 
-drop policy if exists tenant_select_authenticated on public.profit_distributions;
-drop policy if exists tenant_insert_authenticated on public.profit_distributions;
-drop policy if exists tenant_update_authenticated on public.profit_distributions;
-drop policy if exists tenant_delete_authenticated on public.profit_distributions;
+-- Preserve evolved policies on an existing installation. In particular, production
+-- has tenant checks on reversal references that must not be weakened by this
+-- historical bootstrap migration. Fresh installations still receive all four policies.
+do $policies$
+begin
+  if not exists (
+    select 1 from pg_catalog.pg_policies
+    where schemaname = 'public'
+      and tablename = 'profit_distributions'
+      and policyname = 'tenant_select_authenticated'
+  ) then
+    execute 'create policy tenant_select_authenticated
+      on public.profit_distributions
+      for select
+      to authenticated
+      using (organization_id = (select private.current_organization_id()))';
+  end if;
 
-create policy tenant_select_authenticated
-  on public.profit_distributions
-  for select
-  to authenticated
-  using (organization_id = (select private.current_organization_id()));
+  if not exists (
+    select 1 from pg_catalog.pg_policies
+    where schemaname = 'public'
+      and tablename = 'profit_distributions'
+      and policyname = 'tenant_insert_authenticated'
+  ) then
+    execute 'create policy tenant_insert_authenticated
+      on public.profit_distributions
+      for insert
+      to authenticated
+      with check (organization_id = (select private.current_organization_id()))';
+  end if;
 
-create policy tenant_insert_authenticated
-  on public.profit_distributions
-  for insert
-  to authenticated
-  with check (organization_id = (select private.current_organization_id()));
+  if not exists (
+    select 1 from pg_catalog.pg_policies
+    where schemaname = 'public'
+      and tablename = 'profit_distributions'
+      and policyname = 'tenant_update_authenticated'
+  ) then
+    execute 'create policy tenant_update_authenticated
+      on public.profit_distributions
+      for update
+      to authenticated
+      using (organization_id = (select private.current_organization_id()))
+      with check (organization_id = (select private.current_organization_id()))';
+  end if;
 
-create policy tenant_update_authenticated
-  on public.profit_distributions
-  for update
-  to authenticated
-  using (organization_id = (select private.current_organization_id()))
-  with check (organization_id = (select private.current_organization_id()));
-
-create policy tenant_delete_authenticated
-  on public.profit_distributions
-  for delete
-  to authenticated
-  using (organization_id = (select private.current_organization_id()));
+  -- No DELETE policy is created for new installations; history is immutable.
+end
+$policies$;
 
 create index if not exists profit_distributions_organization_date_idx
   on public.profit_distributions (organization_id, distribution_date, created_at);
 
-do $
+do $publication$
 begin
   if not exists (
     select 1
-    from pg_publication_tables
+    from pg_catalog.pg_publication_tables
     where pubname = 'supabase_realtime'
       and schemaname = 'public'
       and tablename = 'profit_distributions'
@@ -70,7 +96,7 @@ begin
     alter publication supabase_realtime add table public.profit_distributions;
   end if;
 end
-$;
+$publication$;
 
 insert into public.profit_distributions
   (organization_id, distribution_date, received_net, costs_net, profit, lukasz_share, pawel_share, payment_ids, cost_ids, note)

@@ -40,17 +40,13 @@ function getAllowedContentType(file) {
   }
 
   const actualType = String(file?.type || '').trim().toLowerCase()
-  if (actualType && actualType !== expectedType) {
-    // Some platforms use a generic MIME type for a few supported formats.
+  if (actualType && actualType !== expectedType && actualType !== 'application/octet-stream') {
     const compatibleTypes = {
-      heic: ['image/heic', 'image/heif', 'application/octet-stream'],
-      heif: ['image/heif', 'image/heic', 'application/octet-stream'],
-      dwg: ['application/acad', 'application/x-acad', 'image/vnd.dwg', 'application/octet-stream'],
-      dxf: ['application/dxf', 'image/vnd.dxf', 'application/octet-stream'],
-      zip: ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
-      doc: ['application/msword', 'application/octet-stream'],
-      xls: ['application/vnd.ms-excel', 'application/octet-stream'],
-      ppt: ['application/vnd.ms-powerpoint', 'application/octet-stream'],
+      heic: ['image/heic', 'image/heif'],
+      heif: ['image/heif', 'image/heic'],
+      dwg: ['application/acad', 'application/x-acad', 'image/vnd.dwg'],
+      dxf: ['application/dxf', 'image/vnd.dxf'],
+      zip: ['application/zip', 'application/x-zip-compressed'],
     }
     if (!(compatibleTypes[extension] || []).includes(actualType)) {
       throw new Error('Typ pliku nie zgadza się z jego rozszerzeniem. Sprawdź plik i spróbuj ponownie.')
@@ -104,8 +100,8 @@ export function createStorageFileApi(
     if (!/^[a-zA-Z0-9_-]+$/.test(String(jobId))) {
       throw new Error('Nieprawidłowe ID realizacji.')
     }
-    if (folder !== 'documents/general') {
-      throw new Error('Nieprawidłowy katalog załącznika.')
+    if (typeof folder !== 'string' || !/^[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(folder)) {
+      throw new Error('Nieprawidłowy katalog pliku.')
     }
 
     const safeName = sanitizeFileName(file.name)

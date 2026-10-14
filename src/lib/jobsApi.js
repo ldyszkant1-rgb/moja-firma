@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { getDocumentationAttachments } from './documentationAttachments'
 import { createStorageFileApi } from './storageFiles'
+import { createJobDocumentsApi } from './jobDocumentsApi'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -845,6 +846,14 @@ export async function deleteSupabaseJobNote(
 
 // Storage upload/delete logic is dependency-injected for isolated unit tests.
 const storageFileApi = createStorageFileApi(supabase)
+const jobDocumentsApi = createJobDocumentsApi(supabase)
+
+// Updates only the JSONB documents field with optimistic concurrency control.
+export async function updateSupabaseJobDocuments(jobId, transformDocuments) {
+  const documents = await jobDocumentsApi.updateJobDocuments(jobId, transformDocuments)
+  const resolved = await resolveJobStorageUrls({ id: jobId, documents })
+  return resolved.documents
+}
 
 export async function uploadSupabaseFile(jobId, folder, file) {
   return storageFileApi.uploadSupabaseFile(jobId, folder, file)

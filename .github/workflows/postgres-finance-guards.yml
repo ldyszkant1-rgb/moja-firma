@@ -113,8 +113,8 @@ jobs:
             supabase/migrations/20261011144623_prevent_duplicate_profit_distribution_allocations.sql \
             supabase/migrations/20261011145650_prevent_mutation_of_allocated_financial_rows.sql \
             supabase/migrations/20261011210100_protect_distributed_finance_costs.sql \
-            supabase/migrations/20261014133251_prevent_org_delete_with_distribution_history.sql \
             supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
+            supabase/migrations/20261014133251_prevent_org_delete_with_distribution_history.sql \
             supabase/migrations/20261014133255_protect_profit_distribution_history.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
             if [ "$migration" = "supabase/migrations/20261007170000_add_profit_distribution_tracking.sql" ]; then
@@ -176,3 +176,24 @@ jobs:
         run: |
           psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql
           psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f tests/postgres/profit-distribution-lifecycle-preservation.test.sql
+
+  private-storage-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check private Storage access and signed URL contract
+        shell: bash
+        run: |
+          migration=supabase/migrations/20261014150000_make_aeroinstal_storage_private.sql
+          grep -Fq "set public = false" "$migration"
+          grep -Fq 'create policy "Aeroinstal files - select"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - upload"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - update"' "$migration"
+          grep -Fq 'create policy "Aeroinstal files - delete"' "$migration"
+          grep -Fq "j.id::text = (storage.foldername(name))[2]" "$migration"
+          if grep -Fq "getPublicUrl" src/lib/jobsApi.js; then
+            echo "ERROR: public Storage URLs must not be used for job files"
+            exit 1
+          fi
+          grep -Fq "createSignedUrl" src/lib/jobsApi.js
+          grep -Fq "resolveJobStorageUrls" src/App.jsx

@@ -28,7 +28,7 @@ const ALLOWED_FILE_TYPES = {
 function sanitizeFileName(name) {
   return String(name || 'plik')
     .normalize('NFD')
-    .replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_')
 }
 
@@ -105,7 +105,7 @@ export function createStorageFileApi(
     }
 
     const safeName = sanitizeFileName(file.name)
-    const path = `jobs/${jobId}/${folder}/${now()}-${safeName}`
+    const path = 'jobs/' + jobId + '/' + folder + '/' + now() + '-' + safeName
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)

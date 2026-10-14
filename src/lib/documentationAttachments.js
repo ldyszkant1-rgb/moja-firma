@@ -91,8 +91,9 @@ export async function saveDocumentationAttachment({
 }
 
 /**
- * Removes metadata first and then the Storage object. On a Storage error,
- * restores only the selected attachment into the latest documents value.
+ * Removes metadata first and then the Storage object. If the metadata request
+ * fails ambiguously, restore the selected attachment against the latest value:
+ * the write may have committed even though its response was lost.
  */
 export async function deleteDocumentationAttachment({
   job,
@@ -105,9 +106,22 @@ export async function deleteDocumentationAttachment({
   )
   if (!attachment) return job
 
-  const saved = await saveDocuments(job.id, (currentDocuments) =>
-    removeDocumentationAttachment(currentDocuments, attachmentId)
-  )
+  let saved
+  try {
+    saved = await saveDocuments(job.id, (currentDocuments) =>
+      removeDocumentationAttachment(currentDocuments, attachmentId)
+    )
+  } catch (error) {
+    try {
+      await saveDocuments(job.id, (currentDocuments) =>
+        restoreAttachment(currentDocuments, attachment)
+      )
+    } catch (restoreError) {
+      if (error && typeof error === 'object') error.restoreError = restoreError
+    }
+    throw error
+  }
+
   const savedJob = saved && String(saved.id) === String(job.id) && Object.hasOwn(saved, 'documents')
     ? saved
     : { ...job, documents: saved }

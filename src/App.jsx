@@ -14,6 +14,7 @@ import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
   updateSupabaseJob,
+  updateSupabaseJobDocuments,
   getJobs,
   uploadSupabaseFile,
   deleteSupabaseFile,
@@ -5753,7 +5754,7 @@ function JobDetails({
           'documents/general',
           selectedFile
         ),
-        saveJob: updateSupabaseJob,
+        saveDocuments: updateSupabaseJobDocuments,
         deleteFile: deleteSupabaseFile,
         createAttachment: (selectedFile, uploadedFile) => ({
           id: typeof crypto !== 'undefined' && crypto.randomUUID
@@ -5797,7 +5798,7 @@ function JobDetails({
       const savedJob = await runDeleteDocumentationAttachment({
         job: editedJob,
         attachmentId,
-        saveJob: updateSupabaseJob,
+        saveDocuments: updateSupabaseJobDocuments,
         deleteFile: deleteSupabaseFile,
       })
 

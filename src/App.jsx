@@ -4927,6 +4927,10 @@ function JobDetails({
     useRef(null)
 
 
+  const attachmentInputRef =
+    useRef(null)
+
+
   const photoInputRef =
     useRef(null)
 
@@ -5728,6 +5732,76 @@ function JobDetails({
 
     }
 
+  }
+
+
+  const addDocumentationAttachment = async (file) => {
+    if (!file) return
+
+    try {
+      const uploadedFile = await uploadSupabaseFile(
+        editedJob.id,
+        'documents/general',
+        file
+      )
+
+      const attachment = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`,
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        url: uploadedFile.url,
+        path: uploadedFile.path,
+        uploadedAt: new Date().toISOString(),
+      }
+
+      const updatedJob = {
+        ...editedJob,
+        documents: {
+          ...(editedJob.documents || {}),
+          attachments: [
+            ...(Array.isArray(editedJob.documents?.attachments) ? editedJob.documents.attachments : []),
+            attachment,
+          ],
+        },
+      }
+
+      setEditedJob(updatedJob)
+      onUpdate(updatedJob)
+    } catch (error) {
+      console.error('Nie udało się dodać pliku do dokumentacji:', error)
+      showCustomAlert('Nie udało się dodać pliku do dokumentacji. Spróbuj ponownie.')
+    }
+  }
+
+  const removeDocumentationAttachment = async (attachmentId) => {
+    const attachments = Array.isArray(editedJob.documents?.attachments)
+      ? editedJob.documents.attachments
+      : []
+    const attachment = attachments.find((item) => String(item.id) === String(attachmentId))
+    if (!attachment) return
+
+    try {
+      if (attachment.path) {
+        await deleteSupabaseFile(attachment.path)
+      }
+
+      const updatedJob = {
+        ...editedJob,
+        documents: {
+          ...(editedJob.documents || {}),
+          attachments: attachments.filter((item) => String(item.id) !== String(attachmentId)),
+        },
+      }
+
+      setEditedJob(updatedJob)
+      onUpdate(updatedJob)
+    } catch (error) {
+      console.error('Nie udało się usunąć pliku z dokumentacji:', error)
+      showCustomAlert('Nie udało się usunąć pliku z dokumentacji. Spróbuj ponownie.')
+    }
   }
 
 
@@ -6996,6 +7070,34 @@ function JobDetails({
               <span>{linkedInvoice ? 'Powiązana faktura' : 'Brak powiązanej faktury'}</span>
               <ChevronRight size={18} strokeWidth={1.75} />
             </div>
+            <div className="job-detail-document-row">
+              <ClipboardList size={19} strokeWidth={1.75} />
+              <span>Załączniki ({(editedJob.documents?.attachments || []).length})</span>
+              <button type="button" className="job-detail-primary-text-button" onClick={() => attachmentInputRef.current?.click()}>
+                <Plus size={16} strokeWidth={2} /> Dodaj plik
+              </button>
+            </div>
+            {(Array.isArray(editedJob.documents?.attachments) ? editedJob.documents.attachments : []).map((attachment) => (
+              <div className="job-detail-document-row" key={attachment.id || attachment.path || attachment.name}>
+                <FileText size={19} strokeWidth={1.75} />
+                <span title={attachment.name}>{attachment.name || 'Załącznik'}</span>
+                {attachment.url ? (
+                  <a href={attachment.url} target="_blank" rel="noreferrer" aria-label={'Otwórz ' + (attachment.name || 'załącznik')}>
+                    <Download size={17} strokeWidth={1.75} />
+                  </a>
+                ) : (
+                  <span aria-label="Plik niedostępny" />
+                )}
+                <button type="button" className="job-detail-inline-delete" onClick={() => removeDocumentationAttachment(attachment.id)} aria-label={'Usuń ' + (attachment.name || 'załącznik')}>
+                  <Trash2 size={16} strokeWidth={1.75} />
+                </button>
+              </div>
+            ))}
+            <input ref={attachmentInputRef} type="file" hidden onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (file) addDocumentationAttachment(file)
+            }} />
           </div>
         </details>
       </section>

@@ -31,13 +31,13 @@ export async function saveDocumentationAttachment({
   createAttachment,
 }) {
   const uploadedFile = await uploadFile(job.id, file)
-  const attachment = createAttachment(file, uploadedFile)
-  const updatedJob = {
-    ...job,
-    documents: appendDocumentationAttachment(job.documents, attachment),
-  }
 
   try {
+    const attachment = createAttachment(file, uploadedFile)
+    const updatedJob = {
+      ...job,
+      documents: appendDocumentationAttachment(job.documents, attachment),
+    }
     const savedJob = await saveJob(updatedJob)
     return savedJob || updatedJob
   } catch (error) {
@@ -45,7 +45,9 @@ export async function saveDocumentationAttachment({
       try {
         await deleteFile(uploadedFile.path)
       } catch (cleanupError) {
-        error.cleanupError = cleanupError
+        if (error && typeof error === 'object') {
+          error.cleanupError = cleanupError
+        }
       }
     }
     throw error

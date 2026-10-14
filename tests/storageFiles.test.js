@@ -42,7 +42,7 @@ test('uploads to the expected job folder and returns a signed URL', async () => 
   const result = await api.uploadSupabaseFile('job-7', 'documents/general', file)
 
   assert.deepEqual(result, {
-    path: 'jobs/job-7/documents/general/123-zazolc_raport.pdf',
+    path: 'jobs/job-7/documents/general/123-zazo_c_raport.pdf',
     url: 'https://signed.example/file',
   })
   assert.deepEqual(calls.find(call => call.method === 'upload').options, {

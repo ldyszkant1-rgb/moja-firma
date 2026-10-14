@@ -37,9 +37,9 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
 
 ## Prywatny Storage realizacji
 
-- Migracja `20261014150000_make_aeroinstal_storage_private.sql` ustawia bucket `aeroinstal-files` jako prywatny i odtwarza polityki SELECT/INSERT/UPDATE/DELETE ograniczone do ID realizacji oraz bieżącej organizacji.
+- Migracja `20261014150000_prepare_aeroinstal_storage_policies.sql` oraz `20261014151000_make_aeroinstal_storage_private.sql` ustawia bucket `aeroinstal-files` jako prywatny i odtwarza polityki SELECT/INSERT/UPDATE/DELETE ograniczone do ID realizacji oraz bieżącej organizacji.
 - W politykach sprawdzana jest ścieżka pliku `jobs/<job-id>/...` przeciwko `jobs.id`; nie wolno odwoływać się do ścieżki z `jobs.name`.
 - Frontend generuje czasowe adresy przez `createSignedUrl` i odświeża je z zapisanej ścieżki podczas pobierania danych oraz zdarzeń Realtime. Nie używa już `getPublicUrl`.
 - CI sprawdza kontrakt migracji i klienta. To kontrola statyczna; nie zastępuje testu na podglądzie aplikacji z prawdziwą sesją i istniejącymi plikami.
-- **Nie zastosowano tej migracji w produkcji.** Produkcyjny bucket nadal jest publiczny do czasu zatwierdzenia wdrożenia kodu, sprawdzenia podglądu i osobnej, świadomej zmiany ustawienia. W produkcji znajduje się 14 obiektów, których dostęp trzeba sprawdzić po przełączeniu.
-- Bezpieczna kolejność rollout: wdrożyć kod używający podpisanych adresów; sprawdzić odczyt, dodawanie, zmianę i usuwanie plików; dopiero potem zastosować migrację prywatnego bucketa; na koniec ponownie sprawdzić dostęp do wszystkich istniejących plików.
+- **Nie zastosowano tych migracji w produkcji.** Produkcyjny bucket nadal jest publiczny. W produkcji znajduje się 14 obiektów, których dostęp trzeba sprawdzić po przełączeniu.
+- Bezpieczna kolejność rollout: najpierw zastosować migrację przygotowującą polityki (bucket pozostaje publiczny), następnie wdrożyć kod używający podpisanych adresów i sprawdzić odczyt, dodawanie, zmianę oraz usuwanie plików; dopiero potem zastosować osobną migrację przełączającą bucket na prywatny; na koniec ponownie sprawdzić dostęp do wszystkich istniejących plików.

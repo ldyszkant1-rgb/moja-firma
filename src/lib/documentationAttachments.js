@@ -84,7 +84,9 @@ export async function deleteDocumentationAttachment({
     try {
       await saveJob(job)
     } catch (restoreError) {
-      error.restoreError = restoreError
+      if (error && typeof error === 'object') {
+        error.restoreError = restoreError
+      }
     }
     throw error
   }

@@ -124,6 +124,43 @@ test('does not delete Storage object if metadata removal fails', async () => {
   assert.equal(deleteCount, 0)
 })
 
+test('restores attachment when metadata removal committed but its response was lost', async () => {
+  const attachment = { id: 'a', name: 'one.pdf', path: 'one.pdf' }
+  const job = { id: 'job-ambiguous-delete', documents: { attachments: [attachment] } }
+  let currentDocuments = {
+    attachments: [attachment],
+    material: { path: 'material.pdf' },
+  }
+  let saveCount = 0
+  let deleteCount = 0
+  const writeFailure = new Error('response lost after commit')
+
+  await assert.rejects(deleteDocumentationAttachment({
+    job,
+    attachmentId: 'a',
+    saveDocuments: async (_jobId, transform) => {
+      saveCount += 1
+      currentDocuments = transform(currentDocuments)
+      if (saveCount === 1) {
+        // The database write committed, but the client received an error.
+        currentDocuments = {
+          ...currentDocuments,
+          assembly: { path: 'new-assembly.pdf' },
+        }
+        throw writeFailure
+      }
+      return currentDocuments
+    },
+    deleteFile: async () => { deleteCount += 1 },
+  }), error => error === writeFailure)
+
+  assert.equal(saveCount, 2)
+  assert.equal(deleteCount, 0)
+  assert.deepEqual(currentDocuments.attachments, [attachment])
+  assert.deepEqual(currentDocuments.material, { path: 'material.pdf' })
+  assert.deepEqual(currentDocuments.assembly, { path: 'new-assembly.pdf' })
+})
+
 test('restores only the deleted attachment when Storage deletion fails, preserving concurrent changes', async () => {
   const attachment = { id: 'a', name: 'one.pdf', path: 'one.pdf' }
   const job = { id: 'job-5', documents: { attachments: [attachment] } }

@@ -18,49 +18,69 @@ export function removeDocumentationAttachment(documents, attachmentId) {
   }
 }
 
+function removeUploadedAttachment(documents, attachment) {
+  if (!attachment) return documents || {}
+  const attachments = getDocumentationAttachments(documents)
+  const nextAttachments = attachments.filter((item) => {
+    if (attachment.id != null && item?.id != null) {
+      return String(item.id) !== String(attachment.id)
+    }
+    return item?.path !== attachment.path
+  })
+  if (nextAttachments.length === attachments.length) return documents || {}
+  return { ...(documents || {}), attachments: nextAttachments }
+}
+
+function restoreAttachment(documents, attachment) {
+  const current = getDocumentationAttachments(documents)
+  const alreadyPresent = current.some((item) =>
+    (attachment.id != null && item?.id != null && String(item.id) === String(attachment.id)) ||
+    (attachment.path && item?.path === attachment.path)
+  )
+  if (alreadyPresent) return documents || {}
+  return { ...(documents || {}), attachments: [...current, attachment] }
+}
+
 /**
- * Uploads a file and persists its metadata before exposing it in local UI state.
- * Dependencies are injected so the full lifecycle can be tested without Supabase.
+ * Uploads a file, then changes only the documents JSONB field through the
+ * optimistic-concurrency saveDocuments API. Rollback removes only this upload.
  */
 export async function saveDocumentationAttachment({
   job,
   file,
   uploadFile,
-  saveJob,
+  saveDocuments,
   deleteFile,
   createAttachment,
 }) {
   const uploadedFile = await uploadFile(job.id, file)
+  let attachment = null
 
   try {
-    const attachment = createAttachment(file, uploadedFile)
-    const updatedJob = {
-      ...job,
-      documents: appendDocumentationAttachment(job.documents, attachment),
-    }
-    const savedJob = await saveJob(updatedJob)
-    return savedJob || updatedJob
+    attachment = createAttachment(file, uploadedFile)
+    const documents = await saveDocuments(job.id, (currentDocuments) =>
+      appendDocumentationAttachment(currentDocuments, attachment)
+    )
+    return { ...job, documents }
   } catch (error) {
-    // A network error can happen after the database has committed the update.
-    // Restore the previous metadata first; never delete the object if rollback
-    // cannot be confirmed, because the row might still reference that object.
+    // The database request may have committed even if its response was lost.
+    // Remove only this attachment from the latest metadata; never restore a
+    // stale whole-job snapshot or remove another writer's changes.
     let rollbackSucceeded = false
     try {
-      await saveJob(job)
+      await saveDocuments(job.id, (currentDocuments) =>
+        removeUploadedAttachment(currentDocuments, attachment || uploadedFile)
+      )
       rollbackSucceeded = true
     } catch (restoreError) {
-      if (error && typeof error === 'object') {
-        error.restoreError = restoreError
-      }
+      if (error && typeof error === 'object') error.restoreError = restoreError
     }
 
     if (rollbackSucceeded && uploadedFile?.path) {
       try {
         await deleteFile(uploadedFile.path)
       } catch (cleanupError) {
-        if (error && typeof error === 'object') {
-          error.cleanupError = cleanupError
-        }
+        if (error && typeof error === 'object') error.cleanupError = cleanupError
       }
     }
     throw error
@@ -68,13 +88,13 @@ export async function saveDocumentationAttachment({
 }
 
 /**
- * Persists metadata removal, then deletes the object. If Storage deletion fails,
- * attempts to restore the original metadata so the user can retry.
+ * Removes metadata first and then the Storage object. On a Storage error,
+ * restores only the selected attachment into the latest documents value.
  */
 export async function deleteDocumentationAttachment({
   job,
   attachmentId,
-  saveJob,
+  saveDocuments,
   deleteFile,
 }) {
   const attachment = getDocumentationAttachments(job.documents).find(
@@ -82,24 +102,22 @@ export async function deleteDocumentationAttachment({
   )
   if (!attachment) return job
 
-  const updatedJob = {
-    ...job,
-    documents: removeDocumentationAttachment(job.documents, attachmentId),
-  }
-  const savedJob = await saveJob(updatedJob)
+  const documents = await saveDocuments(job.id, (currentDocuments) =>
+    removeDocumentationAttachment(currentDocuments, attachmentId)
+  )
 
-  if (!attachment.path) return savedJob || updatedJob
+  if (!attachment.path) return { ...job, documents }
 
   try {
     await deleteFile(attachment.path)
-    return savedJob || updatedJob
+    return { ...job, documents }
   } catch (error) {
     try {
-      await saveJob(job)
+      await saveDocuments(job.id, (currentDocuments) =>
+        restoreAttachment(currentDocuments, attachment)
+      )
     } catch (restoreError) {
-      if (error && typeof error === 'object') {
-        error.restoreError = restoreError
-      }
+      if (error && typeof error === 'object') error.restoreError = restoreError
     }
     throw error
   }

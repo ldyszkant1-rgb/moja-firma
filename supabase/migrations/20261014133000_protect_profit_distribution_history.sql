@@ -10,6 +10,7 @@ BEGIN
   RAISE EXCEPTION
     'Nie można usunąć historii rozliczenia wspólników. Użyj operacji cofnięcia rozliczenia.'
     USING ERRCODE = '23514';
+  RETURN OLD;
 END;
 $function$;
 

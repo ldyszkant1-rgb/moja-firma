@@ -10,7 +10,7 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
   3. `20261011131054_validate_profit_distribution_relations.sql`
   4. `20261011144623_prevent_duplicate_profit_distribution_allocations.sql`
   5. `20261011145650_prevent_mutation_of_allocated_financial_rows.sql`
-  6. `20261011210000_protect_distributed_finance_costs.sql`
+  6. `20261011210100_protect_distributed_finance_costs.sql`
   7. `20261013180000_prevent_org_delete_with_active_distributions.sql`
   8. `20261014120000_add_profit_distribution_lifecycle_columns.sql`
 - Direct UPDATE of a cost referenced by an active distribution is blocked.

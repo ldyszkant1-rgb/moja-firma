@@ -11,8 +11,9 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
   4. `20261011144623_prevent_duplicate_profit_distribution_allocations.sql`
   5. `20261011145650_prevent_mutation_of_allocated_financial_rows.sql`
   6. `20261011210100_protect_distributed_finance_costs.sql`
-  7. `20261013180000_prevent_org_delete_with_active_distributions.sql`
-  8. `20261014120000_add_profit_distribution_lifecycle_columns.sql`
+  7. `20261014120000_add_profit_distribution_lifecycle_columns.sql`
+  8. `20261014133251_prevent_org_delete_with_distribution_history.sql`
+  9. `20261014133255_protect_profit_distribution_history.sql`
 - Direct UPDATE of a cost referenced by an active distribution is blocked.
 - DELETE of an allocated payment is blocked.
 - A nested trigger cannot bypass the allocation guard.
@@ -27,6 +28,7 @@ These workflows use isolated PostgreSQL 16 services. They never connect to Supab
 ## Important limitations
 
 - The migration replay uses a minimal test-only base schema, not the full production schema or all repository migrations.
-- This does not establish which columns or trigger definitions currently exist in the production Supabase database.
-- Before any production rollout, inspect migration history and the actual schema in a separately approved, read-only verification step, then review a rollout plan. Do not run these test SQL files against production.
-- No production migration, storage change, or deployment is performed by these tests.
+- Production read-only verification was completed on 2026-10-14. The two history-deletion guards were applied directly to production and registered there as versions `20261014133251` and `20261014133255`; controlled DELETE attempts confirmed both protections reject deletion. Production still has two active distributions, and no financial rows were changed or deleted.
+- The repository filenames for these two migrations match the versions recorded in production, avoiding a needless reapplication during a future `db push`.
+- The replay remains a minimal test-only schema, not a full replay of every production migration. Before any future rollout, inspect the proposed `db push` plan and verify it contains no unexpected operations. Never run these test SQL files against production.
+- These tests do not change production, Storage configuration, or deployment.

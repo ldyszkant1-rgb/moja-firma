@@ -3930,6 +3930,11 @@ section {
   background: transparent;
   padding: 4px;
 }
+.job-detail-document-row > button.job-detail-primary-text-button {
+  padding: 4px 0;
+  color: #0787e8;
+  font-size: 12px;
+}
 .job-detail-document-row > a { text-decoration: none; }
 .job-detail-inline-delete {
   width: 34px;

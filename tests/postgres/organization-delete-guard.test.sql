@@ -46,6 +46,20 @@ BEGIN
 END;
 $test$;
 
+-- Authenticated clients must not retain table-level DELETE permission.
+DO $test$
+BEGIN
+  IF pg_catalog.has_table_privilege(
+    'authenticated',
+    'public.profit_distributions',
+    'DELETE'
+  ) THEN
+    RAISE EXCEPTION
+      'TEST FAILED: authenticated still has DELETE privilege on profit_distributions';
+  END IF;
+END;
+$test$;
+
 -- Direct deletion of a reversed distribution must not erase the audit trail.
 DO $test$
 DECLARE v_count integer;

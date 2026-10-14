@@ -1,11 +1,74 @@
 const STORAGE_BUCKET = 'aeroinstal-files'
 const SIGNED_STORAGE_URL_TTL_SECONDS = 60 * 60 * 24
+export const MAX_STORAGE_FILE_SIZE_BYTES = 25 * 1024 * 1024
+
+// Keep this list aligned with the Storage bucket's allowed_mime_types.
+// SVG and HTML are intentionally excluded because they can contain active content.
+const ALLOWED_FILE_TYPES = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  csv: 'text/csv',
+  txt: 'text/plain',
+  zip: 'application/zip',
+  dwg: 'application/acad',
+  dxf: 'application/dxf',
+}
 
 function sanitizeFileName(name) {
   return String(name || 'plik')
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\\u0300-\\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_')
+}
+
+function getAllowedContentType(file) {
+  const extension = String(file?.name || '').split('.').pop()?.toLowerCase()
+  const expectedType = ALLOWED_FILE_TYPES[extension]
+  if (!expectedType) {
+    throw new Error('Ten typ pliku nie jest obsługiwany. Dozwolone są PDF, zdjęcia, dokumenty Office, CSV/TXT, ZIP oraz pliki DWG/DXF.')
+  }
+
+  const actualType = String(file?.type || '').trim().toLowerCase()
+  if (actualType && actualType !== expectedType) {
+    // Some platforms use a generic MIME type for a few supported formats.
+    const compatibleTypes = {
+      heic: ['image/heic', 'image/heif', 'application/octet-stream'],
+      heif: ['image/heif', 'image/heic', 'application/octet-stream'],
+      dwg: ['application/acad', 'application/x-acad', 'image/vnd.dwg', 'application/octet-stream'],
+      dxf: ['application/dxf', 'image/vnd.dxf', 'application/octet-stream'],
+      zip: ['application/zip', 'application/x-zip-compressed', 'application/octet-stream'],
+      doc: ['application/msword', 'application/octet-stream'],
+      xls: ['application/vnd.ms-excel', 'application/octet-stream'],
+      ppt: ['application/vnd.ms-powerpoint', 'application/octet-stream'],
+    }
+    if (!(compatibleTypes[extension] || []).includes(actualType)) {
+      throw new Error('Typ pliku nie zgadza się z jego rozszerzeniem. Sprawdź plik i spróbuj ponownie.')
+    }
+  }
+
+  return expectedType
+}
+
+function validateUploadFile(file) {
+  if (!file) throw new Error('Brak pliku do wysłania.')
+  if (!Number.isFinite(file.size) || file.size < 0) {
+    throw new Error('Nie można odczytać rozmiaru pliku.')
+  }
+  if (file.size > MAX_STORAGE_FILE_SIZE_BYTES) {
+    throw new Error('Plik jest za duży. Maksymalny rozmiar załącznika to 25 MB.')
+  }
+  return getAllowedContentType(file)
 }
 
 /**
@@ -37,7 +100,13 @@ export function createStorageFileApi(
 
   async function uploadSupabaseFile(jobId, folder, file) {
     if (!jobId) throw new Error('Brak ID roboty.')
-    if (!file) throw new Error('Brak pliku do wysłania.')
+    const contentType = validateUploadFile(file)
+    if (!/^[a-zA-Z0-9_-]+$/.test(String(jobId))) {
+      throw new Error('Nieprawidłowe ID realizacji.')
+    }
+    if (folder !== 'documents/general') {
+      throw new Error('Nieprawidłowy katalog załącznika.')
+    }
 
     const safeName = sanitizeFileName(file.name)
     const path = `jobs/${jobId}/${folder}/${now()}-${safeName}`
@@ -47,7 +116,7 @@ export function createStorageFileApi(
       .upload(path, file, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type || 'application/octet-stream',
+        contentType,
       })
 
     if (uploadError) {

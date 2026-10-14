@@ -933,7 +933,9 @@ export async function uploadSupabaseFile(
     try {
       await deleteSupabaseFile(path)
     } catch (cleanupError) {
-      urlError.cleanupError = cleanupError
+      if (urlError && typeof urlError === 'object') {
+        urlError.cleanupError = cleanupError
+      }
       console.error('Nie udało się posprzątać pliku po błędzie podpisanego URL:', cleanupError)
     }
 

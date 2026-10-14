@@ -927,8 +927,17 @@ export async function uploadSupabaseFile(
     .from(STORAGE_BUCKET)
     .createSignedUrl(path, SIGNED_STORAGE_URL_TTL_SECONDS)
 
-  if (signedUrlError) {
-    throw signedUrlError
+  if (signedUrlError || !signedUrlData?.signedUrl) {
+    const urlError = signedUrlError || new Error('Nie udało się utworzyć podpisanego linku do pliku.')
+
+    try {
+      await deleteSupabaseFile(path)
+    } catch (cleanupError) {
+      urlError.cleanupError = cleanupError
+      console.error('Nie udało się posprzątać pliku po błędzie podpisanego URL:', cleanupError)
+    }
+
+    throw urlError
   }
 
   return {

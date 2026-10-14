@@ -59,6 +59,13 @@ jobs:
             supabase/migrations/20261014133251_prevent_org_delete_with_distribution_history.sql \
             supabase/migrations/20261014133255_protect_profit_distribution_history.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+            if [ "$migration" = "supabase/migrations/20261007170000_add_profit_distribution_tracking.sql" ]; then
+              delete_grant=$(psql -h localhost -U postgres -d aeroinstal_test -Atc "select has_table_privilege('authenticated', 'public.profit_distributions', 'DELETE')")
+              if [ "$delete_grant" != "f" ]; then
+                echo "ERROR: bootstrap migration must not grant DELETE on profit_distributions"
+                exit 1
+              fi
+            fi
           done
       - name: Seed regression-test data after migrations
         env:
@@ -110,6 +117,13 @@ jobs:
             supabase/migrations/20261014120000_add_profit_distribution_lifecycle_columns.sql \
             supabase/migrations/20261014133255_protect_profit_distribution_history.sql; do
             psql -h localhost -U postgres -d aeroinstal_test -v ON_ERROR_STOP=1 -f "$migration"
+            if [ "$migration" = "supabase/migrations/20261007170000_add_profit_distribution_tracking.sql" ]; then
+              delete_grant=$(psql -h localhost -U postgres -d aeroinstal_test -Atc "select has_table_privilege('authenticated', 'public.profit_distributions', 'DELETE')")
+              if [ "$delete_grant" != "f" ]; then
+                echo "ERROR: bootstrap migration must not grant DELETE on profit_distributions"
+                exit 1
+              fi
+            fi
           done
       - name: Seed regression-test data after migrations
         env:

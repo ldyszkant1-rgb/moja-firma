@@ -208,10 +208,13 @@ async function signStorageItem(item) {
   } catch (error) {
     console.error('Nie udało się utworzyć podpisanego adresu pliku:', item.path, error)
 
-    // Nie zwracamy starego publicznego URL jako obejścia błędu.
+    // Bucket produkcyjny nadal jest publiczny podczas etapowego wdrożenia.
+    // Zachowaj zapisany URL, aby starsze zdjęcia nie znikały, jeśli podpisanie
+    // URL-a chwilowo nie powiedzie się. Przed ustawieniem bucketu jako private
+    // trzeba usunąć ten fallback i potwierdzić działanie polityki SELECT.
     return {
       ...item,
-      url: null,
+      url: item.url || null,
     }
   }
 }

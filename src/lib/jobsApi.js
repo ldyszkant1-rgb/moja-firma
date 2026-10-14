@@ -223,11 +223,12 @@ export async function resolveJobStorageUrls(job) {
     return job
   }
 
-  const [mainPhoto, material, assembly, photos] = await Promise.all([
+  const [mainPhoto, material, assembly, photos, attachments] = await Promise.all([
     signStorageItem(job.mainPhoto),
     signStorageItem(job.documents?.material),
     signStorageItem(job.documents?.assembly),
     Promise.all((Array.isArray(job.photos) ? job.photos : []).map(signStorageItem)),
+    Promise.all((Array.isArray(job.documents?.attachments) ? job.documents.attachments : []).map(signStorageItem)),
   ])
 
   return {
@@ -237,6 +238,7 @@ export async function resolveJobStorageUrls(job) {
       ...(job.documents || {}),
       material,
       assembly,
+      attachments,
     },
     photos,
   }

@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { getDocumentationAttachments } from './documentationAttachments'
+import { createStorageFileApi } from './storageFiles'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -842,143 +843,15 @@ export async function deleteSupabaseJobNote(
    NAZWA PLIKU
 ========================================================= */
 
-function sanitizeFileName(name) {
-  return String(
-    name || 'plik'
-  )
-    .normalize('NFD')
-    .replace(
-      /[\u0300-\u036f]/g,
-      ''
-    )
-    .replace(
-      /[^a-zA-Z0-9._-]/g,
-      '_'
-    )
+// Storage upload/delete logic is dependency-injected for isolated unit tests.
+const storageFileApi = createStorageFileApi(supabase)
+
+export async function uploadSupabaseFile(jobId, folder, file) {
+  return storageFileApi.uploadSupabaseFile(jobId, folder, file)
 }
 
-
-/* =========================================================
-   UPLOAD PLIKU DO STORAGE
-========================================================= */
-
-export async function uploadSupabaseFile(
-  jobId,
-  folder,
-  file
-) {
-  if (!jobId) {
-    throw new Error(
-      'Brak ID roboty.'
-    )
-  }
-
-  if (!file) {
-    throw new Error(
-      'Brak pliku do wysłania.'
-    )
-  }
-
-  const safeName =
-    sanitizeFileName(
-      file.name
-    )
-
-  const path =
-    `jobs/${jobId}/${folder}/` +
-    `${Date.now()}-${safeName}`
-
-  const {
-    error: uploadError,
-  } =
-    await supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .upload(
-        path,
-        file,
-        {
-          cacheControl:
-            '3600',
-
-          upsert:
-            false,
-
-          contentType:
-            file.type ||
-            'application/octet-stream',
-        }
-      )
-
-  if (uploadError) {
-    console.error(
-      'Błąd wysyłania pliku do Storage:',
-      uploadError
-    )
-
-    throw uploadError
-  }
-
-  const {
-    data: signedUrlData,
-    error: signedUrlError,
-  } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrl(path, SIGNED_STORAGE_URL_TTL_SECONDS)
-
-  if (signedUrlError || !signedUrlData?.signedUrl) {
-    const urlError = signedUrlError || new Error('Nie udało się utworzyć podpisanego linku do pliku.')
-
-    try {
-      await deleteSupabaseFile(path)
-    } catch (cleanupError) {
-      if (urlError && typeof urlError === 'object') {
-        urlError.cleanupError = cleanupError
-      }
-      console.error('Nie udało się posprzątać pliku po błędzie podpisanego URL:', cleanupError)
-    }
-
-    throw urlError
-  }
-
-  return {
-    path,
-    url: signedUrlData.signedUrl,
-  }
-}
-
-
-/* =========================================================
-   USUWANIE PLIKU ZE STORAGE
-========================================================= */
-
-export async function deleteSupabaseFile(
-  path
-) {
-  if (!path) {
-    return
-  }
-
-  const {
-    error,
-  } =
-    await supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .remove([
-        path,
-      ])
-
-  if (error) {
-    console.error(
-      'Błąd usuwania pliku ze Storage:',
-      error
-    )
-
-    throw error
-  }
+export async function deleteSupabaseFile(path) {
+  return storageFileApi.deleteSupabaseFile(path)
 }
 
 

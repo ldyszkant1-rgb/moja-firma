@@ -9925,7 +9925,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           )}
         </div>
 
-        {activeProfitDistributions.length > 0 && (
+        {profitDistributions.length > 0 && (
           <section className="finance-history-card detail-card">
             <div className="finance-history-header">
               <div>

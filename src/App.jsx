@@ -5772,10 +5772,12 @@ function JobDetails({
       onUpdate(savedJob, { skipSupabase: true })
     } catch (error) {
       console.error('Nie udało się dodać pliku do dokumentacji:', error)
-      if (error?.cleanupError) {
-        showCustomAlert('Nie udało się zapisać załącznika, a sprzątnięcie wysłanego pliku również się nie powiodło. Nie ponawiaj teraz wysyłania tego samego pliku — potrzebna jest kontrola Storage.')
+      if (error?.restoreError) {
+        showCustomAlert('Nie udało się potwierdzić wycofania zapisu. Plik pozostaje w Storage, aby nie usunąć go, jeśli baza zdążyła go zapisać. Nie ponawiaj operacji; potrzebna jest kontrola wpisu w dokumentacji.')
+      } else if (error?.cleanupError) {
+        showCustomAlert('Nie udało się zapisać załącznika i posprzątać wysłanego pliku. Nie ponawiaj teraz wysyłania tego samego pliku — potrzebna jest kontrola Storage.')
       } else {
-        showCustomAlert('Nie udało się zapisać załącznika. Dane nie zostały dodane do listy. Spróbuj ponownie.')
+        showCustomAlert('Nie udało się zapisać załącznika. Poprzedni stan został przywrócony. Możesz spróbować ponownie.')
       }
     } finally {
       attachmentOperationRef.current = false

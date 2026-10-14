@@ -6,6 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
+import { appendDocumentationAttachment, getDocumentationAttachments, removeDocumentationAttachment } from './lib/documentationAttachments'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
@@ -5761,10 +5762,7 @@ function JobDetails({
         ...editedJob,
         documents: {
           ...(editedJob.documents || {}),
-          attachments: [
-            ...(Array.isArray(editedJob.documents?.attachments) ? editedJob.documents.attachments : []),
-            attachment,
-          ],
+          ...appendDocumentationAttachment(editedJob.documents, attachment),
         },
       }
 
@@ -5792,7 +5790,7 @@ function JobDetails({
         ...editedJob,
         documents: {
           ...(editedJob.documents || {}),
-          attachments: attachments.filter((item) => String(item.id) !== String(attachmentId)),
+          ...removeDocumentationAttachment(editedJob.documents, attachmentId),
         },
       }
 
@@ -7072,12 +7070,12 @@ function JobDetails({
             </div>
             <div className="job-detail-document-row">
               <ClipboardList size={19} strokeWidth={1.75} />
-              <span>Załączniki ({(editedJob.documents?.attachments || []).length})</span>
+              <span>Załączniki ({getDocumentationAttachments(editedJob.documents).length})</span>
               <button type="button" className="job-detail-primary-text-button" onClick={() => attachmentInputRef.current?.click()}>
                 <Plus size={16} strokeWidth={2} /> Dodaj plik
               </button>
             </div>
-            {(Array.isArray(editedJob.documents?.attachments) ? editedJob.documents.attachments : []).map((attachment) => (
+            {getDocumentationAttachments(editedJob.documents).map((attachment) => (
               <div className="job-detail-document-row" key={attachment.id || attachment.path || attachment.name}>
                 <FileText size={19} strokeWidth={1.75} />
                 <span title={attachment.name}>{attachment.name || 'Załącznik'}</span>

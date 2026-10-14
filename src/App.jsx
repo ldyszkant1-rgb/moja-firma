@@ -3893,10 +3893,6 @@ function JobCard({
                 src={job.mainPhoto.url}
                 alt={job.mainPhoto.name || job.name}
                 title="Zdjęcie główne"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.open(job.mainPhoto.url, '_blank')
-                }}
               />
             ) : (
               <span className="job-card-photo job-card-photo-empty" aria-hidden="true">{capitalizeDisplay(job.name || '?').charAt(0)}</span>
@@ -4866,6 +4862,17 @@ function JobDetails({
 
   const [editedJob, setEditedJob] =
     useState(job)
+
+  const [photoPreview, setPhotoPreview] = useState(null)
+
+  useEffect(() => {
+    if (!photoPreview) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setPhotoPreview(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [photoPreview])
 
   const [jobTeams, setJobTeams] = useState([])
 
@@ -7008,7 +7015,7 @@ function JobDetails({
           <div className="job-detail-subtitle">Zdjęcie główne</div>
           {editedJob.mainPhoto?.url ? (
             <div className="job-detail-main-photo-wrap">
-              <img src={editedJob.mainPhoto.url} alt={editedJob.mainPhoto.name || editedJob.name} onClick={() => window.open(editedJob.mainPhoto.url, '_blank')} />
+              <img src={editedJob.mainPhoto.url} alt={editedJob.mainPhoto.name || editedJob.name} onClick={() => setPhotoPreview({ url: editedJob.mainPhoto.url, name: editedJob.mainPhoto.name || editedJob.name })} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setPhotoPreview({ url: editedJob.mainPhoto.url, name: editedJob.mainPhoto.name || editedJob.name }) }} />
               <button type="button" className="job-detail-inline-delete" onClick={removeMainPhoto} aria-label="Usuń zdjęcie główne">
                 <Trash2 size={17} strokeWidth={1.75} />
               </button>
@@ -7027,7 +7034,7 @@ function JobDetails({
           <div className="job-detail-photo-grid">
             {(editedJob.photos || []).map((photo) => (
               <div className="job-detail-photo-item" key={photo.id}>
-                <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => window.open(photo.url, '_blank')} />
+                <img src={photo.url} alt={photo.name || editedJob.name} onClick={() => setPhotoPreview({ url: photo.url, name: photo.name || editedJob.name })} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setPhotoPreview({ url: photo.url, name: photo.name || editedJob.name }) }} />
                 <button type="button" onClick={() => renamePhoto(photo.id)} aria-label="Zmień nazwę zdjęcia" title="Zmień nazwę">
                   <Pencil size={15} strokeWidth={1.75} />
                 </button>
@@ -7358,6 +7365,46 @@ function JobDetails({
               <button type="button" className="finance-cost-sheet-save" onClick={saveJobCost}>Zapisz</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {photoPreview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Podgląd zdjęcia"
+          onClick={() => setPhotoPreview(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            padding: 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))',
+            background: 'rgba(8, 16, 30, 0.96)',
+          }}
+        >
+          <div style={{ width: '100%', maxWidth: 900, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ color: '#fff', fontSize: 14, overflowWrap: 'anywhere' }}>{photoPreview.name}</span>
+            <button
+              type="button"
+              onClick={() => setPhotoPreview(null)}
+              aria-label="Zamknij podgląd zdjęcia"
+              style={{ flex: '0 0 auto', width: 44, height: 44, border: 0, borderRadius: 22, background: '#fff', color: '#17243d', fontSize: 28, lineHeight: 1, cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+          <img
+            src={photoPreview.url}
+            alt={photoPreview.name}
+            onClick={(event) => event.stopPropagation()}
+            style={{ display: 'block', maxWidth: '100%', maxHeight: 'calc(100dvh - 110px)', objectFit: 'contain', borderRadius: 8 }}
+          />
+          <span style={{ color: '#cbd5e1', fontSize: 12 }}>Dotknij tła lub ×, aby wrócić do realizacji</span>
         </div>
       )}
     </div>

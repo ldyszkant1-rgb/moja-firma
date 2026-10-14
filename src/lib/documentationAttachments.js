@@ -41,7 +41,20 @@ export async function saveDocumentationAttachment({
     const savedJob = await saveJob(updatedJob)
     return savedJob || updatedJob
   } catch (error) {
-    if (uploadedFile?.path) {
+    // A network error can happen after the database has committed the update.
+    // Restore the previous metadata first; never delete the object if rollback
+    // cannot be confirmed, because the row might still reference that object.
+    let rollbackSucceeded = false
+    try {
+      await saveJob(job)
+      rollbackSucceeded = true
+    } catch (restoreError) {
+      if (error && typeof error === 'object') {
+        error.restoreError = restoreError
+      }
+    }
+
+    if (rollbackSucceeded && uploadedFile?.path) {
       try {
         await deleteFile(uploadedFile.path)
       } catch (cleanupError) {

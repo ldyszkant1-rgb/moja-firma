@@ -58,10 +58,13 @@ export async function saveDocumentationAttachment({
 
   try {
     attachment = createAttachment(file, uploadedFile)
-    const documents = await saveDocuments(job.id, (currentDocuments) =>
+    const saved = await saveDocuments(job.id, (currentDocuments) =>
       appendDocumentationAttachment(currentDocuments, attachment)
     )
-    return { ...job, documents }
+    // Production returns a fresh full job; simple unit fakes may return documents.
+    return saved && String(saved.id) === String(job.id) && Object.hasOwn(saved, 'documents')
+      ? saved
+      : { ...job, documents: saved }
   } catch (error) {
     // The database request may have committed even if its response was lost.
     // Remove only this attachment from the latest metadata; never restore a
@@ -102,15 +105,18 @@ export async function deleteDocumentationAttachment({
   )
   if (!attachment) return job
 
-  const documents = await saveDocuments(job.id, (currentDocuments) =>
+  const saved = await saveDocuments(job.id, (currentDocuments) =>
     removeDocumentationAttachment(currentDocuments, attachmentId)
   )
+  const savedJob = saved && String(saved.id) === String(job.id) && Object.hasOwn(saved, 'documents')
+    ? saved
+    : { ...job, documents: saved }
 
-  if (!attachment.path) return { ...job, documents }
+  if (!attachment.path) return savedJob
 
   try {
     await deleteFile(attachment.path)
-    return { ...job, documents }
+    return savedJob
   } catch (error) {
     try {
       await saveDocuments(job.id, (currentDocuments) =>

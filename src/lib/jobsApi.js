@@ -876,6 +876,19 @@ export async function uploadSupabaseFile(
     )
   }
 
+  // Ograniczamy foldery do ścieżek używanych przez moduł realizacji.
+  // Zapobiega to zapisowi plików poza oczekiwaną strukturą jobs/<id>/...
+  const allowedFolders = new Set([
+    'main',
+    'photos',
+    'documents/material',
+    'documents/assembly',
+  ])
+
+  if (!allowedFolders.has(folder)) {
+    throw new Error('Nieprawidłowy folder pliku realizacji.')
+  }
+
   const safeName =
     sanitizeFileName(
       file.name
@@ -925,6 +938,18 @@ export async function uploadSupabaseFile(
     .createSignedUrl(path, SIGNED_STORAGE_URL_TTL_SECONDS)
 
   if (signedUrlError) {
+    // Upload mógł się udać, mimo że nie udało się utworzyć URL-a.
+    // Usuń wtedy nowy obiekt, aby nie zostawiać osieroconych plików.
+    try {
+      await deleteSupabaseFile(path)
+    } catch (cleanupError) {
+      console.error(
+        'Nie udało się posprzątać pliku po błędzie tworzenia podpisanego URL-a:',
+        path,
+        cleanupError
+      )
+    }
+
     throw signedUrlError
   }
 

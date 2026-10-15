@@ -5626,17 +5626,6 @@ function JobDetails({
         path: uploadedDocument.path,
       }
 
-      if (oldDocument?.path) {
-        try {
-          await deleteSupabaseFile(oldDocument.path)
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
         ...editedJob,
 
@@ -5650,13 +5639,38 @@ function JobDetails({
 
       }
 
-      setEditedJob(
-        updatedJob
-      )
+      setEditedJob(updatedJob)
 
-      onUpdate(
-        updatedJob
-      )
+      const saved = await onUpdate(updatedJob)
+
+      if (saved === false) {
+        // Zachowaj stary dokument, jeśli zapis nowych metadanych się nie udał.
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+
+        try {
+          await deleteSupabaseFile(uploadedDocument.path)
+        } catch (cleanupError) {
+          console.error(
+            'Nie udało się posprzątać nowego dokumentu po błędzie zapisu:',
+            cleanupError
+          )
+        }
+
+        return
+      }
+
+      // Stary plik usuwamy dopiero po potwierdzonym zapisie nowych metadanych.
+      if (oldDocument?.path) {
+        try {
+          await deleteSupabaseFile(oldDocument.path)
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego dokumentu ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5686,12 +5700,6 @@ function JobDetails({
 
     try {
 
-      if (document.path) {
-        await deleteSupabaseFile(
-          document.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5707,13 +5715,27 @@ function JobDetails({
 
       }
 
-      setEditedJob(
-        updatedJob
-      )
+      setEditedJob(updatedJob)
 
-      onUpdate(
-        updatedJob
-      )
+      const saved = await onUpdate(updatedJob)
+
+      if (saved === false) {
+        // Nie usuwaj pliku, gdy nie udało się zapisać usunięcia metadanych.
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
+
+      if (document.path) {
+        try {
+          await deleteSupabaseFile(document.path)
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć dokumentu ze Storage po zapisie metadanych:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5823,19 +5845,6 @@ function JobDetails({
 
       }
 
-      if (oldMainPhoto?.path) {
-        try {
-          await deleteSupabaseFile(
-            oldMainPhoto.path
-          )
-        } catch (error) {
-          console.error(
-            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
-            error
-          )
-        }
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5844,13 +5853,38 @@ function JobDetails({
 
       }
 
-      setEditedJob(
-        updatedJob
-      )
+      setEditedJob(updatedJob)
 
-      onUpdate(
-        updatedJob
-      )
+      const saved = await onUpdate(updatedJob)
+
+      if (saved === false) {
+        // Baza nadal wskazuje poprzednie zdjęcie — zachowaj je i wycofaj nowy upload.
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+
+        try {
+          await deleteSupabaseFile(uploadedPhoto.path)
+        } catch (cleanupError) {
+          console.error(
+            'Nie udało się posprzątać nowego zdjęcia głównego po błędzie zapisu:',
+            cleanupError
+          )
+        }
+
+        return
+      }
+
+      // Usuwaj poprzedni plik dopiero po potwierdzonym zapisie nowych metadanych.
+      if (oldMainPhoto?.path) {
+        try {
+          await deleteSupabaseFile(oldMainPhoto.path)
+        } catch (error) {
+          console.error(
+            'Nie udało się usunąć poprzedniego zdjęcia głównego ze Storage:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5903,12 +5937,6 @@ function JobDetails({
 
     try {
 
-      if (mainPhoto.path) {
-        await deleteSupabaseFile(
-          mainPhoto.path
-        )
-      }
-
       const updatedJob = {
 
         ...editedJob,
@@ -5917,13 +5945,28 @@ function JobDetails({
 
       }
 
-      setEditedJob(
-        updatedJob
-      )
+      setEditedJob(updatedJob)
 
-      onUpdate(
-        updatedJob
-      )
+      const saved = await onUpdate(updatedJob)
+
+      if (saved === false) {
+        // Nie usuwaj pliku, jeśli nie udało się zapisać zmiany w bazie.
+        setEditedJob(editedJob)
+        onUpdate(editedJob, { skipSupabase: true })
+        return
+      }
+
+      if (mainPhoto.path) {
+        try {
+          await deleteSupabaseFile(mainPhoto.path)
+        } catch (error) {
+          // Metadane zostały usunięte; ewentualny plik-sierota nie blokuje UI.
+          console.error(
+            'Nie udało się usunąć zdjęcia głównego ze Storage po zapisie metadanych:',
+            error
+          )
+        }
+      }
 
     } catch (error) {
 
@@ -5948,9 +5991,11 @@ function JobDetails({
     if (!file)
       return
 
+    let uploadedPhoto = null
+
     try {
 
-      const uploadedPhoto =
+      uploadedPhoto =
         await uploadSupabaseFile(
           editedJob.id,
           'photos',
@@ -6019,6 +6064,18 @@ function JobDetails({
       )
 
     } catch (error) {
+
+      if (uploadedPhoto?.path) {
+        try {
+          // Jeśli zapis metadanych zdjęcia nie powiódł się, usuń świeżo wgrany obiekt.
+          await deleteSupabaseFile(uploadedPhoto.path)
+        } catch (cleanupError) {
+          console.error(
+            'Nie udało się posprzątać zdjęcia po błędzie zapisu metadanych:',
+            cleanupError
+          )
+        }
+      }
 
       console.error(
         'Nie udało się wysłać zdjęcia do Supabase Storage:',

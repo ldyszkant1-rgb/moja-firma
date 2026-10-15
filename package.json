@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:finance": "node --test tests/financeCostCalculations.test.js"
+    "test:finance": "node --test tests/financeCostCalculations.test.js",
+    "test:storage": "node --test tests/storagePhotoSafety.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

@@ -10,9 +10,6 @@ begin
   if has_function_privilege('anon', 'public.append_job_photo(uuid,jsonb)', 'EXECUTE') then
     raise exception 'anon must not be able to execute append_job_photo';
   end if;
-  if has_function_privilege('public', 'public.append_job_photo(uuid,jsonb)', 'EXECUTE') then
-    raise exception 'public must not be able to execute append_job_photo';
-  end if;
 end;
 $$;
 

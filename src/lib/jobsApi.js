@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { getDocumentationAttachments } from './documentationAttachments'
 import { createStorageFileApi } from './storageFiles'
 import { createJobDocumentsApi } from './jobDocumentsApi'
+import { cleanupUnreferencedPhotoUpload } from './photoUploadCleanup'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -676,6 +677,26 @@ export async function appendSupabaseJobPhoto(
 
   if (error) {
     console.error('Błąd atomowego dodawania zdjęcia:', error)
+
+    // RPC errors can be ambiguous: verify current metadata before cleanup so
+    // a committed photo is never deleted just because its response was lost.
+    await cleanupUnreferencedPhotoUpload({
+      jobId,
+      photo,
+      readJobFiles: async (id) => {
+        const { data: current, error: readError } = await supabase
+          .from('jobs')
+          .select('photos, main_photo, documents')
+          .eq('id', id)
+          .is('deleted_at', null)
+          .maybeSingle()
+
+        return { data: current, error: readError }
+      },
+      deleteFile: deleteSupabaseFile,
+      logger: console,
+    })
+
     throw error
   }
 

@@ -197,4 +197,4 @@ jobs:
             exit 1
           fi
           grep -Fq "createSignedUrl" src/lib/jobsApi.js
-          grep -Fq "resolveJobStorageUrls" src/App.jsx
+          grep -Fq "resolveJobStorageUrls" src/lib/jobsApi.js

@@ -76,8 +76,8 @@ begin
           when jsonb_typeof(j.photos) = 'array' then j.photos
           else '[]'::jsonb
         end
-      ) as existing_photo
-      where existing_photo->>'id' = v_photo_id
+      ) as photo_row(photo)
+      where photo->>'id' = v_photo_id
     )
   returning j.* into v_job;
 

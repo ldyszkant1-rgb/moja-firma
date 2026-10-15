@@ -6,6 +6,7 @@ import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
 import InvoicesPage from './InvoicesPage'
 import JobDocuments from './JobDocuments'
+import { getDocumentationAttachments, saveDocumentationAttachment, deleteDocumentationAttachment as runDeleteDocumentationAttachment } from './lib/documentationAttachments'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
@@ -13,6 +14,7 @@ import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
   updateSupabaseJob,
+  updateSupabaseJobDocuments,
   getJobs,
   uploadSupabaseFile,
   deleteSupabaseFile,
@@ -4927,6 +4929,12 @@ function JobDetails({
     useRef(null)
 
 
+  const attachmentInputRef =
+    useRef(null)
+
+  const [attachmentBusy, setAttachmentBusy] = useState(false)
+  const attachmentOperationRef = useRef(false)
+
   const photoInputRef =
     useRef(null)
 
@@ -5728,6 +5736,85 @@ function JobDetails({
 
     }
 
+  }
+
+
+  const addDocumentationAttachment = async (file) => {
+    if (!file || attachmentOperationRef.current) return
+
+    attachmentOperationRef.current = true
+    setAttachmentBusy(true)
+
+    try {
+      const savedJob = await saveDocumentationAttachment({
+        job: editedJob,
+        file,
+        uploadFile: (jobId, selectedFile) => uploadSupabaseFile(
+          jobId,
+          'documents/general',
+          selectedFile
+        ),
+        saveDocuments: updateSupabaseJobDocuments,
+        deleteFile: deleteSupabaseFile,
+        createAttachment: (selectedFile, uploadedFile) => ({
+          id: typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`,
+          name: selectedFile.name,
+          type: selectedFile.type || 'application/octet-stream',
+          size: selectedFile.size,
+          url: uploadedFile.url,
+          path: uploadedFile.path,
+          uploadedAt: new Date().toISOString(),
+        }),
+      })
+
+      setEditedJob(savedJob)
+      onUpdate(savedJob, { skipSupabase: true })
+    } catch (error) {
+      console.error('Nie udało się dodać pliku do dokumentacji:', error)
+      if (error?.restoreError) {
+        showCustomAlert('Nie udało się potwierdzić wycofania zapisu. Plik pozostaje w Storage, aby nie usunąć go, jeśli baza zdążyła go zapisać. Nie ponawiaj operacji; potrzebna jest kontrola wpisu w dokumentacji.')
+      } else if (error?.cleanupError) {
+        showCustomAlert('Nie udało się zapisać załącznika i posprzątać wysłanego pliku. Nie ponawiaj teraz wysyłania tego samego pliku — potrzebna jest kontrola Storage.')
+      } else {
+        showCustomAlert('Nie udało się zapisać załącznika. Poprzedni stan został przywrócony. Możesz spróbować ponownie.')
+      }
+    } finally {
+      attachmentOperationRef.current = false
+      setAttachmentBusy(false)
+    }
+  }
+
+  const removeDocumentationAttachment = async (attachmentId) => {
+    if (attachmentOperationRef.current) return
+    const attachments = getDocumentationAttachments(editedJob.documents)
+    if (!attachments.some((item) => String(item.id) === String(attachmentId))) return
+
+    attachmentOperationRef.current = true
+    setAttachmentBusy(true)
+
+    try {
+      const savedJob = await runDeleteDocumentationAttachment({
+        job: editedJob,
+        attachmentId,
+        saveDocuments: updateSupabaseJobDocuments,
+        deleteFile: deleteSupabaseFile,
+      })
+
+      setEditedJob(savedJob)
+      onUpdate(savedJob, { skipSupabase: true })
+    } catch (error) {
+      console.error('Nie udało się usunąć pliku z dokumentacji:', error)
+      if (error?.restoreError) {
+        showCustomAlert('Nie udało się usunąć pliku i przywrócić jego wpisu w bazie. Nie ponawiaj operacji. Odświeżenie może ukryć załącznik; wymagana jest kontrola danych.')
+      } else {
+        showCustomAlert('Nie udało się usunąć pliku. Wpis w dokumentacji został zachowany, aby można było spróbować ponownie.')
+      }
+    } finally {
+      attachmentOperationRef.current = false
+      setAttachmentBusy(false)
+    }
   }
 
 
@@ -6996,6 +7083,34 @@ function JobDetails({
               <span>{linkedInvoice ? 'Powiązana faktura' : 'Brak powiązanej faktury'}</span>
               <ChevronRight size={18} strokeWidth={1.75} />
             </div>
+            <div className="job-detail-document-row">
+              <ClipboardList size={19} strokeWidth={1.75} />
+              <span>Załączniki ({getDocumentationAttachments(editedJob.documents).length})</span>
+              <button type="button" className="job-detail-primary-text-button" disabled={attachmentBusy} onClick={() => attachmentInputRef.current?.click()}>
+                <Plus size={16} strokeWidth={2} /> Dodaj plik
+              </button>
+            </div>
+            {getDocumentationAttachments(editedJob.documents).map((attachment) => (
+              <div className="job-detail-document-row" key={attachment.id || attachment.path || attachment.name}>
+                <FileText size={19} strokeWidth={1.75} />
+                <span title={attachment.name}>{attachment.name || 'Załącznik'}</span>
+                {attachment.url ? (
+                  <a href={attachment.url} target="_blank" rel="noreferrer" aria-label={'Otwórz ' + (attachment.name || 'załącznik')}>
+                    <Download size={17} strokeWidth={1.75} />
+                  </a>
+                ) : (
+                  <span aria-label="Plik niedostępny" />
+                )}
+                <button type="button" className="job-detail-inline-delete" disabled={attachmentBusy} onClick={() => removeDocumentationAttachment(attachment.id)} aria-label={'Usuń ' + (attachment.name || 'załącznik')}>
+                  <Trash2 size={16} strokeWidth={1.75} />
+                </button>
+              </div>
+            ))}
+            <input ref={attachmentInputRef} type="file" hidden onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (file) addDocumentationAttachment(file)
+            }} />
           </div>
         </details>
       </section>

@@ -1,4 +1,8 @@
 import { supabase } from './supabase'
+import { getDocumentationAttachments } from './documentationAttachments'
+import { createStorageFileApi } from './storageFiles'
+import { createJobDocumentsApi } from './jobDocumentsApi'
+import { cleanupUnreferencedPhotoUpload } from './photoUploadCleanup'
 
 const STORAGE_BUCKET = 'aeroinstal-files'
 
@@ -223,11 +227,12 @@ export async function resolveJobStorageUrls(job) {
     return job
   }
 
-  const [mainPhoto, material, assembly, photos] = await Promise.all([
+  const [mainPhoto, material, assembly, photos, attachments] = await Promise.all([
     signStorageItem(job.mainPhoto),
     signStorageItem(job.documents?.material),
     signStorageItem(job.documents?.assembly),
     Promise.all((Array.isArray(job.photos) ? job.photos : []).map(signStorageItem)),
+    Promise.all(getDocumentationAttachments(job.documents).map(signStorageItem)),
   ])
 
   return {
@@ -237,6 +242,7 @@ export async function resolveJobStorageUrls(job) {
       ...(job.documents || {}),
       material,
       assembly,
+      attachments,
     },
     photos,
   }
@@ -671,6 +677,26 @@ export async function appendSupabaseJobPhoto(
 
   if (error) {
     console.error('Błąd atomowego dodawania zdjęcia:', error)
+
+    // RPC errors can be ambiguous: verify current metadata before cleanup so
+    // a committed photo is never deleted just because its response was lost.
+    await cleanupUnreferencedPhotoUpload({
+      jobId,
+      photo,
+      readJobFiles: async (id) => {
+        const { data: current, error: readError } = await supabase
+          .from('jobs')
+          .select('photos, main_photo, documents')
+          .eq('id', id)
+          .is('deleted_at', null)
+          .maybeSingle()
+
+        return { data: current, error: readError }
+      },
+      deleteFile: deleteSupabaseFile,
+      logger: console,
+    })
+
     throw error
   }
 
@@ -839,132 +865,33 @@ export async function deleteSupabaseJobNote(
    NAZWA PLIKU
 ========================================================= */
 
-function sanitizeFileName(name) {
-  return String(
-    name || 'plik'
-  )
-    .normalize('NFD')
-    .replace(
-      /[\u0300-\u036f]/g,
-      ''
-    )
-    .replace(
-      /[^a-zA-Z0-9._-]/g,
-      '_'
-    )
+// Storage upload/delete logic is dependency-injected for isolated unit tests.
+const storageFileApi = createStorageFileApi(supabase)
+const jobDocumentsApi = createJobDocumentsApi(supabase)
+
+// Updates only the JSONB documents field with optimistic concurrency control.
+export async function updateSupabaseJobDocuments(jobId, transformDocuments) {
+  await jobDocumentsApi.updateJobDocuments(jobId, transformDocuments)
+
+  // Return a fresh full job snapshot for local UI state, but only documents was
+  // mutated. This avoids replacing the current view with a stale job object.
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', jobId)
+    .is('deleted_at', null)
+    .single()
+
+  if (error) throw error
+  return resolveJobStorageUrls(mapSupabaseJobToAppJob(data))
 }
 
-
-/* =========================================================
-   UPLOAD PLIKU DO STORAGE
-========================================================= */
-
-export async function uploadSupabaseFile(
-  jobId,
-  folder,
-  file
-) {
-  if (!jobId) {
-    throw new Error(
-      'Brak ID roboty.'
-    )
-  }
-
-  if (!file) {
-    throw new Error(
-      'Brak pliku do wysłania.'
-    )
-  }
-
-  const safeName =
-    sanitizeFileName(
-      file.name
-    )
-
-  const path =
-    `jobs/${jobId}/${folder}/` +
-    `${Date.now()}-${safeName}`
-
-  const {
-    error: uploadError,
-  } =
-    await supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .upload(
-        path,
-        file,
-        {
-          cacheControl:
-            '3600',
-
-          upsert:
-            false,
-
-          contentType:
-            file.type ||
-            'application/octet-stream',
-        }
-      )
-
-  if (uploadError) {
-    console.error(
-      'Błąd wysyłania pliku do Storage:',
-      uploadError
-    )
-
-    throw uploadError
-  }
-
-  const {
-    data: signedUrlData,
-    error: signedUrlError,
-  } = await supabase.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrl(path, SIGNED_STORAGE_URL_TTL_SECONDS)
-
-  if (signedUrlError) {
-    throw signedUrlError
-  }
-
-  return {
-    path,
-    url: signedUrlData.signedUrl,
-  }
+export async function uploadSupabaseFile(jobId, folder, file) {
+  return storageFileApi.uploadSupabaseFile(jobId, folder, file)
 }
 
-
-/* =========================================================
-   USUWANIE PLIKU ZE STORAGE
-========================================================= */
-
-export async function deleteSupabaseFile(
-  path
-) {
-  if (!path) {
-    return
-  }
-
-  const {
-    error,
-  } =
-    await supabase.storage
-      .from(
-        STORAGE_BUCKET
-      )
-      .remove([
-        path,
-      ])
-
-  if (error) {
-    console.error(
-      'Błąd usuwania pliku ze Storage:',
-      error
-    )
-
-    throw error
-  }
+export async function deleteSupabaseFile(path) {
+  return storageFileApi.deleteSupabaseFile(path)
 }
 
 

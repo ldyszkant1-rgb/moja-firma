@@ -4,6 +4,13 @@ on:
   pull_request:
     paths:
       - 'src/lib/financeCostCalculations.js'
+      - 'src/lib/documentationAttachments.js'
+      - 'src/lib/jobsApi.js'
+      - 'src/lib/jobDocumentsApi.js'
+      - 'src/lib/storageFiles.js'
+      - 'tests/documentationAttachments.test.js'
+      - 'tests/storageFiles.test.js'
+      - 'tests/jobDocumentsApi.test.js'
       - 'tests/financeCostCalculations.test.js'
       - 'src/App.jsx'
       - 'package.json'
@@ -26,7 +33,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Test finance calculations
-        run: npm run test:finance
+      - name: Run unit tests
+        run: node --test tests/*.test.js
       - name: Build app
         run: npm run build

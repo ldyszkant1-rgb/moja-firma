@@ -186,7 +186,7 @@ jobs:
         run: |
           migration=supabase/migrations/20261014150000_prepare_aeroinstal_storage_policies.sql
           private_migration=supabase/migrations/20261014151000_make_aeroinstal_storage_private.sql
-          grep -Fq "set public = false" "$private_migration"
+          grep -Fq "public = false" "$private_migration"
           grep -Fq 'create policy "Aeroinstal files - select"' "$migration"
           grep -Fq 'create policy "Aeroinstal files - upload"' "$migration"
           grep -Fq 'create policy "Aeroinstal files - update"' "$migration"

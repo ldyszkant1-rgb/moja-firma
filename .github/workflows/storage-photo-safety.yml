@@ -1,0 +1,39 @@
+name: Storage photo safety
+
+on:
+  pull_request:
+    paths:
+      - 'src/App.jsx'
+      - 'src/lib/jobsApi.js'
+      - 'tests/storagePhotoSafety.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/storage-photo-safety.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/App.jsx'
+      - 'src/lib/jobsApi.js'
+      - 'tests/storagePhotoSafety.test.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/storage-photo-safety.yml'
+
+jobs:
+  storage-photo-safety:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run storage safety regression tests
+        run: npm run test:storage
+      - name: Build application
+        run: npm run build

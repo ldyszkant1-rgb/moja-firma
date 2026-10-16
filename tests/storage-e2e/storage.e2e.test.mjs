@@ -60,6 +60,7 @@ test('private Storage: partner access, signed URLs, RLS denials and lifecycle op
   const jobA = randomUUID()
   const jobB = randomUUID()
   const photoPath = `jobs/${jobA}/photos/e2e-photo.jpg`
+  const partnerBPath = `jobs/${jobA}/photos/e2e-pawel.jpg`
   const jobPaths = [
     `jobs/${jobA}/main/e2e-main.jpg`,
     photoPath,
@@ -109,6 +110,17 @@ test('private Storage: partner access, signed URLs, RLS denials and lifecycle op
         const text = await data.text()
         assert.equal(text, ['main-photo', 'gallery-photo', 'material-pdf', 'assembly-pdf'][i])
       }
+
+      const { error: partnerUploadError } = await userB.client.storage.from(bucket).upload(
+        partnerBPath,
+        new Blob(['uploaded-by-pawel'], { type: 'image/jpeg' }),
+        { contentType: 'image/jpeg', upsert: false },
+      )
+      assert.ifError(partnerUploadError)
+      uploadedPaths.push(partnerBPath)
+      const { data: partnerFile, error: partnerReadError } = await userA.client.storage.from(bucket).download(partnerBPath)
+      assert.ifError(partnerReadError)
+      assert.equal(await partnerFile.text(), 'uploaded-by-pawel')
     })
 
     await t.test('signed URLs work and can be refreshed on return to the app', async () => {
@@ -142,6 +154,11 @@ test('private Storage: partner access, signed URLs, RLS denials and lifecycle op
         `jobs/${jobA}/photos/outsider.jpg`,
         new Blob(['not allowed'], { type: 'image/jpeg' }),
         { contentType: 'image/jpeg' },
+      ))
+      await expectDenied('Foreign organization replacement', () => outsider.client.storage.from(bucket).upload(
+        photoPath,
+        new Blob(['unauthorized-replacement'], { type: 'image/jpeg' }),
+        { contentType: 'image/jpeg', upsert: true },
       ))
       const foreignDelete = await outsider.client.storage.from(bucket).remove([photoPath])
       // RLS may reject with an error or hide the row and return an empty result.

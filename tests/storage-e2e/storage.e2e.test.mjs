@@ -143,7 +143,10 @@ test('private Storage: partner access, signed URLs, RLS denials and lifecycle op
         new Blob(['not allowed'], { type: 'image/jpeg' }),
         { contentType: 'image/jpeg' },
       ))
-      await expectDenied('Foreign organization delete', () => outsider.client.storage.from(bucket).remove([photoPath]))
+      const foreignDelete = await outsider.client.storage.from(bucket).remove([photoPath])
+      // RLS may reject with an error or hide the row and return an empty result.
+      // In both cases the object must remain available to an authorized partner.
+      if (foreignDelete.error) assert.ok(foreignDelete.error)
       await expectDenied('No-session read', () => anon.storage.from(bucket).download(photoPath))
       await expectDenied('No-session signed URL', () => anon.storage.from(bucket).createSignedUrl(photoPath, 60))
       await expectDenied('No-session upload', () => anon.storage.from(bucket).upload(

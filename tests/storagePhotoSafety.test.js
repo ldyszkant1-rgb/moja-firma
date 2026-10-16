@@ -89,3 +89,9 @@ test('signed URL-e są odświeżane po powrocie PWA na pierwszy plan', () => {
   assert.match(app, /window\.removeEventListener\('focus', refreshSignedStorageUrls\)/)
   assert.match(app, /document\.removeEventListener\('visibilitychange', onVisibilityChange\)/)
 })
+
+test('realizacje w koszu również dostają świeże signed URL-e', () => {
+  const deletedJobs = section(jobsApi, 'export async function getDeletedJobs()', '/* =========================================================\n   TWORZENIE ROBÓT')
+  assert.match(deletedJobs, /Promise\.all\(/)
+  assert.match(deletedJobs, /resolveJobStorageUrls\(mapSupabaseJobToAppJob\(row\)\)/)
+})

@@ -231,9 +231,17 @@ test('private Storage: partner access, signed URLs, RLS denials and lifecycle op
       await admin.storage.from(bucket).remove(uploadedPaths).catch(() => {})
     }
     if (userA && userB && outsider) {
-      await admin.from('organization_members').delete().in('user_id', [userA.id, userB.id, outsider.id]).catch(() => {})
+      try {
+        await admin.from('organization_members').delete().in('user_id', [userA.id, userB.id, outsider.id])
+      } catch {
+        // Cleanup is best-effort; this test uses only synthetic local rows.
+      }
     }
-    await admin.from('jobs').delete().in('id', [jobA, jobB]).catch(() => {})
+    try {
+      await admin.from('jobs').delete().in('id', [jobA, jobB])
+    } catch {
+      // Cleanup is best-effort; this test uses only synthetic local rows.
+    }
     for (const id of createdUsers) {
       await admin.auth.admin.deleteUser(id).catch(() => {})
     }

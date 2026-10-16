@@ -79,3 +79,13 @@ test('RPC galerii waliduje typ payloadu, identyfikator i ścieżkę przypisaną 
   assert.match(migration, /revoke all privileges on function public\.append_job_photo/)
   assert.match(migration, /grant execute on function public\.append_job_photo\(uuid, jsonb\) to authenticated/)
 })
+
+test('signed URL-e są odświeżane po powrocie PWA na pierwszy plan', () => {
+  assert.match(jobsApi, /const SIGNED_STORAGE_URL_TTL_SECONDS = 60 \* 60 \* 24/)
+  assert.match(jobsApi, /createSignedUrl\(item\.path, SIGNED_STORAGE_URL_TTL_SECONDS\)/)
+  assert.match(app, /window\.addEventListener\('focus', refreshSignedStorageUrls\)/)
+  assert.match(app, /document\.addEventListener\('visibilitychange', onVisibilityChange\)/)
+  assert.match(app, /document\.visibilityState === 'visible'/)
+  assert.match(app, /window\.removeEventListener\('focus', refreshSignedStorageUrls\)/)
+  assert.match(app, /document\.removeEventListener\('visibilitychange', onVisibilityChange\)/)
+})

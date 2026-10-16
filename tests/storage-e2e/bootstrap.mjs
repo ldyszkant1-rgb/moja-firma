@@ -13,7 +13,7 @@ const admin = createClient(url, serviceRoleKey, {
 
 const { data, error } = await admin.storage.createBucket('aeroinstal-files', {
   public: true,
-  fileSizeLimit: '50MiB',
+  fileSizeLimit: '50MB',
 })
 
 if (error) throw error

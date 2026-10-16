@@ -81,7 +81,7 @@ test('RPC galerii waliduje typ payloadu, identyfikator i ścieżkę przypisaną 
 })
 
 test('signed URL-e są odświeżane po powrocie PWA na pierwszy plan', () => {
-  assert.match(jobsApi, /const SIGNED_STORAGE_URL_TTL_SECONDS = 60 \* 60 \* 24/)
+  assert.match(jobsApi, /const SIGNED_STORAGE_URL_TTL_SECONDS = 60 \\* 10/)
   assert.match(jobsApi, /createSignedUrl\(item\.path, SIGNED_STORAGE_URL_TTL_SECONDS\)/)
   assert.match(app, /window\.addEventListener\('focus', refreshSignedStorageUrls\)/)
   assert.match(app, /document\.addEventListener\('visibilitychange', onVisibilityChange\)/)

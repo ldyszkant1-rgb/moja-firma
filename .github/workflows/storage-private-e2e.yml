@@ -1,0 +1,79 @@
+name: Storage private-bucket end-to-end
+
+on:
+  pull_request:
+    paths:
+      - 'src/App.jsx'
+      - 'src/lib/jobsApi.js'
+      - 'supabase/migrations/*storage*'
+      - 'supabase/migrations/*job_photo*'
+      - 'tests/storage-e2e/**'
+      - 'tests/storagePhotoSafety.test.js'
+      - '.github/workflows/storage-private-e2e.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/App.jsx'
+      - 'src/lib/jobsApi.js'
+      - 'supabase/migrations/*storage*'
+      - 'supabase/migrations/*job_photo*'
+      - 'tests/storage-e2e/**'
+      - 'tests/storagePhotoSafety.test.js'
+      - '.github/workflows/storage-private-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-storage-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Start isolated local Supabase stack
+        run: npx supabase --workdir tests/storage-e2e start
+
+      - name: Apply fixtures and real Storage migrations, then test
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+          npx supabase --workdir tests/storage-e2e status -o env > "$RUNNER_TEMP/supabase.env"
+          set -a
+          source "$RUNNER_TEMP/supabase.env"
+          set +a
+
+          # Guardrail: this workflow must never target a hosted/production project.
+          [[ "$API_URL" == "http://127.0.0.1:54321" || "$API_URL" == "http://localhost:54321" ]]
+          [[ "$DB_URL" == *"127.0.0.1:54322"* || "$DB_URL" == *"localhost:54322"* ]]
+
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/storage-e2e/setup.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261014162000_fix_storage_policy_outer_name.sql
+
+          # Start with a public synthetic bucket, then exercise the exact migration
+          # proposed for production against this disposable local stack only.
+          node tests/storage-e2e/bootstrap.mjs
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261014151000_make_aeroinstal_storage_private.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261015140000_validate_job_photo_rpc_payloads.sql
+
+          node --test tests/storage-e2e/storage.e2e.test.mjs
+          npm run test:storage
+
+      - name: Stop isolated local Supabase stack
+        if: always()
+        run: npx supabase --workdir tests/storage-e2e stop --no-backup

@@ -185,7 +185,7 @@ function mapSupabaseJobToAppJob(job) {
    APLIKACJA → SUPABASE
 ========================================================= */
 
-const SIGNED_STORAGE_URL_TTL_SECONDS = 60 * 60 * 24
+const SIGNED_STORAGE_URL_TTL_SECONDS = 60 * 10
 
 async function signStorageItem(item) {
   if (!item || !item.path) {
@@ -413,10 +413,10 @@ export async function getDeletedJobs() {
     throw error
   }
 
-  return (
-    data || []
-  ).map(
-    mapSupabaseJobToAppJob
+  return Promise.all(
+    (data || []).map((row) =>
+      resolveJobStorageUrls(mapSupabaseJobToAppJob(row))
+    )
   )
 }
 

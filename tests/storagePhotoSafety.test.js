@@ -78,6 +78,7 @@ test('RPC galerii waliduje typ payloadu, identyfikator i ścieżkę przypisaną 
   assert.match(migration, /duplicate photo ID/)
   assert.match(migration, /revoke all privileges on function public\.append_job_photo/)
   assert.match(migration, /grant execute on function public\.append_job_photo\(uuid, jsonb\) to authenticated/)
+  assert.match(migration, /set search_path = ''/)
 })
 
 test('signed URL-e są odświeżane po powrocie PWA na pierwszy plan', () => {

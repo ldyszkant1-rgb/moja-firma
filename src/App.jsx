@@ -6940,7 +6940,7 @@ function JobDetails({
             <div className="job-detail-label">CZAS REALIZACJI</div>
             <h2>Czas pracy</h2>
           </div>
-          <strong className="job-detail-time-total">{formatDuration(totalTrackedMinutes)}</strong>
+          <strong className="job-detail-time-total">{formatDuration(effectiveLaborMinutes)}</strong>
         </div>
 
         <div className="job-detail-calendar-time-summary">

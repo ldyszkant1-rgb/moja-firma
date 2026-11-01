@@ -5255,8 +5255,8 @@ function JobDetails({
     if (!editingManualTime?.id || manualTimeUpdating) return
     const hours = String(editingManualTime.hours ?? '').trim()
     const minutes = String(editingManualTime.minutes ?? '').trim()
-    if ((hours && (!/^\\d+$/.test(hours) || Number(hours) > 24)) ||
-        (minutes && (!/^\\d+$/.test(minutes) || Number(minutes) > 59))) {
+    if ((hours && (!/^\d+$/.test(hours) || Number(hours) > 24)) ||
+        (minutes && (!/^\d+$/.test(minutes) || Number(minutes) > 59))) {
       return showCustomAlert('Godziny muszą być liczbą całkowitą (0–24), a minuty (0–59).')
     }
     const totalMinutes = Number(hours || 0) * 60 + Number(minutes || 0)

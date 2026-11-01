@@ -6636,6 +6636,29 @@ function JobDetails({
               </label>
 
               <div className="job-detail-edit-section">
+                <div className="job-detail-edit-section-title">ILOŚĆ MATERIAŁU</div>
+                <label>
+                  <span>Ilość MB rur i kanałów</span>
+                  <input
+                    className="job-detail-edit-input"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={editedJob.quantities?.mb ?? 0}
+                    onChange={(e) => setEditedJob({
+                      ...editedJob,
+                      quantities: {
+                        ...(editedJob.quantities || {}),
+                        mb: e.target.value,
+                      },
+                    })}
+                  />
+                </label>
+                <small>Zmieniasz ilość metrów bieżących. Stawka za MB pozostaje bez zmian.</small>
+              </div>
+
+              <div className="job-detail-edit-section">
                 <div className="job-detail-edit-section-title">PLANOWANIE REALIZACJI</div>
                 <div className="job-detail-edit-grid">
                   <label>

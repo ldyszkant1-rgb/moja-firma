@@ -38,6 +38,7 @@ import {
   getJobTimeEntries,
   getJobCalendarPlans,
   startJobTimer,
+  createManualJobTimeEntry,
   stopJobTimer,
   deleteJobTimeEntry,
 } from './lib/jobTimeApi'
@@ -5012,6 +5013,12 @@ function JobDetails({
   const [jobTimeEntries, setJobTimeEntries] = useState([])
   const [jobCalendarPlans, setJobCalendarPlans] = useState([])
   const [selectedTimeEmployeeId, setSelectedTimeEmployeeId] = useState('team')
+  const [manualTimeInputs, setManualTimeInputs] = useState({
+    transport: { hours: '', minutes: '' },
+    warehouse: { hours: '', minutes: '' },
+    assembly: { hours: '', minutes: '' },
+  })
+  const [manualTimeSaving, setManualTimeSaving] = useState(false)
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
   const [profitShareSaving, setProfitShareSaving] = useState(false)
@@ -5203,6 +5210,32 @@ function JobDetails({
     } catch (error) {
       console.error('Nie udało się uruchomić pomiaru czasu:', error)
       showCustomAlert('Nie udało się uruchomić pomiaru czasu. Spróbuj ponownie.')
+    }
+  }
+
+  const saveManualTime = async (timeType) => {
+    if (manualTimeSaving) return
+    const input = manualTimeInputs[timeType] || {}
+    const hours = String(input.hours ?? '').trim()
+    const minutes = String(input.minutes ?? '').trim()
+    if (!hours && !minutes) return showCustomAlert('Wpisz liczbę godzin lub minut.')
+    if ((hours && (!/^\d+$/.test(hours) || Number(hours) > 24)) ||
+        (minutes && (!/^\d+$/.test(minutes) || Number(minutes) > 59))) {
+      return showCustomAlert('Godziny muszą być liczbą całkowitą (0–24), a minuty (0–59).')
+    }
+    const totalMinutes = Number(hours || 0) * 60 + Number(minutes || 0)
+    if (totalMinutes <= 0 || totalMinutes > 1440) return showCustomAlert('Wpisz czas od 1 minuty do 24 godzin.')
+    setManualTimeSaving(true)
+    try {
+      const saved = await createManualJobTimeEntry({ jobId: editedJob.id, timeType, durationMinutes: totalMinutes })
+      setJobTimeEntries((current) => [saved, ...current])
+      setManualTimeInputs((current) => ({ ...current, [timeType]: { hours: '', minutes: '' } }))
+      showCustomAlert('Ręczny czas został zapisany.')
+    } catch (error) {
+      console.error('Nie udało się zapisać ręcznego czasu:', error)
+      showCustomAlert('Nie udało się zapisać ręcznego czasu. ' + (error?.message || 'Spróbuj ponownie.'))
+    } finally {
+      setManualTimeSaving(false)
     }
   }
 
@@ -6964,6 +6997,23 @@ function JobDetails({
               <Icon size={18} strokeWidth={1.75} />
               <span>{label}</span>
               <strong>{formatDuration(timeByType[type])}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="job-detail-manual-time">
+          <h3>Dodaj czas ręcznie</h3>
+          <p>Uzupełnij czas, jeśli nie został wcześniej dodany w terminarzu ani zmierzony.</p>
+          {[
+            ['transport', 'Transport'],
+            ['warehouse', 'Magazyn'],
+            ['assembly', 'Montaż'],
+          ].map(([type, label]) => (
+            <div className="job-detail-manual-time-row" key={type}>
+              <strong>{label}</strong>
+              <label><span>Godz.</span><input type="number" min="0" max="24" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].hours} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], hours: event.target.value } }))} /></label>
+              <label><span>Min.</span><input type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].minutes} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], minutes: event.target.value } }))} /></label>
+              <button type="button" disabled={manualTimeSaving} onClick={() => saveManualTime(type)}>Dodaj</button>
             </div>
           ))}
         </div>

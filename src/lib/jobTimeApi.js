@@ -74,6 +74,30 @@ export async function startJobTimer({ jobId, employeeId, employeeName, timeType 
   return mapTime(data)
 }
 
+export async function createManualJobTimeEntry({ jobId, timeType, durationMinutes }) {
+  if (!jobId) throw new Error('Brak ID realizacji.')
+  if (!['transport', 'warehouse', 'assembly'].includes(timeType)) throw new Error('Nieprawidłowy rodzaj czasu.')
+  const minutes = Math.round(Number(durationMinutes))
+  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 1440) throw new Error('Czas musi wynosić od 1 do 1440 minut.')
+  const organizationId = await getOrganizationId()
+  const { data: userData } = await supabase.auth.getUser()
+  const endedAt = new Date()
+  const startedAt = new Date(endedAt.getTime() - minutes * 60000)
+  const { data, error } = await supabase.from('job_time_entries').insert({
+    organization_id: organizationId,
+    job_id: jobId,
+    employee_id: null,
+    employee_name: 'Ekipa (wpis ręczny)',
+    time_type: timeType,
+    started_at: startedAt.toISOString(),
+    ended_at: endedAt.toISOString(),
+    duration_minutes: minutes,
+    created_by: userData?.user?.id || null,
+  }).select().single()
+  if (error) throw error
+  return mapTime(data)
+}
+
 export async function stopJobTimer(entry) {
   if (!entry?.id) throw new Error('Brak ID aktywnego pomiaru czasu.')
 

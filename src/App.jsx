@@ -39,6 +39,7 @@ import {
   getJobCalendarPlans,
   startJobTimer,
   createManualJobTimeEntry,
+  updateManualJobTimeEntry,
   stopJobTimer,
   deleteJobTimeEntry,
 } from './lib/jobTimeApi'
@@ -5019,6 +5020,8 @@ function JobDetails({
     assembly: { hours: '', minutes: '' },
   })
   const [manualTimeSaving, setManualTimeSaving] = useState(false)
+  const [editingManualTime, setEditingManualTime] = useState(null)
+  const [manualTimeUpdating, setManualTimeUpdating] = useState(false)
   const [timeTick, setTimeTick] = useState(Date.now())
   const [jobProfitShares, setJobProfitShares] = useState([])
   const [profitShareSaving, setProfitShareSaving] = useState(false)
@@ -5236,6 +5239,39 @@ function JobDetails({
       showCustomAlert('Nie udało się zapisać ręcznego czasu. ' + (error?.message || 'Spróbuj ponownie.'))
     } finally {
       setManualTimeSaving(false)
+    }
+  }
+
+  const beginEditManualTime = (entry) => {
+    const totalMinutes = Math.round(Number(entry.durationMinutes || 0))
+    setEditingManualTime({
+      id: entry.id,
+      hours: String(Math.floor(totalMinutes / 60)),
+      minutes: String(totalMinutes % 60),
+    })
+  }
+
+  const saveEditedManualTime = async () => {
+    if (!editingManualTime?.id || manualTimeUpdating) return
+    const hours = String(editingManualTime.hours ?? '').trim()
+    const minutes = String(editingManualTime.minutes ?? '').trim()
+    if ((hours && (!/^\d+$/.test(hours) || Number(hours) > 24)) ||
+        (minutes && (!/^\d+$/.test(minutes) || Number(minutes) > 59))) {
+      return showCustomAlert('Godziny muszą być liczbą całkowitą (0–24), a minuty (0–59).')
+    }
+    const totalMinutes = Number(hours || 0) * 60 + Number(minutes || 0)
+    if (totalMinutes <= 0 || totalMinutes > 1440) return showCustomAlert('Wpisz czas od 1 minuty do 24 godzin.')
+    setManualTimeUpdating(true)
+    try {
+      const saved = await updateManualJobTimeEntry({ id: editingManualTime.id, durationMinutes: totalMinutes })
+      setJobTimeEntries((current) => current.map((entry) => String(entry.id) === String(saved.id) ? saved : entry))
+      setEditingManualTime(null)
+      await showCustomAlert('Czas został zaktualizowany.')
+    } catch (error) {
+      console.error('Nie udało się zmienić ręcznego czasu:', error)
+      showCustomAlert('Nie udało się zmienić czasu. ' + (error?.message || 'Spróbuj ponownie.'))
+    } finally {
+      setManualTimeUpdating(false)
     }
   }
 
@@ -7037,6 +7073,42 @@ function JobDetails({
             ))}
           </div>
         </section>
+
+        {jobTimeEntries.some((entry) => entry.employeeName === 'Ekipa (wpis ręczny)') && (
+          <div className="job-detail-manual-history">
+            <h4>Ręcznie dodane wpisy</h4>
+            {jobTimeEntries
+              .filter((entry) => entry.employeeName === 'Ekipa (wpis ręczny)')
+              .sort((a, b) => new Date(b.createdAt || b.startedAt) - new Date(a.createdAt || a.startedAt))
+              .map((entry) => {
+                const label = entry.timeType === 'transport' ? 'Transport' : entry.timeType === 'warehouse' ? 'Magazyn' : 'Montaż'
+                const isEditing = String(editingManualTime?.id) === String(entry.id)
+                return (
+                  <div className="job-detail-manual-history-item" key={entry.id}>
+                    <div className="job-detail-manual-history-top">
+                      <div>
+                        <strong>{label}</strong>
+                        <span>{formatDuration(entry.durationMinutes)}</span>
+                      </div>
+                      <div className="job-detail-manual-history-actions">
+                        <button type="button" onClick={() => isEditing ? setEditingManualTime(null) : beginEditManualTime(entry)}>
+                          {isEditing ? 'Anuluj' : 'Edytuj'}
+                        </button>
+                        <button type="button" className="is-delete" onClick={() => removeTimeEntry(entry)}>Usuń</button>
+                      </div>
+                    </div>
+                    {isEditing && (
+                      <div className="job-detail-manual-edit">
+                        <label><span>Godziny</span><input type="number" min="0" max="24" step="1" inputMode="numeric" value={editingManualTime.hours} onChange={(event) => setEditingManualTime((current) => ({ ...current, hours: event.target.value }))} /></label>
+                        <label><span>Minuty</span><input type="number" min="0" max="59" step="1" inputMode="numeric" value={editingManualTime.minutes} onChange={(event) => setEditingManualTime((current) => ({ ...current, minutes: event.target.value }))} /></label>
+                        <button type="button" disabled={manualTimeUpdating} onClick={saveEditedManualTime}>{manualTimeUpdating ? 'Zapisywanie…' : 'Zapisz zmianę'}</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+          </div>
+        )}
 
         <div className="job-detail-time-list">
           {[

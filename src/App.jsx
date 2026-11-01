@@ -37,7 +37,8 @@ import {
 import {
   getJobTimeEntries,
   getJobCalendarPlans,
-  startJobTimer,\n  createManualJobTimeEntry,
+  startJobTimer,
+  createManualJobTimeEntry,
   stopJobTimer,
   deleteJobTimeEntry,
 } from './lib/jobTimeApi'
@@ -5218,8 +5219,8 @@ function JobDetails({
     const hours = String(input.hours ?? '').trim()
     const minutes = String(input.minutes ?? '').trim()
     if (!hours && !minutes) return showCustomAlert('Wpisz liczbę godzin lub minut.')
-    if ((hours && (!/^\\d+$/.test(hours) || Number(hours) > 24)) ||
-        (minutes && (!/^\\d+$/.test(minutes) || Number(minutes) > 59))) {
+    if ((hours && (!/^\d+$/.test(hours) || Number(hours) > 24)) ||
+        (minutes && (!/^\d+$/.test(minutes) || Number(minutes) > 59))) {
       return showCustomAlert('Godziny muszą być liczbą całkowitą (0–24), a minuty (0–59).')
     }
     const totalMinutes = Number(hours || 0) * 60 + Number(minutes || 0)

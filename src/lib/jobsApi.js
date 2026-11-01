@@ -126,8 +126,9 @@ function mapSupabaseJobToAppJob(job) {
     },
 
     rates: {
-      mb: parseDecimal(job.rate_mb),
-      m2: parseDecimal(job.rate_m2),
+      // Historyczne realizacje bez zapisanej stawki korzystają z domyślnych stawek Aeroinstal.
+      mb: parseDecimal(job.rate_mb) || 100,
+      m2: parseDecimal(job.rate_m2) || 220,
       kg: parseDecimal(job.rate_kg),
     },
 

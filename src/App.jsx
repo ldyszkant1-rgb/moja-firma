@@ -7001,22 +7001,42 @@ function JobDetails({
           ))}
         </div>
 
-        <div className="job-detail-manual-time">
-          <h3>Dodaj czas ręcznie</h3>
-          <p>Uzupełnij czas, jeśli nie został wcześniej dodany w terminarzu ani zmierzony.</p>
-          {[
-            ['transport', 'Transport'],
-            ['warehouse', 'Magazyn'],
-            ['assembly', 'Montaż'],
-          ].map(([type, label]) => (
-            <div className="job-detail-manual-time-row" key={type}>
-              <strong>{label}</strong>
-              <label><span>Godz.</span><input type="number" min="0" max="24" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].hours} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], hours: event.target.value } }))} /></label>
-              <label><span>Min.</span><input type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].minutes} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], minutes: event.target.value } }))} /></label>
-              <button type="button" disabled={manualTimeSaving} onClick={() => saveManualTime(type)}>Dodaj</button>
+        <section className="job-detail-manual-time">
+          <div className="job-detail-manual-time-heading">
+            <div>
+              <h3>Dodaj czas ręcznie</h3>
+              <p>Uzupełnij czas, którego nie ma w terminarzu ani w pomiarach.</p>
             </div>
-          ))}
-        </div>
+            <span className="job-detail-manual-time-tag">Wpis ręczny</span>
+          </div>
+          <div className="job-detail-manual-time-list">
+            {[
+              ['transport', 'Transport', Truck],
+              ['warehouse', 'Magazyn', Package],
+              ['assembly', 'Montaż', Wrench],
+            ].map(([type, label, Icon]) => (
+              <div className="job-detail-manual-time-card" key={type}>
+                <div className="job-detail-manual-time-card-title">
+                  <Icon size={19} strokeWidth={1.8} />
+                  <strong>{label}</strong>
+                </div>
+                <div className="job-detail-manual-time-fields">
+                  <label>
+                    <span>Godziny</span>
+                    <input type="number" min="0" max="24" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].hours} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], hours: event.target.value } }))} />
+                  </label>
+                  <label>
+                    <span>Minuty</span>
+                    <input type="number" min="0" max="59" step="1" inputMode="numeric" placeholder="0" value={manualTimeInputs[type].minutes} onChange={(event) => setManualTimeInputs((current) => ({ ...current, [type]: { ...current[type], minutes: event.target.value } }))} />
+                  </label>
+                </div>
+                <button type="button" disabled={manualTimeSaving} onClick={() => saveManualTime(type)}>
+                  {manualTimeSaving ? 'Zapisywanie…' : 'Dodaj czas'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="job-detail-time-list">
           {[

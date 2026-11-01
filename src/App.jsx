@@ -6659,10 +6659,8 @@ function JobDetails({
                   <span>Kanały (m²)</span>
                   <input
                     className="job-detail-edit-input"
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    min="0"
-                    step="0.01"
                     value={editedJob.quantities?.m2 ?? 0}
                     onChange={(e) => setEditedJob({
                       ...editedJob,

@@ -6950,7 +6950,7 @@ function JobDetails({
             ['mb', 'MB', Number(editedJob.quantities?.mb || 0)],
             ['m2', 'm²', Number(editedJob.quantities?.m2 || 0)],
             ['kg', 'kg', Number(editedJob.quantities?.kg || 0)],
-          ].filter(([, , value]) => value > 0).map(([field, label, value]) => (
+          ].filter(([, , value]) => editing || value > 0).map(([field, label, value]) => (
             <div className="job-detail-quantity" key={field}>
               <span>{label}</span>
               {editing ? (

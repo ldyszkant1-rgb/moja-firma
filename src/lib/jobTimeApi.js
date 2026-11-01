@@ -98,6 +98,31 @@ export async function createManualJobTimeEntry({ jobId, timeType, durationMinute
   return mapTime(data)
 }
 
+export async function updateManualJobTimeEntry({ id, durationMinutes }) {
+  if (!id) throw new Error('Brak ID wpisu czasu.')
+  const minutes = Math.round(Number(durationMinutes))
+  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > 1440) {
+    throw new Error('Czas musi wynosić od 1 do 1440 minut.')
+  }
+
+  const endedAt = new Date()
+  const startedAt = new Date(endedAt.getTime() - minutes * 60000)
+  const { data, error } = await supabase
+    .from('job_time_entries')
+    .update({
+      started_at: startedAt.toISOString(),
+      ended_at: endedAt.toISOString(),
+      duration_minutes: minutes,
+      updated_at: endedAt.toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapTime(data)
+}
+
 export async function stopJobTimer(entry) {
   if (!entry?.id) throw new Error('Brak ID aktywnego pomiaru czasu.')
 

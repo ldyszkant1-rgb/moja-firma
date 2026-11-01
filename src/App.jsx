@@ -5494,17 +5494,16 @@ function JobDetails({
     }
 
 
-    onUpdate(
-      updatedJob
-    )
+    // Nie zamykaj formularza, dopóki Supabase nie potwierdzi zapisu.
+    const saved = await onUpdate(updatedJob)
 
-    setEditedJob(
-      updatedJob
-    )
+    if (saved === false) {
+      return
+    }
 
-    setEditing(
-      false
-    )
+    setEditedJob(updatedJob)
+
+    setEditing(false)
 
   }
 

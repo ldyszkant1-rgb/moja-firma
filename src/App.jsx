@@ -1964,34 +1964,37 @@ function App() {
       skipSupabase = false,
     } = options
 
-    setJobs(
-      (currentJobs) =>
-        currentJobs.map(
-          (job) =>
-            String(job.id) ===
-            String(updatedJob.id)
-              ? updatedJob
-              : job
-        )
-    )
-
-    setSelectedJob(
-      updatedJob
-    )
-
     if (skipSupabase) {
-      return
+      setJobs((currentJobs) =>
+        currentJobs.map((job) =>
+          String(job.id) === String(updatedJob.id) ? updatedJob : job
+        )
+      )
+      setSelectedJob(updatedJob)
+      return true
     }
 
     try {
+      // Rekord zwrócony przez Supabase jest źródłem prawdy po zapisie.
+      // Dzięki temu stan aplikacji nie zostaje ze starszymi ilościami,
+      // gdy zdarzenie Realtime lub odświeżenie dotrze równolegle.
+      const savedJob = await updateSupabaseJob(updatedJob)
 
-      await updateSupabaseJob(
-        updatedJob
+      setJobs((currentJobs) =>
+        currentJobs.map((job) =>
+          String(job.id) === String(savedJob.id) ? savedJob : job
+        )
+      )
+      setSelectedJob((currentSelectedJob) =>
+        currentSelectedJob &&
+        String(currentSelectedJob.id) === String(savedJob.id)
+          ? savedJob
+          : currentSelectedJob
       )
 
       console.log(
         'Realizacja została zaktualizowana w Supabase:',
-        updatedJob.name
+        savedJob.name
       )
 
       return true

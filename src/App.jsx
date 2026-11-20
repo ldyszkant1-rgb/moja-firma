@@ -10381,17 +10381,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <span>Nierozliczone koszty</span>
               <strong>{formatMoney(unallocatedCostsNet)}</strong>
             </div>
-            <div>
-              <span>Saldo wspólników</span>
-              <strong>{Math.abs(partnerCostBalance) > 0.01 ? formatMoney(Math.abs(partnerCostBalance)) : '0 zł'}</strong>
-            </div>
           </div>
-
-          {Math.abs(partnerCostBalance) > 0.01 && (
-            <div className="finance-settlement-balance-note">
-              {balanceDirection} <strong>{formatMoney(balanceAmount)}</strong>
-            </div>
-          )}
 
           <div className="aero-report-shell">
             <div className="aero-report-actions">

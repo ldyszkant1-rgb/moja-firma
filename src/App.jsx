@@ -8361,6 +8361,13 @@ function FinancePage({
   const yearProfitRounded = Math.round((yearProfit + Number.EPSILON) * 100) / 100
   const yearPartnerOneShare = Math.round((yearProfitRounded / 2 + Number.EPSILON) * 100) / 100
   const yearPartnerTwoShare = Math.round((yearProfitRounded - yearPartnerOneShare + Number.EPSILON) * 100) / 100
+  // Dla bieżącego roku średnia obejmuje miesiące od stycznia do teraz;
+  // dla zamkniętych lat zawsze pełne 12 miesięcy.
+  const yearMonthsForAverage = selectedYear === today.getFullYear()
+    ? Math.max(1, today.getMonth() + 1)
+    : 12
+  const yearPartnerOneMonthlyAverage = yearPartnerOneShare / yearMonthsForAverage
+  const yearPartnerTwoMonthlyAverage = yearPartnerTwoShare / yearMonthsForAverage
 
   const formatCount = (count, one, few, many = few) => {
     const value = Math.abs(Number(count) || 0)
@@ -11294,14 +11301,18 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
                 <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerOne}</span>
                 <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerOneShare)}</strong>
+                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnio miesięcznie</span>
+                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(yearPartnerOneMonthlyAverage)}</strong>
               </div>
               <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
                 <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerTwo}</span>
                 <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerTwoShare)}</strong>
+                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnio miesięcznie</span>
+                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(yearPartnerTwoMonthlyAverage)}</strong>
               </div>
             </div>
             <p style={{ margin: '10px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>
-              Kwoty oznaczają połowę rocznego zysku po kosztach, przed indywidualnymi rozliczeniami podatkowymi i ewentualnymi wypłatami. Wyrównanie kosztów zapłaconych przez wspólników jest rozliczane osobno.
+              Kwoty oznaczają połowę zysku po kosztach, przed indywidualnymi rozliczeniami podatkowymi i ewentualnymi wypłatami. Średnia miesięczna jest liczona przez podzielenie udziału rocznego przez ${yearMonthsForAverage} miesięcy uwzględnionych w zestawieniu; dla bieżącego roku obejmuje miesiące od stycznia do aktualnego miesiąca, a dla zakończonych lat pełne 12 miesięcy. Wyrównanie kosztów zapłaconych przez wspólników jest rozliczane osobno.
             </p>
           </div>
           <p style={{ margin: '14px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>

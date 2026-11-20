@@ -10476,7 +10476,7 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                   return (
                     <div key={item.historyId} className={'finance-history-item' + (isOpen ? ' is-open' : '')}>
                       <button type="button" className="finance-history-main" onClick={() => setHistoryOpenId(isOpen ? null : item.historyId)}>
-                        <span className="finance-history-date">{formatDate(isTransfer ? item.transferDate : item.distributionDate)}</span>
+                        <span className="finance-history-date">{formatDate(item.distributionDate)}</span>
                         <span className="finance-history-summary">
                           <>
                             <strong>{formatMoney(item.receivedNet)}</strong>

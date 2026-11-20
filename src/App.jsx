@@ -8666,7 +8666,10 @@ function FinancePage({
     .filter((item) => Number(item.receivedNet || 0) > 0.01 || Number(item.profit || 0) > 0.01)
     .sort((a, b) => String(b.distributionDate || '').localeCompare(String(a.distributionDate || '')))[0] || null
 
-  const activeReportDistribution = reportDistribution || latestSavedDistribution
+  // Gorny panel raportu dotyczy aktualnej puli do podzialu. Nie podstawiaj
+  // automatycznie ostatniego zapisanego rozliczenia, bo przy nowej wplacie
+  // przycisk PDF moglby wygenerowac raport ze starej faktury.
+  const activeReportDistribution = reportDistribution
 
   async function createPdfFileFromJpeg(jpegBlob, width, height) {
     const jpegBytes = new Uint8Array(await jpegBlob.arrayBuffer())

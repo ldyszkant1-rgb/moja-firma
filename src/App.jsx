@@ -11235,25 +11235,22 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
         <div className="finance-cost-header">
           <div>
             <h2 style={{ marginBottom: '4px' }}>Podsumowanie {selectedYear}</h2>
-            <span>Otrzymane płatności i koszty</span>
+            <span>Roczne zestawienie — kwoty z rozróżnieniem brutto i netto</span>
           </div>
         </div>
 
         <div
           className="finance-summary finance-year-summary-rows"
-          style={{
-            marginTop: '12px',
-            marginBottom: 0,
-          }}
+          style={{ marginTop: '12px', marginBottom: 0 }}
         >
           <div>
-            <span>Otrzymane</span>
+            <span>Przychód brutto</span>
             <strong>{formatMoney(yearRevenue)}</strong>
             <small>{formatCount(yearPayments.length, '1 płatność', `${yearPayments.length} płatności`)}</small>
           </div>
 
           <div>
-            <span>Koszty</span>
+            <span>Koszty netto</span>
             <strong>{formatMoney(yearCosts)}</strong>
             <small>{formatCount(yearCostsList.length, '1 wpis', `${yearCostsList.length} wpisy`, `${yearCostsList.length} wpisów`)}</small>
           </div>
@@ -11261,9 +11258,36 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           <div>
             <span>Zysk</span>
             <strong>{formatMoney(yearProfit)} <small className="finance-inline-unit">netto</small></strong>
-            <small>Po kosztach</small>
+            <small>Przychód netto minus koszty netto</small>
           </div>
         </div>
+
+        <details className="finance-year-breakdown" style={{ marginTop: '18px', borderTop: '1px solid #e6edf5', paddingTop: '14px' }}>
+          <summary style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer', fontWeight: 700, color: '#087fce', listStyle: 'none' }}>
+            <span>Zobacz szczegółowe wyliczenie</span>
+            <span aria-hidden="true">＋</span>
+          </summary>
+          <div style={{ display: 'grid', gap: '12px', marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline' }}>
+              <span>Otrzymane wpłaty brutto</span><strong>{formatMoney(yearRevenue)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline' }}>
+              <span>Przychód netto według faktur</span><strong>{formatMoney(yearRevenueNet)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline' }}>
+              <span>Różnica brutto–netto</span><strong>{formatMoney(Math.max(0, yearRevenue - yearRevenueNet))}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline' }}>
+              <span>Koszty netto</span><strong>{formatMoney(yearCosts)}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', borderTop: '1px solid #e6edf5', paddingTop: '12px', fontWeight: 800 }}>
+              <span>Zysk po kosztach netto</span><strong>{formatMoney(yearProfit)}</strong>
+            </div>
+          </div>
+          <p style={{ margin: '14px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>
+            Przychód brutto to faktycznie otrzymane wpłaty. Przychód netto jest ustalany z powiązanych faktur; dla starszych wpłat bez danych VAT aplikacja przyjmuje kwotę wpłaty jako netto. Koszty są sumowane z pola netto, jeśli jest dostępne, w przeciwnym razie z zapisanej kwoty. Różnica brutto–netto nie jest automatycznie wyliczeniem podatku VAT do zapłaty.
+          </p>
+        </details>
       </div>
 
     </div>

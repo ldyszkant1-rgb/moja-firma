@@ -10395,33 +10395,58 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
           )}
         </div>
 
-        {profitDistributions.length > 0 && (
+        {(profitDistributions.length > 0 || partnerTransfers.length > 0) && (
           <section className="finance-history-card detail-card">
             <div className="finance-history-header">
               <div>
                 <div className="finance-overview-label">ARCHIWUM</div>
-                <h2>Historia podziałów</h2>
-                <p>Każde rozliczenie jest zapisane osobno. Możesz wrócić do dowolnego dnia i ponownie wygenerować raport.</p>
+                <h2>Historia podziałów i rozliczeń</h2>
+                <p>Podziały wpłat 50/50 oraz osobne rozliczenia salda wspólników, zapisane według daty.</p>
               </div>
             </div>
             <div className="finance-history-list">
-              {[...profitDistributions]
-                .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
-                .sort((a, b) => String(b.createdAt || b.distributionDate || '').localeCompare(String(a.createdAt || a.distributionDate || '')))
-                .map((distribution) => {
-                  const isOpen = historyOpenId === distribution.id
-                  const reportData = getDistributionReportData(distribution)
+              {[
+                ...profitDistributions
+                  .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
+                  .map((item) => ({ ...item, historyType: 'distribution', historyId: 'distribution-' + item.id, historyDate: item.createdAt || item.distributionDate })),
+                ...partnerTransfers
+                  .map((item) => ({ ...item, historyType: 'transfer', historyId: 'transfer-' + item.id, historyDate: item.transferDate }))
+              ]
+                .sort((a, b) => String(b.historyDate || '').localeCompare(String(a.historyDate || '')))
+                .map((item) => {
+                  const isTransfer = item.historyType === 'transfer'
+                  const isOpen = historyOpenId === item.historyId
+                  const reportData = isTransfer ? null : getDistributionReportData(item)
                   return (
-                    <div key={distribution.id} className={'finance-history-item' + (isOpen ? ' is-open' : '')}>
-                      <button type="button" className="finance-history-main" onClick={() => setHistoryOpenId(isOpen ? null : distribution.id)}>
-                        <span className="finance-history-date">{formatDate(distribution.distributionDate)}</span>
+                    <div key={item.historyId} className={'finance-history-item' + (isOpen ? ' is-open' : '')}>
+                      <button type="button" className="finance-history-main" onClick={() => setHistoryOpenId(isOpen ? null : item.historyId)}>
+                        <span className="finance-history-date">{formatDate(isTransfer ? item.transferDate : item.distributionDate)}</span>
                         <span className="finance-history-summary">
-                          <strong>{formatMoney(distribution.receivedNet)}</strong>
-                          <small>{partnerOne} {formatMoney(distribution.lukaszShare)} · {partnerTwo} {formatMoney(distribution.pawelShare)}</small>
+                          {isTransfer ? (
+                            <>
+                              <strong>Rozliczenie salda · {formatMoney(item.amount)}</strong>
+                              <small>{item.fromPerson} → {item.toPerson}</small>
+                            </>
+                          ) : (
+                            <>
+                              <strong>{formatMoney(item.receivedNet)}</strong>
+                              <small>{partnerOne} {formatMoney(item.lukaszShare)} · {partnerTwo} {formatMoney(item.pawelShare)}</small>
+                            </>
+                          )}
                         </span>
                         <span className="finance-history-chevron">{isOpen ? '⌃' : '⌄'}</span>
                       </button>
-                      {isOpen && (
+                      {isOpen && (isTransfer ? (
+                        <div className="finance-history-detail">
+                          <div className="finance-history-stats">
+                            <div><span>Rodzaj</span><strong>Rozliczenie salda kosztów</strong></div>
+                            <div><span>Kwota</span><strong>{formatMoney(item.amount)}</strong></div>
+                            <div><span>Od</span><strong>{item.fromPerson}</strong></div>
+                            <div><span>Do</span><strong>{item.toPerson}</strong></div>
+                          </div>
+                          {item.note && <div className="finance-history-final"><span>Opis</span><strong>{item.note}</strong></div>}
+                        </div>
+                      ) : (
                         <div className="finance-history-detail">
                           <div className="finance-history-stats">
                             <div><span>Wpłata</span><strong>{formatMoney(reportData.received)}</strong></div>
@@ -10430,20 +10455,20 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                             <div><span>{partnerTwo} pokrył</span><strong>{formatMoney(reportData.reportCosts.filter((cost) => cost.paidBy === partnerTwo).reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0))}</strong></div>
                           </div>
                           <div className="aero-report-history-actions">
-                            <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Udostępnij</button>
-                            <button type="button" className="aero-report-action" onClick={() => sendDistributionPdfToMessenger(distribution)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Przygotuj PDF do Messengera</button>
-                            <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(distribution)} disabled={reportBusy}><Copy size={15} strokeWidth={1.8} aria-hidden="true" /> Kopiuj podsumowanie</button>
-                            <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(distribution)}><Download size={15} strokeWidth={1.8} aria-hidden="true" /> Pobierz PDF</button>
-                            {distribution.status !== 'reversed' && (
-                              <button type="button" className="finance-history-reverse" onClick={() => handleReverseDistribution(distribution)} disabled={settlementSaving}>↩️ Cofnij</button>
+                            <button type="button" className="aero-report-action" onClick={() => shareDistributionGraphic(item)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Udostępnij</button>
+                            <button type="button" className="aero-report-action" onClick={() => sendDistributionPdfToMessenger(item)} disabled={reportBusy}><Share2 size={15} strokeWidth={1.8} aria-hidden="true" /> Przygotuj PDF do Messengera</button>
+                            <button type="button" className="aero-report-action" onClick={() => copyDistributionSummary(item)} disabled={reportBusy}><Copy size={15} strokeWidth={1.8} aria-hidden="true" /> Kopiuj podsumowanie</button>
+                            <button type="button" className="aero-report-action" onClick={() => openDistributionPdf(item)}><Download size={15} strokeWidth={1.8} aria-hidden="true" /> Pobierz PDF</button>
+                            {item.status !== 'reversed' && (
+                              <button type="button" className="finance-history-reverse" onClick={() => handleReverseDistribution(item)} disabled={settlementSaving}>↩️ Cofnij</button>
                             )}
                           </div>
                           <div className="finance-history-final">
                             <span>Podział końcowy</span>
-                            <strong>{partnerOne} {formatMoney(distribution.lukaszShare)} · {partnerTwo} {formatMoney(distribution.pawelShare)}</strong>
+                            <strong>{partnerOne} {formatMoney(item.lukaszShare)} · {partnerTwo} {formatMoney(item.pawelShare)}</strong>
                           </div>
                         </div>
-                      )}
+                      ))}
                     </div>
                   )
                 })}

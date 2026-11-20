@@ -9006,30 +9006,79 @@ function FinancePage({
     }
 
     settlementSavingRef.current = true
+    let savedDistribution = null
     try {
       setSettlementSaving(true)
 
-      const saved = await createPartnerTransfer({
-        settlementId: null,
-        transferDate: getTodayString(),
-        fromPerson,
-        toPerson,
-        amount: safeAmount,
-        note: safeAmount >= Math.abs(partnerCostBalance) - 0.01
-          ? 'Pełne rozliczenie salda kosztów'
-          : 'Częściowe rozliczenie salda kosztów',
-      })
+      const isFullSettlement = safeAmount >= Math.abs(partnerCostBalance) - 0.01
 
-      setPartnerTransfers((current) => [...current, saved])
+      // Przy pełnym rozliczeniu salda archiwizujemy również całą bieżącą
+      // nierozliczoną wpłatę — dokładnie tym samym mechanizmem co przycisk
+      // „Podziel”. Częściowa spłata pozostaje wyłącznie transferem salda.
+      if (isFullSettlement && unallocatedPayments.length > 0 && splitTotal > 0.01) {
+        const currentProfit = Math.round(
+          (unallocatedReceivedNet - costsForCurrentDistributionNet + Number.EPSILON) * 100
+        ) / 100
+
+        savedDistribution = await createProfitDistribution({
+          distributionDate: getTodayString(),
+          receivedNet: unallocatedReceivedNet,
+          costsNet: costsForCurrentDistributionNet,
+          profit: currentProfit,
+          lukaszShare: partnerOneSplitAmount,
+          pawelShare: partnerTwoSplitAmount,
+          paymentIds: unallocatedPayments.map((payment) => payment.id),
+          costIds: costsForCurrentDistribution.map((cost) => cost.id),
+          note: 'Podział wpływów 50/50 z korektą kosztów opłaconych przez wspólników — zapisany przy rozliczeniu salda',
+        })
+
+        setProfitDistributions((current) =>
+          current.some((item) => item.id === savedDistribution.id)
+            ? current.map((item) => item.id === savedDistribution.id ? savedDistribution : item)
+            : [savedDistribution, ...current]
+        )
+        setReportDistribution(savedDistribution)
+      }
+
+      try {
+        const savedTransfer = await createPartnerTransfer({
+          settlementId: null,
+          transferDate: getTodayString(),
+          fromPerson,
+          toPerson,
+          amount: safeAmount,
+          note: isFullSettlement
+            ? 'Pełne rozliczenie salda kosztów'
+            : 'Częściowe rozliczenie salda kosztów',
+        })
+
+        setPartnerTransfers((current) => [...current, savedTransfer])
+      } catch (transferError) {
+        // Jeśli zapis przelewu się nie powiedzie, nie zostawiamy samego
+        // podziału bez potwierdzonego rozliczenia salda.
+        if (savedDistribution?.id) {
+          const reversed = await reverseProfitDistribution(
+            savedDistribution.id,
+            'Automatyczne wycofanie: nie udało się zapisać rozliczenia salda'
+          )
+          setProfitDistributions((current) =>
+            current.map((item) => item.id === reversed.id ? reversed : item)
+          )
+          setReportDistribution(null)
+        }
+        throw transferError
+      }
 
       await showCustomAlert(
-        safeAmount >= Math.abs(partnerCostBalance) - 0.01
-          ? `Saldo zostało rozliczone: ${formatMoney(safeAmount)}.`
+        isFullSettlement
+          ? savedDistribution
+            ? `Zapisano cały podział ${formatMoney(savedDistribution.receivedNet)} oraz rozliczenie salda ${formatMoney(safeAmount)}. Raport jest w historii.`
+            : `Saldo zostało rozliczone: ${formatMoney(safeAmount)}. Nie było nowych wpłat do archiwizacji.`
           : `Zapisano częściową spłatę: ${formatMoney(safeAmount)}.`
       )
     } catch (error) {
       console.error('Nie udało się zapisać rozliczenia salda:', error)
-      await showCustomAlert('Nie udało się zapisać rozliczenia salda.')
+      await showCustomAlert('Nie udało się zapisać pełnego rozliczenia. Sprawdź historię przed ponowną próbą.')
     } finally {
       settlementSavingRef.current = false
       setSettlementSaving(false)

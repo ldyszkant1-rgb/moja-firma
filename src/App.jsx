@@ -8357,6 +8357,10 @@ function FinancePage({
     legacyCompletedJobsThisYear.reduce((sum, job) => sum + calculateTotal(job), 0)
 
   const yearProfit = yearRevenueNet - yearCosts
+  // Roczny zysk dzielony po równo między dwóch wspólników.
+  const yearProfitRounded = Math.round((yearProfit + Number.EPSILON) * 100) / 100
+  const yearPartnerOneShare = Math.round((yearProfitRounded / 2 + Number.EPSILON) * 100) / 100
+  const yearPartnerTwoShare = Math.round((yearProfitRounded - yearPartnerOneShare + Number.EPSILON) * 100) / 100
 
   const formatCount = (count, one, few, many = few) => {
     const value = Math.abs(Number(count) || 0)
@@ -11283,6 +11287,22 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'baseline', borderTop: '1px solid #e6edf5', paddingTop: '12px', fontWeight: 800 }}>
               <span>Zysk po kosztach netto</span><strong>{formatMoney(yearProfit)}</strong>
             </div>
+          </div>
+          <div style={{ borderTop: '1px solid #e6edf5', paddingTop: '14px', marginTop: '4px' }}>
+            <strong style={{ display: 'block', marginBottom: '12px' }}>Zysk na osobę — podział 50/50</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
+              <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
+                <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerOne}</span>
+                <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerOneShare)}</strong>
+              </div>
+              <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
+                <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerTwo}</span>
+                <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerTwoShare)}</strong>
+              </div>
+            </div>
+            <p style={{ margin: '10px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>
+              Kwoty oznaczają połowę rocznego zysku po kosztach, przed indywidualnymi rozliczeniami podatkowymi i ewentualnymi wypłatami. Wyrównanie kosztów zapłaconych przez wspólników jest rozliczane osobno.
+            </p>
           </div>
           <p style={{ margin: '14px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>
             Przychód brutto to faktycznie otrzymane wpłaty. Przychód netto jest ustalany z powiązanych faktur; dla starszych wpłat bez danych VAT aplikacja przyjmuje kwotę wpłaty jako netto. Koszty są sumowane z pola netto, jeśli jest dostępne, w przeciwnym razie z zapisanej kwoty. Różnica brutto–netto nie jest automatycznie wyliczeniem podatku VAT do zapłaty.

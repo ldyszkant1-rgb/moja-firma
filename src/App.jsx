@@ -9029,7 +9029,7 @@ function FinancePage({
           pawelShare: partnerTwoSplitAmount,
           paymentIds: unallocatedPayments.map((payment) => payment.id),
           costIds: costsForCurrentDistribution.map((cost) => cost.id),
-          note: 'Podział wpływów 50/50 z korektą kosztów opłaconych przez wspólników — zapisany przy rozliczeniu salda',
+          note: 'Podział wpływów 50/50 z korektą kosztów opłaconych przez wspólników',
         })
 
         setProfitDistributions((current) =>

@@ -9622,17 +9622,43 @@ function FinancePage({
   const sendDistributionPdfToMessenger = async (distribution = null) => {
     try {
       setReportBusy(true)
+
+      // Przygotuj rzeczywisty plik PDF i przekaż go do natywnego arkusza
+      // udostępniania iOS/Android. Użytkownik wybiera Messenger i rozmowę;
+      // odbiorca dostaje załącznik PDF, a nie adres blob strony.
       const pdfBlob = createDistributionPdf(distribution)
+      const file = new File(
+        [pdfBlob],
+        'rozliczenie-wspolnikow.pdf',
+        { type: 'application/pdf' }
+      )
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: 'Rozliczenie Aeroinstal',
+          files: [file],
+        })
+        return
+      }
+
+      // Przeglądarki bez udostępniania plików: zapisz PDF lokalnie.
       const url = URL.createObjectURL(pdfBlob)
       const link = document.createElement('a')
       link.href = url
       link.download = 'rozliczenie-wspolnikow.pdf'
+      document.body.appendChild(link)
       link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 60000)
-      await showCustomAlert('PDF został pobrany. Otwórz Messengera, wejdź w rozmowę i dołącz plik rozliczenie-wspolnikow.pdf. Na iPhonie przeglądarka nie może automatycznie załączyć pliku do rozmowy.')
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000)
+      await showCustomAlert('PDF został pobrany. Ta przeglądarka nie obsługuje bezpośredniego udostępniania plików. Otwórz PDF z Plików i wybierz Messenger.')
     } catch (error) {
-      console.error('Nie udało się przygotować PDF do Messengera:', error)
-      await showCustomAlert('Nie udało się przygotować PDF. Spróbuj ponownie.')
+      if (error?.name === 'AbortError') return
+      console.error('Nie udało się udostępnić PDF do Messengera:', error)
+      await showCustomAlert('Nie udało się przygotować PDF do udostępnienia. Spróbuj ponownie.')
     } finally {
       setReportBusy(false)
     }

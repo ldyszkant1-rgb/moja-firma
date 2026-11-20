@@ -8361,13 +8361,19 @@ function FinancePage({
   const yearProfitRounded = Math.round((yearProfit + Number.EPSILON) * 100) / 100
   const yearPartnerOneShare = Math.round((yearProfitRounded / 2 + Number.EPSILON) * 100) / 100
   const yearPartnerTwoShare = Math.round((yearProfitRounded - yearPartnerOneShare + Number.EPSILON) * 100) / 100
-  // Dla bieżącego roku średnia obejmuje miesiące od stycznia do teraz;
-  // dla zamkniętych lat zawsze pełne 12 miesięcy.
-  const yearMonthsForAverage = selectedYear === today.getFullYear()
-    ? Math.max(1, today.getMonth() + 1)
-    : 12
-  const yearPartnerOneMonthlyAverage = yearPartnerOneShare / yearMonthsForAverage
-  const yearPartnerTwoMonthlyAverage = yearPartnerTwoShare / yearMonthsForAverage
+
+  // Średnia miesięczna od pierwszej wystawionej faktury — skumulowany wynik od początku.
+  const firstInvoiceDate = invoices.map((invoice) => invoice.issueDate).filter((date) => /^\d{4}-\d{2}-\d{2}/.test(String(date || ''))).sort((a, b) => String(a).localeCompare(String(b)))[0] || null
+  const firstInvoiceMonth = firstInvoiceDate ? new Date(String(firstInvoiceDate).slice(0, 7) + '-01T00:00:00') : null
+  const currentAverageMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const monthsSinceFirstInvoice = firstInvoiceMonth ? Math.max(1, (currentAverageMonth.getFullYear() - firstInvoiceMonth.getFullYear()) * 12 + currentAverageMonth.getMonth() - firstInvoiceMonth.getMonth() + 1) : 1
+  const jobsWithAnyPaymentHistory = new Set(allJobPayments.map((payment) => String(payment.jobId)))
+  const legacyCompletedJobsAllTime = jobs.filter((job) => job.completed === true && !jobsWithAnyPaymentHistory.has(String(job.id)))
+  const lifetimeRevenueNet = allJobPayments.reduce((sum, payment) => sum + getReceivedNetAmount(payment), 0) + legacyCompletedJobsAllTime.reduce((sum, job) => sum + calculateTotal(job), 0)
+  const lifetimeCosts = costs.filter((cost) => cost.type !== 'revenue').reduce((sum, cost) => sum + Number(cost.netAmount ?? cost.amount ?? 0), 0)
+  const lifetimeProfit = lifetimeRevenueNet - lifetimeCosts
+  const lifetimePartnerOneMonthlyAverage = lifetimeProfit / 2 / monthsSinceFirstInvoice
+  const lifetimePartnerTwoMonthlyAverage = (lifetimeProfit - lifetimeProfit / 2) / monthsSinceFirstInvoice
 
   const formatCount = (count, one, few, many = few) => {
     const value = Math.abs(Number(count) || 0)
@@ -11301,18 +11307,18 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
                 <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerOne}</span>
                 <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerOneShare)}</strong>
-                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnio miesięcznie</span>
-                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(yearPartnerOneMonthlyAverage)}</strong>
+                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnia miesięczna od pierwszej faktury</span>
+                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(lifetimePartnerOneMonthlyAverage)}</strong>
               </div>
               <div style={{ background: '#f3f8fc', borderRadius: '12px', padding: '12px' }}>
                 <span style={{ display: 'block', color: '#718096', fontSize: '13px', marginBottom: '5px' }}>{partnerTwo}</span>
                 <strong style={{ fontSize: '18px' }}>{formatMoney(yearPartnerTwoShare)}</strong>
-                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnio miesięcznie</span>
-                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(yearPartnerTwoMonthlyAverage)}</strong>
+                <span style={{ display: 'block', color: '#718096', fontSize: '12px', marginTop: '8px' }}>Średnia miesięczna od pierwszej faktury</span>
+                <strong style={{ display: 'block', fontSize: '15px', marginTop: '2px' }}>{formatMoney(lifetimePartnerTwoMonthlyAverage)}</strong>
               </div>
             </div>
             <p style={{ margin: '10px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>
-              Kwoty oznaczają połowę zysku po kosztach, przed indywidualnymi rozliczeniami podatkowymi i ewentualnymi wypłatami. Średnia miesięczna jest liczona przez podzielenie udziału rocznego przez ${yearMonthsForAverage} miesięcy uwzględnionych w zestawieniu; dla bieżącego roku obejmuje miesiące od stycznia do aktualnego miesiąca, a dla zakończonych lat pełne 12 miesięcy. Wyrównanie kosztów zapłaconych przez wspólników jest rozliczane osobno.
+              Kwoty roczne oznaczają połowę zysku wybranego roku. Średnia miesięczna jest liczona z łącznego zysku netto od daty wystawienia pierwszej faktury do bieżącego miesiąca. Wyrównanie kosztów zapłaconych przez wspólników jest rozliczane osobno.
             </p>
           </div>
           <p style={{ margin: '14px 0 0', color: '#718096', fontSize: '12px', lineHeight: 1.5 }}>

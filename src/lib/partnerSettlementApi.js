@@ -192,9 +192,12 @@ export async function createPartnerTransfer({
     throw new Error('Nieprawidłowe przekazanie.')
   }
 
+  const organizationId = await getOrganizationId()
+
   const { data, error } = await supabase
     .from('partner_transfers')
     .insert({
+      organization_id: organizationId,
       settlement_id: settlementId || null,
       transfer_date: transferDate || new Date().toISOString().slice(0, 10),
       from_person: fromPerson,

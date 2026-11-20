@@ -8241,21 +8241,12 @@ function FinancePage({
 
       const gross = Math.max(0, Number(candidate.grossAmount || 0))
       const net = Math.max(0, Number(candidate.netAmount || 0))
-      const vat = Math.max(0, Number(candidate.vatAmount || (gross - net)))
-      const vatSettled = Math.min(
-        vat,
-        Math.max(0, Number(candidate.vatSettledAmount || 0))
-      )
-
-      // Jeżeli VAT z faktury został już wcześniej rozliczony, późniejszy
-      // przelew klienta traktujemy jako kwotę netto. Nie przeliczamy go
-      // ponownie proporcją netto/brutto.
-      if (vatSettled >= vat - 0.01) {
-        return Math.min(amount, net > 0 ? net : amount)
-      }
-
+      // Status rozliczenia VAT nie zmienia charakteru wpłaty od klienta:
+      // wpłata nadal jest brutto. Do podziału wspólników zawsze trafia
+      // wyłącznie jej część netto, proporcjonalna do wartości faktury.
+      // Limit do netto faktury chroni przed zawyżeniem przy nadpłacie.
       if (gross > 0 && net >= 0) {
-        return Math.min(amount, amount * (net / gross))
+        return Math.min(net, amount * (net / gross))
       }
 
       return amount

@@ -10450,52 +10450,47 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               <div>
                 <div className="finance-overview-label">ARCHIWUM</div>
                 <h2>Historia podziałów i rozliczeń</h2>
-                <p>Podziały wpłat 50/50 oraz osobne rozliczenia salda wspólników, zapisane według daty.</p>
+                <p>Podziały wpłat 50/50 wraz z informacją o wyrównaniu salda wspólników.</p>
               </div>
             </div>
             <div className="finance-history-list">
-              {[
-                ...profitDistributions
-                  .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
-                  .map((item) => ({ ...item, historyType: 'distribution', historyId: 'distribution-' + item.id, historyDate: item.createdAt || item.distributionDate })),
-                ...partnerTransfers
-                  .map((item) => ({ ...item, historyType: 'transfer', historyId: 'transfer-' + item.id, historyDate: item.transferDate }))
-              ]
+              {profitDistributions
+                .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
+                .map((item) => {
+                  const relatedTransfer = partnerTransfers.find((transfer) =>
+                    transfer.transferDate === item.distributionDate &&
+                    Number(transfer.amount || 0) > 0 &&
+                    transfer.fromPerson && transfer.toPerson
+                  )
+                  return {
+                    ...item,
+                    relatedTransfer,
+                    historyId: 'distribution-' + item.id,
+                    historyDate: item.createdAt || item.distributionDate,
+                  }
+                })
                 .sort((a, b) => String(b.historyDate || '').localeCompare(String(a.historyDate || '')))
                 .map((item) => {
-                  const isTransfer = item.historyType === 'transfer'
                   const isOpen = historyOpenId === item.historyId
-                  const reportData = isTransfer ? null : getDistributionReportData(item)
+                  const reportData = getDistributionReportData(item)
                   return (
                     <div key={item.historyId} className={'finance-history-item' + (isOpen ? ' is-open' : '')}>
                       <button type="button" className="finance-history-main" onClick={() => setHistoryOpenId(isOpen ? null : item.historyId)}>
-                        <span className="finance-history-date">{formatDate(isTransfer ? item.transferDate : item.distributionDate)}</span>
+                        <span className="finance-history-date">{formatDate(item.distributionDate)}</span>
                         <span className="finance-history-summary">
-                          {isTransfer ? (
-                            <>
-                              <strong>Rozliczenie salda · {formatMoney(item.amount)}</strong>
-                              <small>{item.fromPerson} → {item.toPerson}</small>
-                            </>
-                          ) : (
-                            <>
-                              <strong>{formatMoney(item.receivedNet)}</strong>
-                              <small>{partnerOne} {formatMoney(item.lukaszShare)} · {partnerTwo} {formatMoney(item.pawelShare)}</small>
-                            </>
-                          )}
+                          <>
+                            <strong>{formatMoney(item.receivedNet)}</strong>
+                            <small>{partnerOne} {formatMoney(item.lukaszShare)} · {partnerTwo} {formatMoney(item.pawelShare)}</small>
+                            {item.relatedTransfer && (
+                              <small className="finance-history-settlement-note">
+                                {item.relatedTransfer.fromPerson} oddaje {item.relatedTransfer.toPerson} {formatMoney(item.relatedTransfer.amount)}
+                              </small>
+                            )}
+                          </>
                         </span>
                         <span className="finance-history-chevron">{isOpen ? '⌃' : '⌄'}</span>
                       </button>
-                      {isOpen && (isTransfer ? (
-                        <div className="finance-history-detail">
-                          <div className="finance-history-stats">
-                            <div><span>Rodzaj</span><strong>Rozliczenie salda kosztów</strong></div>
-                            <div><span>Kwota</span><strong>{formatMoney(item.amount)}</strong></div>
-                            <div><span>Od</span><strong>{item.fromPerson}</strong></div>
-                            <div><span>Do</span><strong>{item.toPerson}</strong></div>
-                          </div>
-                          {item.note && <div className="finance-history-final"><span>Opis</span><strong>{item.note}</strong></div>}
-                        </div>
-                      ) : (
+                      {isOpen && (
                         <div className="finance-history-detail">
                           <div className="finance-history-stats">
                             <div><span>Wpłata</span><strong>{formatMoney(reportData.received)}</strong></div>
@@ -10516,8 +10511,14 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
                             <span>Podział końcowy</span>
                             <strong>{partnerOne} {formatMoney(item.lukaszShare)} · {partnerTwo} {formatMoney(item.pawelShare)}</strong>
                           </div>
+                          {item.relatedTransfer && (
+                            <div className="finance-history-final finance-history-settlement-note">
+                              <span>Wyrównanie salda</span>
+                              <strong>{item.relatedTransfer.fromPerson} oddaje {item.relatedTransfer.toPerson} {formatMoney(item.relatedTransfer.amount)}</strong>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )
                 })}

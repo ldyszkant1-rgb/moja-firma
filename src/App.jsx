@@ -9621,20 +9621,41 @@ function FinancePage({
 
   const sendDistributionPdfToMessenger = async (distribution = null) => {
     try {
-      setReportBusy(true)
+      // Build a real PDF File and pass the file itself to the iOS share sheet.
+      // Never share a blob: URL: it is temporary and only exists in this browser tab.
       const pdfBlob = createDistributionPdf(distribution)
+      const file = new File(
+        [pdfBlob],
+        'rozliczenie-aeroinstal.pdf',
+        { type: 'application/pdf' }
+      )
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: 'Rozliczenie Aeroinstal',
+          files: [file],
+        })
+        return
+      }
+
+      // Browsers without file sharing support can still download the PDF.
       const url = URL.createObjectURL(pdfBlob)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'rozliczenie-wspolnikow.pdf'
+      link.download = 'rozliczenie-aeroinstal.pdf'
+      document.body.appendChild(link)
       link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 60000)
-      await showCustomAlert('PDF został pobrany. Otwórz Messengera, wejdź w rozmowę i dołącz plik rozliczenie-wspolnikow.pdf. Na iPhonie przeglądarka nie może automatycznie załączyć pliku do rozmowy.')
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000)
+      await showCustomAlert('PDF został pobrany. Otwórz go z aplikacji Pliki i użyj Udostępnij, aby wysłać go przez Messengera.')
     } catch (error) {
-      console.error('Nie udało się przygotować PDF do Messengera:', error)
+      if (error?.name === 'AbortError') return
+      console.error('Nie udało się udostępnić PDF do Messengera:', error)
       await showCustomAlert('Nie udało się przygotować PDF. Spróbuj ponownie.')
-    } finally {
-      setReportBusy(false)
     }
   }
 

@@ -1,14 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
 import logo from './assets/logo.png'
-import ClientsPage from './ClientsPage'
-import OffersPage from './OffersPage'
-import InvoicesPage from './InvoicesPage'
-import JobDocuments from './JobDocuments'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
 import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
+import { buildDistributionTransferNote, findDistributionTransfer } from './lib/partnerSettlementHistory'
+import { hasReadyDataAccess } from './lib/dataAccessReadiness'
 import { getClients, subscribeToClients } from './lib/clientsApi'
 import {
   createSupabaseJob,
@@ -57,20 +55,14 @@ import {
 import {
   getJobPayments,
   getAllJobPayments,
-  createJobPayment,
-  deleteJobPayment,
-  subscribeToJobPayments,
-  calculatePaidAmount,
 } from './lib/jobPaymentsApi'
 import {
   getPartnerSettlements,
-  savePartnerSettlement,
   getProfitDistributions,
   createProfitDistribution,
   reverseProfitDistribution,
   getPartnerTransfers,
   createPartnerTransfer,
-  deletePartnerTransfer,
   subscribeToPartnerSettlements,
 } from './lib/partnerSettlementApi'
 import { supabase } from './lib/supabase'
@@ -84,6 +76,11 @@ import {
   ensureLegacyAnonymousSession,
   claimDeviceInSupabase,
 } from './lib/deviceAuth'
+
+const ClientsPage = lazy(() => import('./ClientsPage.jsx'))
+const OffersPage = lazy(() => import('./OffersPage.jsx'))
+const InvoicesPage = lazy(() => import('./InvoicesPage.jsx'))
+const JobDocuments = lazy(() => import('./JobDocuments.jsx'))
 
 
 /* =====================================================
@@ -644,13 +641,14 @@ function App() {
   // sesji oraz starego przypisania urządzenia. Wcześniej deviceUser może być
   // odczytany z localStorage, ale sesja Supabase nie jest jeszcze gotowa,
   // więc RLS zwróci pustą listę. To powodowało wyzerowanie Start/Realizacje.
-  const dataAccessReady =
-    authChecked &&
-    authOrganizationChecked &&
-    (
-      Boolean(authSession) ||
-      (!deviceLoading && Boolean(deviceUser))
-    )
+  const dataAccessReady = hasReadyDataAccess({
+    authChecked,
+    authOrganizationChecked,
+    authOrganizationId,
+    authSession,
+    deviceLoading,
+    deviceUser,
+  })
 
   useEffect(() => {
     let mounted = true
@@ -2765,9 +2763,9 @@ return (
 
           className="app-logo"
 
-          alt={settings.company?.shortName || 'Moja Firma'}
+          alt={settings.company?.shortName || 'Aeroinstal'}
 
-          title={settings.company?.shortName || 'Moja Firma'}
+          title={settings.company?.shortName || 'Aeroinstal'}
 
         />
 
@@ -2872,48 +2870,52 @@ return (
 
 
         {activePage === 'offers' && (
-          <OffersPage
-            offers={offers}
-            clients={clients}
-            settings={settings}
-            onCreate={handleCreateOffer}
-            onUpdate={handleUpdateOffer}
-            onDelete={handleDeleteOffer}
-            onConvertToJob={handleConvertOfferToJob}
-            onAlert={showCustomAlert}
-            onConfirm={showCustomConfirm}
-          />
+          <Suspense fallback={<p aria-live="polite">Wczytywanie ofert…</p>}>
+            <OffersPage
+              offers={offers}
+              clients={clients}
+              settings={settings}
+              onCreate={handleCreateOffer}
+              onUpdate={handleUpdateOffer}
+              onDelete={handleDeleteOffer}
+              onConvertToJob={handleConvertOfferToJob}
+              onAlert={showCustomAlert}
+              onConfirm={showCustomConfirm}
+            />
+          </Suspense>
         )}
 
 
         {activePage === 'clients' && (
-
-          <ClientsPage
-            clients={clients}
-            settings={settings}
-            jobs={jobs}
-            onRefresh={loadClients}
-            onAlert={showCustomAlert}
-            onConfirm={showCustomConfirm}
-            onOpenJob={setSelectedJob}
-          />
-
+          <Suspense fallback={<p aria-live="polite">Wczytywanie klientów…</p>}>
+            <ClientsPage
+              clients={clients}
+              settings={settings}
+              jobs={jobs}
+              onRefresh={loadClients}
+              onAlert={showCustomAlert}
+              onConfirm={showCustomConfirm}
+              onOpenJob={setSelectedJob}
+            />
+          </Suspense>
         )}
 
 
         {activePage === 'invoices' && (
-          <InvoicesPage
-            invoices={invoices}
-            jobs={jobs}
-            clients={clients}
-            settings={settings}
-            prefillJobId={invoiceJobToCreate}
-            openInvoiceId={invoiceToOpen}
-            onPrefillConsumed={() => setInvoiceJobToCreate(null)}
-            onOpenConsumed={() => setInvoiceToOpen(null)}
-            onAlert={showCustomAlert}
-            onConfirm={showCustomConfirm}
-          />
+          <Suspense fallback={<p aria-live="polite">Wczytywanie faktur…</p>}>
+            <InvoicesPage
+              invoices={invoices}
+              jobs={jobs}
+              clients={clients}
+              settings={settings}
+              prefillJobId={invoiceJobToCreate}
+              openInvoiceId={invoiceToOpen}
+              onPrefillConsumed={() => setInvoiceJobToCreate(null)}
+              onOpenConsumed={() => setInvoiceToOpen(null)}
+              onAlert={showCustomAlert}
+              onConfirm={showCustomConfirm}
+            />
+          </Suspense>
         )}
 
         {activePage === 'finance' && (
@@ -2959,6 +2961,7 @@ return (
             settings={settings}
             setSettings={setSettings}
             authSession={authSession}
+            authOrganizationId={authOrganizationId}
           />
 
         )}
@@ -7180,7 +7183,7 @@ function JobDetails({
       <section className="job-detail-card">
         <details className="job-detail-accordion">
           <summary>
-            <span><FileText size={19} strokeWidth={1.75} /> Dokumenty formalne</span>
+            <span><FileText size={19} strokeWidth={1.75} /> Załączniki do realizacji</span>
             <ChevronDown size={18} strokeWidth={1.75} />
           </summary>
           <div className="job-detail-accordion-body">
@@ -7218,6 +7221,10 @@ function JobDetails({
         <input ref={materialInputRef} type="file" hidden onChange={(e) => addDocument('material', e.target.files?.[0])} />
         <input ref={assemblyInputRef} type="file" hidden onChange={(e) => addDocument('assembly', e.target.files?.[0])} />
       </section>
+
+      <Suspense fallback={<p aria-live="polite" className="job-detail-muted-block">Wczytywanie dokumentów…</p>}>
+        <JobDocuments job={editedJob} clients={clients} company={company} />
+      </Suspense>
 
       <section className="job-detail-card">
         <details className="job-detail-accordion">
@@ -9048,7 +9055,7 @@ function FinancePage({
           toPerson,
           amount: safeAmount,
           note: isFullSettlement
-            ? 'Pełne rozliczenie salda kosztów'
+            ? buildDistributionTransferNote(savedDistribution?.id)
             : 'Częściowe rozliczenie salda kosztów',
         })
 
@@ -10447,10 +10454,10 @@ ${partnerTwo}: ${formatMoney(partnerTwoSplitAmount)}`
               {profitDistributions
                 .filter((item) => Number(item.receivedNet || item.profit || 0) > 0.01)
                 .map((item) => {
-                  const relatedTransfer = partnerTransfers.find((transfer) =>
-                    transfer.transferDate === item.distributionDate &&
-                    Number(transfer.amount || 0) > 0 &&
-                    transfer.fromPerson && transfer.toPerson
+                  const relatedTransfer = findDistributionTransfer(
+                    item,
+                    profitDistributions,
+                    partnerTransfers
                   )
                   return {
                     ...item,
@@ -11472,6 +11479,7 @@ function SettingsPage({
   settings,
   setSettings,
   authSession,
+  authOrganizationId,
 }) {
 
   const [editingRates, setEditingRates] = useState(false)
@@ -11639,7 +11647,7 @@ function SettingsPage({
 
   const exportBackup = async () => {
     try {
-      const [remoteJobs, remoteDeletedJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteProfitDistributions, remoteClients] = await Promise.all([
+      const [remoteJobs, remoteDeletedJobs, remoteOffers, remoteInvoices, remoteFinance, remoteJobPayments, remotePartnerSettlements, remotePartnerTransfers, remoteProfitDistributions, remoteClients, generalRemindersResult] = await Promise.all([
         getJobs(),
         getDeletedJobs(),
         getOffers(),
@@ -11650,7 +11658,15 @@ function SettingsPage({
         getPartnerTransfers(),
         getProfitDistributions(),
         getClients(),
+        supabase
+          .from('general_reminders')
+          .select('*')
+          .order('done', { ascending: true })
+          .order('date', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: false }),
       ])
+
+      if (generalRemindersResult.error) throw generalRemindersResult.error
 
       const backup = {
         app: 'Moja Firma',
@@ -11665,7 +11681,7 @@ function SettingsPage({
         clients: Array.isArray(remoteClients) ? remoteClients : [],
         invoices: Array.isArray(remoteInvoices) ? remoteInvoices : [],
         finance: Array.isArray(remoteFinance) ? remoteFinance : [],
-        generalReminders: Array.isArray(generalReminders) ? generalReminders : [],
+        generalReminders: Array.isArray(generalRemindersResult.data) ? generalRemindersResult.data : [],
         jobPayments: Array.isArray(remoteJobPayments) ? remoteJobPayments : [],
         partnerSettlements: Array.isArray(remotePartnerSettlements) ? remotePartnerSettlements : [],
         partnerTransfers: Array.isArray(remotePartnerTransfers) ? remotePartnerTransfers : [],
@@ -11680,14 +11696,14 @@ function SettingsPage({
 
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      const date = new Date().toISOString().slice(0, 10)
+      const date = getTodayString()
 
       link.href = url
       link.download = `moja-firma-backup-${date}.json`
       document.body.appendChild(link)
       link.click()
       link.remove()
-      URL.revokeObjectURL(url)
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 
       showCustomAlert('Kopia zapasowa została utworzona.')
     } catch (error) {
@@ -11703,6 +11719,7 @@ function SettingsPage({
       return
     }
 
+    let writesStarted = false
     try {
       const raw = await file.text()
       const backup = JSON.parse(raw)
@@ -11757,6 +11774,12 @@ function SettingsPage({
         }
       }
 
+      if (!authOrganizationId) {
+        const organizationError = new Error('Nie udało się ustalić aktywnej firmy.')
+        organizationError.code = 'BACKUP_ORGANIZATION_REQUIRED'
+        throw organizationError
+      }
+
       const confirmed = window.confirm(
         'Przywrócić dane z tej kopii? To scalenie danych: rekordy o tych samych ID mogą zostać zaktualizowane. Operacja nie usuwa rekordów nieobecnych w kopii i nie obejmuje plików ze Storage. Przed kontynuacją upewnij się, że masz aktualną kopię bieżących danych.'
       )
@@ -11766,6 +11789,7 @@ function SettingsPage({
         return
       }
 
+      writesStarted = true
       const jobsRows = backup.jobs.map((job) => ({
         id: job.id,
         name: job.name,
@@ -11802,9 +11826,32 @@ function SettingsPage({
         }
       }
 
+      // Keep foreign-key parents ahead of dependent offers and invoices.
+      const clientRows = (backup.clients || []).map((item) => ({
+        id: item.id,
+        organization_id: authOrganizationId,
+        name: item.name || '',
+        nip: item.nip || null,
+        address: item.address || null,
+        contact_name: item.contactName || null,
+        phone: item.phone || null,
+        email: item.email || null,
+        notes: item.notes || null,
+        short_name: item.shortName || null,
+        created_at: item.createdAt || undefined,
+        updated_at: item.updatedAt || undefined,
+      }))
+
+      if (clientRows.length > 0) {
+        const { error: clientError } = await supabase
+          .from('clients')
+          .upsert(clientRows, { onConflict: 'id' })
+        if (clientError) throw clientError
+      }
+
       const offerRows = (backup.offers || []).map((offer) => ({
         id: offer.id,
-        organization_id: offer.organizationId || authOrganizationId,
+        organization_id: authOrganizationId,
         client_id: offer.clientId || null,
         offer_number: offer.offerNumber || null,
         name: offer.name || '',
@@ -11834,31 +11881,9 @@ function SettingsPage({
         if (offerError) throw offerError
       }
 
-      const clientRows = (backup.clients || []).map((item) => ({
-        id: item.id,
-        organization_id: item.organizationId || authOrganizationId,
-        name: item.name || '',
-        nip: item.nip || null,
-        address: item.address || null,
-        contact_name: item.contactName || null,
-        phone: item.phone || null,
-        email: item.email || null,
-        notes: item.notes || null,
-        short_name: item.shortName || null,
-        created_at: item.createdAt || undefined,
-        updated_at: item.updatedAt || undefined,
-      }))
-
-      if (clientRows.length > 0) {
-        const { error: clientError } = await supabase
-          .from('clients')
-          .upsert(clientRows, { onConflict: 'id' })
-        if (clientError) throw clientError
-      }
-
       const invoiceRows = (backup.invoices || []).map((item) => ({
         id: item.id,
-        organization_id: item.organizationId || authOrganizationId,
+        organization_id: authOrganizationId,
         job_id: item.jobId || null,
         client_id: item.clientId || null,
         invoice_number: item.invoiceNumber || '',
@@ -12018,7 +12043,12 @@ function SettingsPage({
       window.location.reload()
     } catch (error) {
       console.error('Nie udało się przywrócić kopii:', error)
-      showCustomAlert('Nie udało się przywrócić kopii. Plik może być nieprawidłowy.')
+      const message = error?.code === 'BACKUP_ORGANIZATION_REQUIRED'
+        ? 'Nie udało się ustalić aktywnej firmy. Zaloguj się ponownie i spróbuj jeszcze raz.'
+        : writesStarted
+          ? 'Import został przerwany. Część danych mogła już zostać przywrócona. Sprawdź dane przed ponowną próbą.'
+          : 'Nie udało się przywrócić kopii. Sprawdź format pliku i połączenie z bazą.'
+      showCustomAlert(message)
       setBackupInputKey((value) => value + 1)
     }
   }
@@ -12027,7 +12057,7 @@ function SettingsPage({
     <>
       <div className="page-heading settings-page-heading">
         <div>
-          <div className="small-label">MOJA FIRMA</div>
+          <div className="small-label">AEROINSTAL</div>
           <h1>Ustawienia</h1>
         </div>
       </div>

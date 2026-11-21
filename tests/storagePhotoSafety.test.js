@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const jobsApi = readFileSync(new URL('../src/lib/jobsApi.js', import.meta.url), 'utf8')
-const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
+const jobsApi = readFileSync(new URL('../src/lib/jobsApi.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 
 function section(source, start, end) {
   const startIndex = source.indexOf(start)

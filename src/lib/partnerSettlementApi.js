@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toLocalDateInput } from './date'
 
 function mapSettlement(row) {
   return {
@@ -92,7 +93,7 @@ export async function createProfitDistribution({
     .from('profit_distributions')
     .insert({
       organization_id: organizationId,
-      distribution_date: distributionDate || new Date().toISOString().slice(0, 10),
+      distribution_date: distributionDate || toLocalDateInput(),
       received_net: Number(receivedNet || 0),
       costs_net: Number(costsNet || 0),
       profit: Number(profit || 0),
@@ -199,7 +200,7 @@ export async function createPartnerTransfer({
     .insert({
       organization_id: organizationId,
       settlement_id: settlementId || null,
-      transfer_date: transferDate || new Date().toISOString().slice(0, 10),
+      transfer_date: transferDate || toLocalDateInput(),
       from_person: fromPerson,
       to_person: toPerson,
       amount: numericAmount,

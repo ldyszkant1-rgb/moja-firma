@@ -48,7 +48,7 @@ const polishAmountInWords=value=>{
 
 
 export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={},prefillJobId=null,openInvoiceId=null,onPrefillConsumed,onOpenConsumed,onAlert,onConfirm}){
- const [edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
+ const [saveError,setSaveError]=useState(''),[edit,setEdit]=useState(null),[preview,setPreview]=useState(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[saving,setSaving]=useState(false)
  const [payments,setPayments]=useState([]),[paymentForm,setPaymentForm]=useState({amount:'',paidAt:today(),note:''}),[paymentSaving,setPaymentSaving]=useState(false)
  const paymentSavingRef=useRef(false),invoiceSavingRef=useRef(false),paymentDeletingRef=useRef(new Set())
  const cm=useMemo(()=>new Map(clients.map(c=>[String(c.id),c])),[clients])
@@ -135,6 +135,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
  }
 
  const save=async()=>{
+  setSaveError('')
   if(invoiceSavingRef.current)return
   if(!edit.clientId){onAlert?.('Wybierz klienta.');return}
   if(!edit.issueDate){onAlert?.('Podaj datę wystawienia.');return}
@@ -173,7 +174,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
    setEdit(null)
    window.dispatchEvent(new CustomEvent('aeroinstal-invoices-changed',{detail:x}))
    onAlert?.('Faktura została zapisana.')
-  }catch(e){console.error(e);onAlert?.('Nie udało się zapisać faktury.')}finally{invoiceSavingRef.current=false;setSaving(false)}
+  }catch(e){console.error('Błąd zapisu faktury:',e);const message=e?.message||'Nieznany błąd';setSaveError('Nie udało się zapisać faktury: '+message);onAlert?.('Nie udało się zapisać faktury: '+message)}finally{invoiceSavingRef.current=false;setSaving(false)}
  }
 
  const remove=async x=>{
@@ -364,6 +365,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      </div>
     </div>
 
+    {saveError && <p role="alert" style={{color:"#b91c1c",padding:"12px 16px",margin:0}}>{saveError}</p>}
     <div className="invoice-editor-actions">
      <button type="button" className="invoice-cancel-button" onClick={()=>setEdit(null)}>Anuluj</button>
      <button type="button" className="invoice-preview-button" onClick={()=>setPreview({...edit,items:Array.isArray(edit.items)?edit.items:[]})}>👁 Podgląd</button>

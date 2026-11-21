@@ -11,7 +11,9 @@ function getStorageValue(keys) {
     try {
       const value = window.localStorage.getItem(key)
       if (value) return value
-    } catch {}
+    } catch {
+      // localStorage can be disabled; keep checking other supported keys.
+    }
   }
   return null
 }
@@ -21,7 +23,9 @@ function setStorageValue(keys, value) {
   for (const key of keys) {
     try {
       window.localStorage.setItem(key, value)
-    } catch {}
+    } catch {
+      // Device identity is best-effort when browser storage is unavailable.
+    }
   }
 }
 

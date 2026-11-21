@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
 import AuthPage from './AuthPage'
+import AccountPasswordSettings from './AccountPasswordSettings'
 import logo from './assets/logo.png'
 import ClientsPage from './ClientsPage'
 import OffersPage from './OffersPage'
@@ -12073,6 +12074,8 @@ function SettingsPage({
             </button>
           </div>
         )}
+
+        {authSession && <AccountPasswordSettings />}
 
         <TeamSettings authSession={authSession} />
 

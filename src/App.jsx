@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
+const invoiceBelongsToJob = (invoice, jobId) =>
+  String(invoice?.jobId || '') === String(jobId) ||
+  (Array.isArray(invoice?.items) && invoice.items.some(item => String(item?.sourceJobId || '') === String(jobId)))
+
+
 import AuthPage from './AuthPage'
 import AccountPasswordSettings from './AccountPasswordSettings'
 import logo from './assets/logo.png'
@@ -1429,7 +1434,7 @@ function App() {
           }
 
           const linkedInvoices = trashInvoices.filter(
-            (invoice) => String(invoice.jobId || '') === String(job.id)
+            (invoice) => invoiceBelongsToJob(invoice, job.id)
           )
           const linkedPayments = trashPayments.filter(
             (payment) => String(payment.jobId || '') === String(job.id)
@@ -2212,7 +2217,7 @@ function App() {
         (payment) => String(payment.jobId || '') === String(jobToDelete.id)
       )
       const linkedInvoices = allInvoices.filter(
-        (invoice) => String(invoice.jobId || '') === String(jobToDelete.id)
+        (invoice) => invoiceBelongsToJob(invoice, jobToDelete.id)
       )
 
       if (linkedInvoices.length || linkedPayments.length) {
@@ -3861,7 +3866,7 @@ function JobCard({
   const extraCompletedTasks = Math.max(0, completedTasks.length - Math.max(0, 3 - visibleTasks.length))
   const totalValue = calculateTotal(job)
   const progress = Math.max(0, Math.min(100, Number(job.progress) || 0))
-  const linkedInvoice = (invoices || []).find((invoice) => String(invoice.jobId) === String(job.id))
+  const linkedInvoice = (invoices || []).find((invoice) => invoiceBelongsToJob(invoice, job.id))
   const invoicePaid = Number(linkedInvoice?.paidAmount || 0)
   const invoiceVatSettled = Number(linkedInvoice?.vatSettledAmount || 0)
   const invoiceGross = Number(linkedInvoice?.grossAmount || 0)
@@ -4980,7 +4985,7 @@ function JobDetails({
   }, [job])
 
   const linkedInvoice = (invoices || []).find(
-    (invoice) => String(invoice.jobId) === String(job.id)
+    (invoice) => invoiceBelongsToJob(invoice, job.id)
   ) || null
   const [jobCosts, setJobCosts] = useState([])
   const [showCostForm, setShowCostForm] = useState(false)

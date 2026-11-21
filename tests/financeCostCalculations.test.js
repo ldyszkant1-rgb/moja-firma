@@ -1,6 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { calculateEditedCostAmounts } from '../src/lib/financeCostCalculations.js'
+import {
+  calculateEditedCostAmounts,
+  getInvoiceCustomerPaidAmount,
+} from '../src/lib/financeCostCalculations.js'
 import {
   buildDistributionTransferNote,
   findDistributionTransfer,
@@ -47,6 +50,19 @@ test('rounds gross and VAT amounts to two decimal places', () => {
     vatAmount: 0.8,
     grossAmount: 10.81,
   })
+})
+
+test('uses legacy invoice paid amount when no payment rows are linked', () => {
+  assert.equal(getInvoiceCustomerPaidAmount(123, 0, 123), 123)
+})
+
+test('uses the larger of allocated payments and the legacy paid amount', () => {
+  assert.equal(getInvoiceCustomerPaidAmount(123, 50, 25), 50)
+  assert.equal(getInvoiceCustomerPaidAmount(123, 25, 50), 50)
+})
+
+test('does not count customer payments above the invoice gross amount', () => {
+  assert.equal(getInvoiceCustomerPaidAmount(123, 150, 140), 123)
 })
 
 test('links a full-settlement transfer to its exact distribution ID', () => {

@@ -4,7 +4,10 @@ import AuthPage from './AuthPage'
 import logo from './assets/logo.png'
 import { Home, CalendarDays, Wrench, Receipt, MoreHorizontal, ArrowRight, ArrowUpDown, Search, UserRound, User, Bell, Wallet, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, Plus, FileText, X, HardHat, Briefcase, Pencil, Clock, Trash2, Camera, ClipboardList, Truck, Package, Users, Share2, Copy, Download } from 'lucide-react'
 import { getOffers, createOffer, updateOffer, deleteOffer, subscribeToOffers } from './lib/offersApi'
-import { calculateEditedCostAmounts } from './lib/financeCostCalculations'
+import {
+  calculateEditedCostAmounts,
+  getInvoiceCustomerPaidAmount,
+} from './lib/financeCostCalculations'
 import { buildDistributionTransferNote, findDistributionTransfer } from './lib/partnerSettlementHistory'
 import { hasReadyDataAccess } from './lib/dataAccessReadiness'
 import { getClients, subscribeToClients } from './lib/clientsApi'
@@ -8582,7 +8585,11 @@ function FinancePage({
       const net = Math.max(0, Number(invoice.netAmount || 0))
       const vat = Math.max(0, Number(invoice.vatAmount || (gross - net)))
       const customerPaid = invoice.jobId
-        ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
+        ? getInvoiceCustomerPaidAmount(
+          gross,
+          allocatedPaymentsByInvoice.get(String(invoice.id)),
+          invoice.paidAmount
+        )
         : Math.min(gross, Math.max(0, Number(invoice.paidAmount || 0)))
 
       // VAT rozliczony wcześniej nie jest wpłatą klienta, ale zmniejsza
@@ -8859,7 +8866,11 @@ function FinancePage({
 
     const net = Math.max(0, Number(invoice.netAmount || 0))
     const paid = invoice.jobId
-      ? (allocatedPaymentsByInvoice.get(String(invoice.id)) ?? 0)
+      ? getInvoiceCustomerPaidAmount(
+        invoice.grossAmount,
+        allocatedPaymentsByInvoice.get(String(invoice.id)),
+        invoice.paidAmount
+      )
       : Number(invoice.paidAmount || 0)
 
     return sum + Math.min(net, Math.max(0, paid))

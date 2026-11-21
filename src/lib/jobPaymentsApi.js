@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { toLocalDateInput } from './date'
 
 function mapPayment(row) {
   return {
@@ -44,7 +45,7 @@ export async function createJobPayment({ jobId, invoiceId = null, amount, paidAt
     p_job_id: jobId,
     p_invoice_id: invoiceId,
     p_amount: numericAmount,
-    p_paid_at: paidAt || new Date().toISOString().slice(0, 10),
+    p_paid_at: paidAt || toLocalDateInput(),
     p_note: note?.trim() || null,
   })
   if (error) throw error

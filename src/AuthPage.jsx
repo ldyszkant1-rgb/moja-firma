@@ -1,15 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from './lib/supabase'
-
-function slugify(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 50)
-}
 
 export default function AuthPage({ session = null, recovery = false }) {
   const [invitationId, setInvitationId] = useState(session?.user?.user_metadata?.invitation_id || null)
@@ -26,7 +16,6 @@ export default function AuthPage({ session = null, recovery = false }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [resetSent, setResetSent] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -99,7 +88,6 @@ export default function AuthPage({ session = null, recovery = false }) {
         redirectTo: window.location.origin,
       })
       if (resetError) throw resetError
-      setResetSent(true)
       setMessage('Jeśli konto istnieje, wysłaliśmy instrukcję zmiany hasła na podany adres e-mail.')
     } catch (resetError) {
       console.error('Błąd resetu hasła:', resetError)
@@ -236,7 +224,7 @@ export default function AuthPage({ session = null, recovery = false }) {
     <main style={pageStyle}>
       <section style={cardStyle}>
         <div style={{ marginBottom: '26px' }}>
-          <div style={badgeStyle}>MOJA FIRMA</div>
+          <div style={badgeStyle}>AEROINSTAL</div>
           <h1 style={titleStyle}>{title}</h1>
           <p style={{ margin: 0, color: '#68758a', lineHeight: 1.5 }}>{subtitle}</p>
         </div>
@@ -465,23 +453,6 @@ const forgotStyle = {
   cursor: 'pointer',
   padding: '4px 0',
   textAlign: 'left',
-}
-
-const toggleStyle = {
-  display: 'flex',
-  justifyContent: 'center',
-  marginTop: '18px',
-  paddingTop: '18px',
-  borderTop: '1px solid #e8eef5',
-}
-
-const toggleButtonStyle = {
-  border: 'none',
-  background: 'transparent',
-  color: '#087fce',
-  fontWeight: 800,
-  cursor: 'pointer',
-  padding: '8px',
 }
 
 const hintStyle = {

@@ -1,9 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
-const invoiceBelongsToJob = (invoice, jobId) =>
-  String(invoice?.jobId || '') === String(jobId) ||
-  (Array.isArray(invoice?.items) && invoice.items.some(item => String(item?.sourceJobId || '') === String(jobId)))
-
 
 import AuthPage from './AuthPage'
 import AccountPasswordSettings from './AccountPasswordSettings'
@@ -190,6 +186,10 @@ function capitalizeDisplay(value) {
 /* =====================================================
    DANE STARTOWE
    ===================================================== */
+
+const invoiceBelongsToJob = (invoice, jobId) =>
+  String(invoice?.jobId || '') === String(jobId) ||
+  (Array.isArray(invoice?.items) && invoice.items.some(item => String(item?.sourceJobId || '') === String(jobId)))
 
 const defaultJobs = [
   {

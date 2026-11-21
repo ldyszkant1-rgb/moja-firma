@@ -12,6 +12,8 @@ const total=j=>{const q=j?.quantities||{},r=j?.rates||{};return Number(q.mb||0)*
 const items=j=>{if(!j)return[];const q=j.quantities||{},r=j.rates||{};return[['Prace wentylacyjne – mb',q.mb,r.mb,'mb'],['Prace wentylacyjne – m²',q.m2,r.m2,'m²'],['Prace wentylacyjne – kg',q.kg,r.kg,'kg']].filter(x=>Number(x[1]||0)>0&&Number(x[2]||0)>0).map(x=>({name:x[0],quantity:Number(x[1]),netUnit:Number(x[2]),unit:x[3],vatRate:23}))}
 const amounts=it=>(it||[]).reduce((a,x)=>{const net=Number(x.quantity||0)*Number(x.netUnit||0),vat=net*Number(x.vatRate||0)/100;a.net+=net;a.vat+=vat;a.gross+=net+vat;return a},{net:0,vat:0,gross:0})
 const blankItem=()=>({name:'',quantity:1,netUnit:0,unit:'szt.',vatRate:23})
+const linkedJobIds=invoice=>[...new Set([invoice?.jobId,...(invoice?.items||[]).map(item=>item.sourceJobId)].filter(Boolean).map(String))]
+const jobInvoiceItems=job=>{const rows=items(job);return (rows.length?rows:[{name:job?.name||'Prace wentylacyjne',quantity:1,netUnit:0,unit:'usł.',vatRate:23}]).map(item=>({...item,name:`${job?.name||'Realizacja'} — ${item.name}`,sourceJobId:String(job.id)}))}
 const polishAmountInWords=value=>{
  const n=Math.max(0,Math.round(Number(value||0)*100))
  const zl=Math.floor(n/100),gr=n%100
@@ -65,7 +67,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
  const open=job=>{
   const t=job?total(job):0
-  const it=items(job)
+  const it=job?jobInvoiceItems(job):[]
   setEdit({
    jobId:job?.id||'',clientId:job?.clientId||'',invoiceNumber:'',
    issueDate:today(),saleDate:today(),dueDate:addDays(today(),14),
@@ -128,6 +130,21 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
  useEffect(()=>{if(!prefillJobId||edit)return;const j=jm.get(String(prefillJobId));if(!j)return;open(j);onPrefillConsumed?.()},[prefillJobId,jm,edit])
  useEffect(()=>{if(!openInvoiceId||edit)return;const inv=invoices.find(x=>String(x.id)===String(openInvoiceId));if(!inv)return;setEdit({...inv,items:Array.isArray(inv.items)?inv.items:[]});onOpenConsumed?.()},[openInvoiceId,invoices,edit])
+
+ const toggleJob=job=>{
+  if(!job||!edit)return
+  const id=String(job.id),selected=linkedJobIds(edit),already=selected.includes(id)
+  if(edit.id&&payments.some(p=>String(p.invoiceId||'')===String(edit.id))&&String(edit.jobId)===id&&already){
+   onAlert?.('Nie można odłączyć głównej realizacji faktury z zarejestrowanymi wpłatami.');return
+  }
+  if(!already&&edit.clientId&&job.clientId&&String(edit.clientId)!==String(job.clientId)){
+   onAlert?.('Do jednej faktury można przypisać tylko realizacje tego samego klienta.');return
+  }
+  const nextItems=already?(edit.items||[]).filter(item=>String(item.sourceJobId||'')!==id):(edit.items||[]).concat(jobInvoiceItems(job))
+  const remaining=selected.filter(x=>x!==id)
+  const nextJobId=already?(String(edit.jobId)===id?(remaining[0]||''):edit.jobId):(edit.jobId||id)
+  recalc(nextItems,{jobId:nextJobId,clientId:!already&&!edit.clientId?(job.clientId||''):edit.clientId})
+ }
 
  const recalc=(nextItems,patch={})=>{
   const a=amounts(nextItems)
@@ -293,11 +310,15 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
     </div>
 
     <div className="invoice-editor-section">
-     <div className="invoice-editor-section-head"><div className="invoice-editor-section-title">Realizacja</div></div>
-     <select className="invoice-editor-full-select" value={edit.jobId||''} disabled={edit.id&&payments.some(p=>String(p.invoiceId||'')===String(edit.id))} onChange={e=>{const hasPayments=payments.some(p=>String(p.invoiceId||'')===String(edit.id));if(hasPayments){onAlert?.('Nie można zmienić realizacji faktury, która ma zarejestrowane płatności.');return}const j=jm.get(e.target.value);const it=items(j);recalc(it,{jobId:e.target.value,clientId:j?.clientId||edit.clientId})}}>
-      <option value="">Bez powiązania z realizacją</option>
-      {jobs.map(j=><option key={j.id} value={j.id}>{j.name||'Bez nazwy'}{j.location?' • '+j.location:''}</option>)}
-     </select>
+     <div className="invoice-editor-section-head"><div className="invoice-editor-section-title">Powiązane realizacje</div></div>
+     <p className="invoice-editor-muted">Zaznacz kilka robót jednego klienta. Ich pozycje zostaną dodane do jednej faktury; kwota faktury jest liczona tylko raz.</p>
+     <div style={{display:'grid',gap:9}}>
+      {jobs.filter(j=>!edit.clientId||!j.clientId||String(j.clientId)===String(edit.clientId)||linkedJobIds(edit).includes(String(j.id))).map(j=><label key={j.id} style={{display:'flex',gap:10,alignItems:'center',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10}}>
+       <input type="checkbox" checked={linkedJobIds(edit).includes(String(j.id))} onChange={()=>toggleJob(j)}/>
+       <span>{j.name||'Bez nazwy'}{j.location?' • '+j.location:''}</span>
+      </label>)}
+     </div>
+     {linkedJobIds(edit).length>0&&<p className="invoice-editor-muted">Powiązane roboty: {linkedJobIds(edit).length}</p>}
     </div>
 
     <div className="invoice-editor-section">
@@ -377,7 +398,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
 
  const list=invoices.filter(x=>{
   const c=cm.get(String(x.clientId)),j=jm.get(String(x.jobId)),ps=paymentStatus(x)
-  const t=[x.invoiceNumber,c?.shortName,c?.name,j?.name,x.status,ps].join(' ').toLowerCase()
+  const t=[x.invoiceNumber,c?.shortName,c?.name,j?.name,...linkedJobIds(x).map(id=>jm.get(id)?.name),x.status,ps].join(' ').toLowerCase()
   return(!query||t.includes(query.toLowerCase()))&&(filter==='all'||x.status===filter||ps===filter)
  })
 
@@ -385,7 +406,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
   <div className="page-heading"><div><div className="small-label">{company.shortName || company.name || 'Twoja firma'}</div><h1>Faktury</h1></div><button type="button" onClick={()=>open()} style={{minHeight:44,padding:'0 14px',border:0,borderRadius:12,background:'#168fe5',color:'#fff',fontWeight:800}}>+ Nowa faktura</button></div>
   <div className="dashboard-grid">{[['Wszystkie',invoices.length],['Do wystawienia',invoices.filter(x=>x.status==='Do wystawienia').length],['Wystawione',invoices.filter(x=>x.status==='Wystawiona').length],['Zapłacone',invoices.filter(x=>paymentStatus(x)==='Zapłacona').length]].map(([l,v])=><div className="dashboard-card" key={l}><div className="dashboard-icon">🧾</div><div><span>{l}</span><strong>{v}</strong></div></div>)}</div>
   <div className="detail-card invoice-list-tools"><input placeholder="Szukaj faktury, klienta lub realizacji…" value={query} onChange={e=>setQuery(e.target.value)}/><div className="invoice-filter-row">{['all','Do wystawienia','Wystawiona','Częściowo zapłacona','Zapłacona','Przeterminowana','Wysłana do KSeF','Błąd KSeF'].map(x=><button type="button" key={x} onClick={()=>setFilter(x)} className={filter===x?'active':''}>{x==='all'?'Wszystkie':x}</button>)}</div></div>
-  <div style={{display:'grid',gap:9}}>{list.map(x=>{const c=cm.get(String(x.clientId)),j=jm.get(String(x.jobId));return <div key={x.id} className="detail-card invoice-list-card"><button type="button" className="invoice-list-main" onClick={()=>setEdit({...x,items:Array.isArray(x.items)?x.items:[]})}><div><strong>{x.invoiceNumber}</strong><span>{c?.shortName||c?.name||'Brak klienta'}{j?.name?' • '+j.name:''}</span><small>Wystawiona: {formatDate(x.issueDate)} · Termin: {formatDate(x.dueDate)} · {paymentStatus(x)}</small></div><strong>{money(x.grossAmount)}</strong></button><button type="button" onClick={()=>remove(x)} className="invoice-list-delete">Usuń</button></div>})}</div>
+  <div style={{display:'grid',gap:9}}>{list.map(x=>{const c=cm.get(String(x.clientId)),j=jm.get(String(x.jobId));return <div key={x.id} className="detail-card invoice-list-card"><button type="button" className="invoice-list-main" onClick={()=>setEdit({...x,items:Array.isArray(x.items)?x.items:[]})}><div><strong>{x.invoiceNumber}</strong><span>{c?.shortName||c?.name||'Brak klienta'}{linkedJobIds(x).length?' • '+linkedJobIds(x).map(id=>jm.get(id)?.name||'Realizacja').join(', '):''}</span><small>Wystawiona: {formatDate(x.issueDate)} · Termin: {formatDate(x.dueDate)} · {paymentStatus(x)}</small></div><strong>{money(x.grossAmount)}</strong></button><button type="button" onClick={()=>remove(x)} className="invoice-list-delete">Usuń</button></div>})}</div>
   {list.length===0&&<div className="detail-card" style={{textAlign:'center',color:'#718096'}}>Brak faktur.</div>}
  </div>
 }

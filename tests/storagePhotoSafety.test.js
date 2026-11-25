@@ -65,3 +65,34 @@ test('usunięcie dokumentu zapisuje metadane przed usunięciem pliku', () => {
   assert.ok(remove.indexOf('await onUpdate(updatedJob)') < remove.indexOf('await deleteSupabaseFile(document.path)'))
   assert.match(remove, /if \(saved === false\)/)
 })
+
+test('RPC galerii waliduje typ payloadu, identyfikator i ścieżkę przypisaną do realizacji', () => {
+  const migration = readFileSync(new URL('../supabase/migrations/20261015140000_validate_job_photo_rpc_payloads.sql', import.meta.url), 'utf8')
+  assert.match(migration, /jsonb_typeof\(p_photo\) is distinct from 'object'/)
+  assert.match(migration, /length\(v_photo_id\) > 128/)
+  assert.match(migration, /length\(v_photo_name\) > 255/)
+  assert.match(migration, /\^jobs\//)
+  assert.match(migration, /\/photos\/\[\^\/\]\+\$/)
+  assert.match(migration, /jsonb_typeof\(p_photo->'size'\) is distinct from 'number'/)
+  assert.match(migration, /not exists \(/)
+  assert.match(migration, /duplicate photo ID/)
+  assert.match(migration, /revoke all privileges on function public\.append_job_photo/)
+  assert.match(migration, /grant execute on function public\.append_job_photo\(uuid, jsonb\) to authenticated/)
+  assert.match(migration, /set search_path = ''/)
+})
+
+test('signed URL-e są odświeżane po powrocie PWA na pierwszy plan', () => {
+  assert.ok(jobsApi.includes('const SIGNED_STORAGE_URL_TTL_SECONDS = 60 * 10'))
+  assert.match(jobsApi, /createSignedUrl\(item\.path, SIGNED_STORAGE_URL_TTL_SECONDS\)/)
+  assert.match(app, /window\.addEventListener\('focus', refreshSignedStorageUrls\)/)
+  assert.match(app, /document\.addEventListener\('visibilitychange', onVisibilityChange\)/)
+  assert.match(app, /document\.visibilityState === 'visible'/)
+  assert.match(app, /window\.removeEventListener\('focus', refreshSignedStorageUrls\)/)
+  assert.match(app, /document\.removeEventListener\('visibilitychange', onVisibilityChange\)/)
+})
+
+test('realizacje w koszu również dostają świeże signed URL-e', () => {
+  const deletedJobs = section(jobsApi, 'export async function getDeletedJobs()', 'export async function createSupabaseJob(')
+  assert.match(deletedJobs, /Promise\.all\(/)
+  assert.match(deletedJobs, /resolveJobStorageUrls\(mapSupabaseJobToAppJob\(row\)\)/)
+})

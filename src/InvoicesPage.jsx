@@ -1,12 +1,13 @@
-import React,{useEffect,useMemo,useRef,useState} from 'react'
+import {useEffect,useMemo,useRef,useState} from 'react'
 import logo from './assets/logo.png'
 import './invoices.css'
 import {createInvoice,updateInvoice,deleteInvoice} from './lib/invoicesApi'
 import {getJobPayments,createJobPayment,deleteJobPayment} from './lib/jobPaymentsApi'
+import {addCalendarDays,toLocalDateInput} from './lib/date'
 
 const money=v=>Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2})+' zł'
-const today=()=>new Date().toISOString().slice(0,10)
-const addDays=(d,n)=>{const x=new Date(d+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)}
+const today=()=>toLocalDateInput()
+const addDays=addCalendarDays
 const formatDate=v=>v?new Date(v+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'}):'—'
 const total=j=>{const q=j?.quantities||{},r=j?.rates||{};return Number(q.mb||0)*Number(r.mb||0)+Number(q.m2||0)*Number(r.m2||0)+Number(q.kg||0)*Number(r.kg||0)}
 const items=j=>{if(!j)return[];const q=j.quantities||{},r=j.rates||{};return[['Prace wentylacyjne – mb',q.mb,r.mb,'mb'],['Prace wentylacyjne – m²',q.m2,r.m2,'m²'],['Prace wentylacyjne – kg',q.kg,r.kg,'kg']].filter(x=>Number(x[1]||0)>0&&Number(x[2]||0)>0).map(x=>({name:x[0],quantity:Number(x[1]),netUnit:Number(x[2]),unit:x[3],vatRate:23}))}
@@ -301,7 +302,7 @@ export default function InvoicesPage({invoices=[],jobs=[],clients=[],settings={}
      </div>
      <div className="invoice-party invoice-party-buyer">
       <div className="invoice-party-label">Nabywca</div>
-      <select value={edit.clientId||''} onChange={e=>{const c=cm.get(e.target.value);setEdit({...edit,clientId:e.target.value})}}>
+      <select value={edit.clientId||''} onChange={e=>setEdit({...edit,clientId:e.target.value})}>
        <option value="">Wybierz klienta</option>
        {clients.map(c=><option key={c.id} value={c.id}>{c.shortName||c.name}</option>)}
       </select>

@@ -15,3 +15,15 @@ export function calculateEditedCostAmounts(amount, vatRate) {
     grossAmount,
   }
 }
+
+export function getInvoiceCustomerPaidAmount(
+  grossAmount,
+  allocatedPayments,
+  legacyPaidAmount
+) {
+  const gross = Math.max(0, Number(grossAmount) || 0)
+  const allocated = Math.max(0, Number(allocatedPayments) || 0)
+  const legacyPaid = Math.max(0, Number(legacyPaidAmount) || 0)
+
+  return Math.min(gross, Math.max(allocated, legacyPaid))
+}

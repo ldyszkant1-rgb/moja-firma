@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { toLocalDateInput } from './lib/date'
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -26,8 +27,7 @@ function formatDate(value) {
 }
 
 function todayInput() {
-  const date = new Date()
-  return date.toISOString().slice(0, 10)
+  return toLocalDateInput()
 }
 
 function calculateTotal(job) {
